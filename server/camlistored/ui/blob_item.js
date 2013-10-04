@@ -70,14 +70,9 @@ camlistore.BlobItem = function(blobRef, metaBag, opt_contentLink, opt_domHelper)
   this.resolvedMetaData_ = camlistore.BlobItem.resolve(
       this.blobRef_, this.metaBag_);
 
-  /**
-   * @type {goog.events.EventHandler}
-   * @private
-   */
-  this.eh_ = new goog.events.EventHandler(this);
-
-  // Blob items support the CHECKED state.
   this.setSupportedState(goog.ui.Component.State.CHECKED, true);
+  this.setSupportedState(goog.ui.Component.State.DISABLED, true);
+  this.setAutoStates(goog.ui.Component.State.CHECKED, false);
 
   // Blob items dispatch state when checked.
   this.setDispatchTransitionEvents(
@@ -287,85 +282,57 @@ camlistore.BlobItem.prototype.decorateInternal = function(element) {
 
   var el = this.getElement();
   goog.dom.classes.add(el, 'cam-blobitem');
+
+  var link = this.dom_.createDom('a', 'cam-blobitem-thumb');
+  link.href = this.getLink_();
+
+  var thumb = this.dom_.createDom('img');
+  thumb.src = this.getThumbSrc_();
+  thumb.height = this.getThumbHeight_();
+  thumb.width = this.getThumbWidth();
+  link.appendChild(thumb);
+
+  el.appendChild(link);
+  this.loadCheckmark_();
+
   if (!this.isImage()) {
     goog.dom.classes.add(el, 'cam-blobitem-notimage');
+    var label = this.dom_.createDom('a', 'cam-blobitem-thumbtitle');
+    this.dom_.setTextContent(label, this.getTitle_());
+    el.appendChild(label);
   }
 
-  var thumbEl = this.dom_.createDom('img', 'cam-blobitem-thumb');
-  thumbEl.src = this.getThumbSrc_();
-  thumbEl.height = this.getThumbHeight_();
-  thumbEl.width = this.getThumbWidth();
-
-  var linkEl = this.dom_.createDom('a', 'cam-blobitem-thumbtitle');
-  linkEl.href = this.getLink_();
-  this.dom_.setTextContent(linkEl, this.getTitle_());
-
-  this.dom_.appendChild(el, thumbEl);
-  this.dom_.appendChild(el, linkEl);
+  this.getElement().addEventListener('click', this.handleClick_.bind(this));
+  this.setEnabled(false);
 };
-
-
-/** @override */
-camlistore.BlobItem.prototype.disposeInternal = function() {
-  camlistore.BlobItem.superClass_.disposeInternal.call(this);
-  this.eh_.dispose();
-};
-
 
 /**
- * Called when component's element is known to be in the document.
- */
-camlistore.BlobItem.prototype.enterDocument = function() {
-	camlistore.BlobItem.superClass_.enterDocument.call(this);
-
-	var thumbLink = goog.dom.getFirstElementChild(this.getElement());
-	this.eh_.listen(
-		thumbLink,
-		goog.events.EventType.DRAGENTER,
-		this.handleFileDragEnter_);
-	this.eh_.listen(
-		thumbLink,
-		goog.events.EventType.DRAGLEAVE,
-		this.handleFileDragLeave_);
-};
-
-
-/**
- * @param {goog.events.Event} e The drag drop event.
  * @private
  */
-camlistore.BlobItem.prototype.handleFileDragEnter_ = function(e) {
-	e.preventDefault();
-	e.stopPropagation();
-	if (this.isCollection()) {
-		goog.dom.classes.add(this.getElement(), 'cam-blobitem-dropactive');
-		// we could dispatch another custom event to the container, but why bother
-		// since we can directly access it?
-		var container = this.getParent();
-		container.notifyDragEnter_(this);
-	}
+camlistore.BlobItem.prototype.loadCheckmark_ = function() {
+  var req = new XMLHttpRequest();
+  req.open("GET", 'checkmark.svg', true);
+  req.onload = goog.bind(function() {
+    var temp = document.createElement('div');
+    temp.innerHTML = req.responseText;
+    this.checkmark_ = temp.getElementsByTagName('svg')[0];
+    this.checkmark_.setAttribute('class', 'checkmark');
+    this.getElement().appendChild(this.checkmark_);
+  }, this);
+  req.send(null);
 };
 
 /**
  * @param {goog.events.Event} e The drag drop event.
  * @private
  */
-camlistore.BlobItem.prototype.handleFileDragLeave_ = function(e) {
-	e.preventDefault();
-	e.stopPropagation();
-	if (this.isCollection()) {
-		goog.dom.classes.remove(this.getElement(), 'cam-blobitem-dropactive');
-		var container = this.getParent();
-		container.notifyDragLeave_(this);
-	}
-};
+camlistore.BlobItem.prototype.handleClick_ = function(e) {
+  if (!this.checkmark_) {
+    return;
+  }
 
-
-/**
- * Called when component's element is known to have been removed from the
- * document.
- */
-camlistore.BlobItem.prototype.exitDocument = function() {
-  camlistore.BlobItem.superClass_.exitDocument.call(this);
-  this.eh_.removeAll();
+  if (e.target == this.checkmark_ || this.checkmark_.contains(e.target)) {
+    this.setChecked(!this.isChecked());
+    e.preventDefault();
+  }
 };
