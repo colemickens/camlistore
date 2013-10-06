@@ -17,10 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/client"
@@ -34,16 +34,21 @@ import (
 )
 
 type mediaCmd struct {
-	add bool
-	del bool
-	up  *Uploader
+	fixtitles bool
+	opensubs  bool
+	tmdb      bool
+	tvdb      bool
+	ffprobe   bool
+	languages string
+	tag       string
+	//up        *Uploader
 }
 
 func init() {
 	cmdmain.RegisterCommand("media", func(flags *flag.FlagSet) cmdmain.CommandRunner {
 		cmd := new(mediaCmd)
-		flags.BoolVar(&cmd.add, "add", false, `Adds attribute (e.g. "tag")`)
-		flags.BoolVar(&cmd.del, "del", false, "Deletes named attribute [value]")
+		flags.BoolVar(&cmd.fixtitles, "fixtitles", false, `Fix the title on the file? permanode?`)
+		flags.StringVar(&cmd.languages, "languages", "eng", `[type=opensubs] Subtitle languages to download`)
 		return cmd
 	})
 }
@@ -53,7 +58,8 @@ func (c *mediaCmd) Describe() string {
 }
 
 func (c *mediaCmd) Usage() {
-	cmdmain.Errorf("Usage: camput [globalopts] attr [attroption] <permanode> <name> <value>")
+	//cmdmain.Errorf("Usage: camput [globalopts] attr [attroption] <permanode> <name> <value>")
+	cmdmain.Errorf("Usage: camput [globalopts] media [mediaoption]")
 }
 
 func (c *mediaCmd) Examples() []string {
@@ -63,14 +69,13 @@ func (c *mediaCmd) Examples() []string {
 }
 
 func (c *mediaCmd) RunCommand(args []string) error {
-	if len(args) != 2 {
-		return errors.New("Media takes 2 args: <tag> <type>")
-	}
-	tag, typ := args[0], args[1]
+	languages := strings.Split(c.languages, ",")
+	if c.opensubs && (c.fixtitles == true || len(languages) > 0) {
 
-	// check typ for valid (understood) types
-	if typ != "movie" {
-		return errors.New("Media only accepts 'movie' for the <tag> option currently")
+	}
+
+	if c.tag == "" {
+		cmdmain.Errorf("must specify a media tag")
 	}
 
 	var err error
@@ -78,7 +83,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 	req := &search.WithAttrRequest{
 		N:             -1,
 		Attr:          "tag",
-		Value:         tag,
+		Value:         c.tag,
 		Fuzzy:         false,
 		ThumbnailSize: 0,
 	}
@@ -89,36 +94,41 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 
-	prober, err := ffmpeg.NewProber("ffprobe")
-	if err != nil {
-		return err
-	}
-
-	tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
-
 	for h, db := range resp.Meta {
-		log.Println("---")
-		log.Println("hash     ", h)
-		if db.CamliType == "file" {
-			log.Println("file     ", db.File.FileName)
-			searchTerm := mediautil.ScrubFilename(db.File.FileName)
-			log.Println("tmdb     ", searchTerm)
-			movies := tmdb.LookupMovies(searchTerm)
-			if len(movies) > 0 {
-				log.Println("tmdb 1st ", movies[0])
-			} else {
-				log.Println("tmdb nada")
+		if c.opensubs {
+			//opensubs.CalculateHash()
+		}
+
+		if c.tmdb {
+			tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+
+			log.Println("---")
+			log.Println("hash     ", h)
+			if db.CamliType == "file" {
+				log.Println("file     ", db.File.FileName)
+				searchTerm := mediautil.ScrubFilename(db.File.FileName)
+				log.Println("tmdb     ", searchTerm)
+				movies := tmdb.LookupMovies(searchTerm)
+				if len(movies) > 0 {
+					log.Println("tmdb 1st ", movies[0])
+				} else {
+					log.Println("tmdb nada")
+				}
+			}
+			if db.CamliType == "permanode" {
+				log.Println("permanode", db.Permanode.Attr["title"])
 			}
 		}
-		if db.CamliType == "permanode" {
-			log.Println("permanode", db.Permanode.Attr["title"])
+
+		if c.ffprobe {
+			prober, err := ffmpeg.NewProber("ffprobe")
+			_ = prober.ProbeFile
+			if err != nil {
+				return err
+			}
 		}
-
-		// how to link to the ffprobe, tvdb, tmdb output ?
-		//prober.ProbeFile()
-		_ = prober.ProbeFile
-
 	}
+
 	log.Println("---")
 
 	// add a new job to the job pool
