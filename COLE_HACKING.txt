@@ -1,0 +1,13 @@
+commands to run:
+
+
+# start server
+
+cd ~/Code/gopkgs/camlistore.org/
+rm -rf /tmp/camliroot-cole
+devcam server
+
+# put file, attempt to annotate it
+
+devcam put file --permanode --tag=movie /home/cole/Downloads/Oblivion.2013.mp4
+devcam put media --tag=movie tmdb

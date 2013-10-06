@@ -35,10 +35,6 @@ import (
 
 type mediaCmd struct {
 	fixtitles bool
-	opensubs  bool
-	tmdb      bool
-	tvdb      bool
-	ffprobe   bool
 	languages string
 	tag       string
 	//up        *Uploader
@@ -49,6 +45,7 @@ func init() {
 		cmd := new(mediaCmd)
 		flags.BoolVar(&cmd.fixtitles, "fixtitles", false, `Fix the title on the file? permanode?`)
 		flags.StringVar(&cmd.languages, "languages", "eng", `[type=opensubs] Subtitle languages to download`)
+		flags.StringVar(&cmd.tag, "tag", "", `the tag of media to scan`)
 		return cmd
 	})
 }
@@ -58,24 +55,28 @@ func (c *mediaCmd) Describe() string {
 }
 
 func (c *mediaCmd) Usage() {
-	//cmdmain.Errorf("Usage: camput [globalopts] attr [attroption] <permanode> <name> <value>")
-	cmdmain.Errorf("Usage: camput [globalopts] media [mediaoption]")
+	cmdmain.Errorf("Usage: camput [globalopts] media [media_opts] <media_service>")
 }
 
 func (c *mediaCmd) Examples() []string {
 	return []string{
-		"<tag> <type> Lookup [new] items tagged with <tag> against services compatible with <type>",
+		"<tag> <type> Lookup [new] items tagged with <tag> against services compatible with <type>", // TODO: FIX
+		"media --tag=movie --fixtitles opensubs",
 	}
 }
 
 func (c *mediaCmd) RunCommand(args []string) error {
-	languages := strings.Split(c.languages, ",")
-	if c.opensubs && (c.fixtitles == true || len(languages) > 0) {
-
+	if len(args) != 1 {
+		return fmt.Errorf("Must specifiy one media service to lookup against.")
+		// TODO: Cmdmain.errorf vs return fmt.errorf?
 	}
 
+	subCommand := args[0]
+	languages := strings.Split(c.languages, ",")
+	_ = languages
+
 	if c.tag == "" {
-		cmdmain.Errorf("must specify a media tag")
+		return fmt.Errorf("must specify a media tag")
 	}
 
 	var err error
@@ -94,37 +95,61 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 
-	for h, db := range resp.Meta {
-		if c.opensubs {
-			//opensubs.CalculateHash()
-		}
+	for h, describedBlob := range resp.Meta {
+		switch subCommand {
+		case "tmdb":
+			{
+				tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+				if err != nil {
+					return err
+				}
 
-		if c.tmdb {
-			tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+				log.Println("---")
+				log.Println("hash     ", h)
+				if describedBlob.CamliType == "file" {
+					log.Println("file     ", describedBlob.File.FileName)
+					searchTerm := mediautil.ScrubFilename(describedBlob.File.FileName)
+					log.Println("search   ", searchTerm)
+					movies := tmdb.LookupMovies(searchTerm)
+					if len(movies) > 0 {
+						movie := movies[0]
+						log.Println("result   ", movie)
 
-			log.Println("---")
-			log.Println("hash     ", h)
-			if db.CamliType == "file" {
-				log.Println("file     ", db.File.FileName)
-				searchTerm := mediautil.ScrubFilename(db.File.FileName)
-				log.Println("tmdb     ", searchTerm)
-				movies := tmdb.LookupMovies(searchTerm)
-				if len(movies) > 0 {
-					log.Println("tmdb 1st ", movies[0])
-				} else {
-					log.Println("tmdb nada")
+						bb1 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title)
+						//bb2 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path)
+						//bb3 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path)
+						// should we just pull down the backdrop/poster and put it in camlistore as another blob? (yes)
+
+						//for _, bb := range []*schema.Builder{bb1, bb2, bb3} {
+						for _, bb := range []*schema.Builder{bb1} {
+							log.Println("claim    ", bb)
+							put, err := getUploader().UploadAndSignBlob(bb)
+							handleResult(bb.Type(), put, err)
+						}
+					} else {
+						log.Println("tmdb failed to find any match")
+					}
 				}
 			}
-			if db.CamliType == "permanode" {
-				log.Println("permanode", db.Permanode.Attr["title"])
-			}
-		}
+		case "tvdb":
+			{
 
-		if c.ffprobe {
-			prober, err := ffmpeg.NewProber("ffprobe")
-			_ = prober.ProbeFile
-			if err != nil {
-				return err
+			}
+		case "opensubs":
+			{
+				//opensubs.CalculateHash()
+			}
+		case "ffprobe":
+			{
+				prober, err := ffmpeg.NewProber("ffprobe")
+				_ = prober.ProbeFile
+				if err != nil {
+					return err
+				}
+			}
+		default:
+			{
+				cmdmain.Errorf("Bad subcommand")
 			}
 		}
 	}
