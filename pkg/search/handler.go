@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -51,6 +52,7 @@ func init() {
 	blobserver.RegisterHandlerConstructor("search", newHandlerFromConfig)
 }
 
+// Handler handles search queries.
 type Handler struct {
 	index Index
 	owner blob.Ref
@@ -107,9 +109,10 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 	}, nil
 }
 
-// TODO: figure out a plan for an owner having multiple active public keys, or public
-// key rotation
+// Owner returns Handler owner's public key blobref.
 func (h *Handler) Owner() blob.Ref {
+	// TODO: figure out a plan for an owner having multiple active public keys, or public
+	// key rotation
 	return h.owner
 }
 
@@ -119,10 +122,6 @@ func (h *Handler) Index() Index {
 
 func jsonMap() map[string]interface{} {
 	return make(map[string]interface{})
-}
-
-func jsonMapList() []map[string]interface{} {
-	return make([]map[string]interface{}, 0)
 }
 
 func (sh *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -881,7 +880,9 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 			}
 
 			// TODO: different thumbnails based on peer.File.MIMEType.
-			return "file.png", thumbSize, thumbSize, true
+			const fileIconAspectRatio = 260.0 / 300.0
+			var width = int(math.Floor(float64(thumbSize) * fileIconAspectRatio + 0.5))
+			return "file.png", width, thumbSize, true
 		}
 		if peer.Dir != nil {
 			return "folder.png", thumbSize, thumbSize, true
