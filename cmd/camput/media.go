@@ -95,18 +95,33 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 
-	for h, describedBlob := range resp.Meta {
-		switch subCommand {
-		case "tmdb":
-			{
-				tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
-				if err != nil {
-					return err
-				}
+	// INITIALIZE tmdb/etc here rather than on every single blerb
 
-				log.Println("---")
-				log.Println("hash     ", h)
-				if describedBlob.CamliType == "file" {
+	for h, describedBlob := range resp.Meta {
+
+		log.Println(describedBlob.CamliType, "blob", describedBlob)
+
+		pnf, fi, ok := __permanodeFile(describedBlob)
+		if ok {
+			log.Println(pnf, fi)
+		} else {
+			continue
+		}
+
+		// use the permanodeFile and then do the following to the file that comes out
+		// so we can use its filename against tmdb
+		// and then we're still "on" the permanode to put the claim on
+		if describedBlob.CamliType == "file" && false {
+			log.Println("---")
+			switch subCommand {
+			case "tmdb":
+				{
+					tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+					if err != nil {
+						return err
+					}
+
+					log.Println("hash     ", h)
 					log.Println("file     ", describedBlob.File.FileName)
 					searchTerm := mediautil.ScrubFilename(describedBlob.File.FileName)
 					log.Println("search   ", searchTerm)
@@ -115,13 +130,13 @@ func (c *mediaCmd) RunCommand(args []string) error {
 						movie := movies[0]
 						log.Println("result   ", movie)
 
-						bb1 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title)
-						//bb2 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path)
-						//bb3 := schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path)
-						// should we just pull down the backdrop/poster and put it in camlistore as another blob? (yes)
+						// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
 
-						//for _, bb := range []*schema.Builder{bb1, bb2, bb3} {
-						for _, bb := range []*schema.Builder{bb1} {
+						for _, bb := range []*schema.Builder{
+							schema.NewAddAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title),
+							schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path),
+							schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path),
+						} {
 							log.Println("claim    ", bb)
 							put, err := getUploader().UploadAndSignBlob(bb)
 							handleResult(bb.Type(), put, err)
@@ -129,64 +144,49 @@ func (c *mediaCmd) RunCommand(args []string) error {
 					} else {
 						log.Println("tmdb failed to find any match")
 					}
-				}
-			}
-		case "tvdb":
-			{
 
-			}
-		case "opensubs":
-			{
-				//opensubs.CalculateHash()
-			}
-		case "ffprobe":
-			{
-				prober, err := ffmpeg.NewProber("ffprobe")
-				_ = prober.ProbeFile
-				if err != nil {
-					return err
 				}
-			}
-		default:
-			{
-				cmdmain.Errorf("Bad subcommand")
+			case "tvdb":
+				{
+					// tvdb.LookupByFilename()
+				}
+			case "opensubs":
+				{
+					// will need to pull bytes out of the blob
+					// opensubs.CalculateHash()
+					// opensubs.Lookup()
+				}
+			case "ffprobe":
+				{
+					prober, err := ffmpeg.NewProber("ffprobe")
+					_ = prober.ProbeFile
+					if err != nil {
+						return err
+					}
+				}
+			default:
+				{
+					cmdmain.Errorf("Bad subcommand")
+				}
 			}
 		}
 	}
 
-	log.Println("---")
-
-	// add a new job to the job pool
-	// to fire off to ffprobe/tmdb/tvdb/etc
-	// with funcs to write into new attr claims when done
-	// (if they don't exist)
-	// namespace tags?
-	// do these richer types deserve their own camliType?
-
-	/*
-		pn, ok := blob.Parse(permanode)
-		if !ok {
-			return fmt.Errorf("Error parsing blobref %q", permanode)
-		}
-		bb := schema.NewSetAttributeClaim(pn, attr, value)
-		if c.add {
-			if c.del {
-				return errors.New("Add and del options are exclusive")
-			}
-			bb = schema.NewAddAttributeClaim(pn, attr, value)
-		} else {
-			// TODO: del, which can make <value> be optional
-			if c.del {
-				return errors.New("del not yet implemented")
-			}
-		}
-		put, err := getUploader().UploadAndSignBlob(bb)
-		handleResult(bb.Type(), put, err)
-	*/
-
-	_ = fmt.Println
-	_ = blob.Parse
-	_ = schema.NewSetAttributeClaim
-
 	return nil
+}
+
+func __permanodeFile(b *search.DescribedBlob) (path []blob.Ref, fi *search.FileInfo, ok bool) {
+	if b == nil || b.Permanode == nil {
+		return
+	}
+	if contentRef := b.Permanode.Attr.Get("camliContent"); contentRef != "" {
+		log.Println(b.Request)
+		cdes := b.Request.DescribedBlobStr(contentRef)
+		log.Println("cdes   ", cdes) // nil
+		if cdes != nil && cdes.File != nil {
+			return []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true
+		}
+	}
+	log.Println("bail2")
+	return
 }

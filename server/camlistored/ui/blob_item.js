@@ -257,6 +257,7 @@ camlistore.BlobItem.prototype.setThumbSize = function(w, h) {
  * @return {boolean}
  */
 camlistore.BlobItem.prototype.isImage = function() {
+  console.log(this);
   return Boolean(this.resolvedMetaData_.image);
 };
 
