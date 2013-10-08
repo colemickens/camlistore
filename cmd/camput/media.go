@@ -106,9 +106,15 @@ func (c *mediaCmd) RunCommand(args []string) error {
 
 	// INITIALIZE tmdb/etc here rather than on every single blerb
 
+	for _, v := range resp.WithAttr {
+		log.Printf("%+v\n", v)
+		//log.Printf(resp.Meta[v.Permanode])
+	}
+
 	for h, describedBlob := range resp.Meta {
+
 		log.Println("-----------------------------------")
-		log.Printf("%+v\n", describedBlob)
+		log.Printf("%s: %s\n", describedBlob.BlobRef, describedBlob.CamliType)
 
 		pnf, fi, ok := __permanodeFile(describedBlob)
 		if ok {
@@ -131,7 +137,6 @@ func (c *mediaCmd) RunCommand(args []string) error {
 			log.Printf(" + %v", describedBlob.File)
 		case "permanode":
 			log.Println(" + %v", describedBlob.Permanode)
-			continue // REMOVE LATER
 		}
 
 		// leaving this to keep playing around with getting as much
@@ -170,16 +175,13 @@ func (c *mediaCmd) RunCommand(args []string) error {
 				}
 
 			case "tvdb":
-
 				// tvdb.LookupByFilename()
 
 			case "opensubs":
-
 				_ = opensubs.Hash
 				log.Println("opensubs: size:", describedBlob.File.Size)
 
 			case "ffprobe":
-
 				prober, err := ffmpeg.NewProber("ffprobe")
 				_ = prober.ProbeFile
 				if err != nil {
@@ -187,7 +189,6 @@ func (c *mediaCmd) RunCommand(args []string) error {
 				}
 
 			default:
-
 				cmdmain.Errorf("Bad subcommand")
 
 			}
