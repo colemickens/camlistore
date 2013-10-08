@@ -140,59 +140,56 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		if describedBlob.CamliType == "file" {
 			switch subCommand {
 			case "tmdb":
-				{
-					tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
-					if err != nil {
-						return err
-					}
-
-					log.Println("hash     ", h)
-					log.Println("file     ", describedBlob.File.FileName)
-					searchTerm := mediautil.ScrubFilename(describedBlob.File.FileName)
-					log.Println("search   ", searchTerm)
-					movies := tmdb.LookupMovies(searchTerm)
-					if len(movies) > 0 {
-						movie := movies[0]
-						log.Println("result   ", movie)
-
-						// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
-
-						for _, bb := range []*schema.Builder{
-							schema.NewAddAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title),
-							schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path),
-							schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path),
-						} {
-							log.Println("claim    ", bb)
-							put, err := getUploader().UploadAndSignBlob(bb)
-							handleResult(bb.Type(), put, err)
-						}
-					} else {
-						log.Println("tmdb failed to find any match")
-					}
-
+				tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+				if err != nil {
+					return err
 				}
+
+				log.Println("hash     ", h)
+				log.Println("file     ", describedBlob.File.FileName)
+				searchTerm := mediautil.ScrubFilename(describedBlob.File.FileName)
+				log.Println("search   ", searchTerm)
+				movies := tmdb.LookupMovies(searchTerm)
+				if len(movies) > 0 {
+					movie := movies[0]
+					log.Println("result   ", movie)
+
+					// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
+
+					for _, bb := range []*schema.Builder{
+						schema.NewAddAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title),
+						schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path),
+						schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path),
+					} {
+						log.Println("claim    ", bb)
+						put, err := getUploader().UploadAndSignBlob(bb)
+						handleResult(bb.Type(), put, err)
+					}
+				} else {
+					log.Println("tmdb failed to find any match")
+				}
+
 			case "tvdb":
-				{
-					// tvdb.LookupByFilename()
-				}
-			case "opensubs":
-				{
-					_ = opensubs.Hash
-					log.Println("opensubs: size:", describedBlob.File.Size)
 
-				}
+				// tvdb.LookupByFilename()
+
+			case "opensubs":
+
+				_ = opensubs.Hash
+				log.Println("opensubs: size:", describedBlob.File.Size)
+
 			case "ffprobe":
-				{
-					prober, err := ffmpeg.NewProber("ffprobe")
-					_ = prober.ProbeFile
-					if err != nil {
-						return err
-					}
+
+				prober, err := ffmpeg.NewProber("ffprobe")
+				_ = prober.ProbeFile
+				if err != nil {
+					return err
 				}
+
 			default:
-				{
-					cmdmain.Errorf("Bad subcommand")
-				}
+
+				cmdmain.Errorf("Bad subcommand")
+
 			}
 		}
 	}
