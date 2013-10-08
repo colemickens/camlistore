@@ -3,7 +3,18 @@ package opensubs
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
+
+	"camlistore.org/third_party/github.com/kolo/xmlrpc"
+)
+
+const (
+	user       = ""
+	pass       = ""
+	lang       = "eng"
+	user_agent = "OS Test User Agent"
 )
 
 func Hash(size int64, header, footer []byte) (hash uint64, err error) {
@@ -41,6 +52,34 @@ func HashFile(file *os.File) (hash uint64, err error) {
 	return Hash(fi.Size(), header, footer)
 }
 
-func LookupMovieByHash() {
+func LookupMovieByHash(hash uint64) (res xmlrpc.Struct, err error) {
+	shash := strconv.FormatUint(hash, 16)
+	client, err := xmlrpc.NewClient("http://api.opensubtitles.org/xml-rpc", nil)
+	if err != nil {
+		return nil, err
+	}
 
+	result := xmlrpc.Struct{}
+	params := xmlrpc.Params{Params: []interface{}{user, pass, lang, user_agent}}
+	err = client.Call("LogIn", params, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	// get the token out
+	token := result["token"]
+
+	params = xmlrpc.Params{Params: []interface{}{token, []interface{}{shash}}}
+	log.Println("CheckMovieHash", params)
+	//err = client.Call("CheckMovieHash", params, &result)
+	err = client.Call("CheckMovieHash2", params, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("", result)
+	log.Printf("", result["data"])
+	//movie := result["data"].(xmlrpc.Struct)[shash] // TODO: handle... dupes for a hash, I guess?
+
+	return nil, nil
 }
