@@ -14,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+ * How I'm testing this right now:
+ * `rm -rf /tmp/camliroot-${USER} && devcam server`
+ * `devcam put file --filenodes --tag=movie /media/data/Media/oblivion.2013.mp4` [empty file]
+ * `devcam put media --tag=movie opensubs`
+ * `devcam put media --tag=movie tmdbz`
+ */
+
 package main
 
 import (
@@ -29,6 +37,7 @@ import (
 	"camlistore.org/pkg/search"
 
 	"camlistore.org/pkg/media/ffmpeg"
+	"camlistore.org/pkg/media/opensubs"
 	"camlistore.org/pkg/media/tmdb"
 	mediautil "camlistore.org/pkg/media/util"
 )
@@ -98,21 +107,37 @@ func (c *mediaCmd) RunCommand(args []string) error {
 	// INITIALIZE tmdb/etc here rather than on every single blerb
 
 	for h, describedBlob := range resp.Meta {
-
-		log.Println(describedBlob.CamliType, "blob", describedBlob)
+		log.Println("-----------------------------------")
+		log.Printf("%+v\n", describedBlob)
 
 		pnf, fi, ok := __permanodeFile(describedBlob)
 		if ok {
 			log.Println(pnf, fi)
 		} else {
-			continue
+			// Why is it always in here?
+			// Hm
+			// I thought I could GetPermanodesWithAttr
+			// and then go from the file's permanode to it's PermanodeFile()
+			// to get to the FileInfo
+			// to then attach attrs to the blob
+
+			// but PermanodeFile(), __permanodeFile() is failing... [see below]
+
+			// (eventually I'll skip this) continue
 		}
 
-		// use the permanodeFile and then do the following to the file that comes out
-		// so we can use its filename against tmdb
-		// and then we're still "on" the permanode to put the claim on
-		if describedBlob.CamliType == "file" && false {
-			log.Println("---")
+		switch describedBlob.CamliType {
+		case "file":
+			log.Printf(" + %v", describedBlob.File)
+		case "permanode":
+			log.Println(" + %v", describedBlob.Permanode)
+			continue // REMOVE LATER
+		}
+
+		// leaving this to keep playing around with getting as much
+		// info about the file blob as I can until I figure out the
+		// PermanodeFile() stuff
+		if describedBlob.CamliType == "file" {
 			switch subCommand {
 			case "tmdb":
 				{
@@ -152,9 +177,9 @@ func (c *mediaCmd) RunCommand(args []string) error {
 				}
 			case "opensubs":
 				{
-					// will need to pull bytes out of the blob
-					// opensubs.CalculateHash()
-					// opensubs.Lookup()
+					_ = opensubs.Hash
+					log.Println("opensubs: size:", describedBlob.File.Size)
+
 				}
 			case "ffprobe":
 				{
@@ -180,13 +205,11 @@ func __permanodeFile(b *search.DescribedBlob) (path []blob.Ref, fi *search.FileI
 		return
 	}
 	if contentRef := b.Permanode.Attr.Get("camliContent"); contentRef != "" {
-		log.Println(b.Request)
+		log.Println("b.Request", b.Request) // Why is this always nil?
 		cdes := b.Request.DescribedBlobStr(contentRef)
-		log.Println("cdes   ", cdes) // nil
 		if cdes != nil && cdes.File != nil {
 			return []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true
 		}
 	}
-	log.Println("bail2")
 	return
 }
