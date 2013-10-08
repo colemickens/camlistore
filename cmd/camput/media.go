@@ -19,7 +19,7 @@ limitations under the License.
  * `rm -rf /tmp/camliroot-${USER} && devcam server`
  * `devcam put file --filenodes --tag=movie /media/data/Media/oblivion.2013.mp4` [empty file]
  * `devcam put media --tag=movie opensubs`
- * `devcam put media --tag=movie tmdbz`
+ * `devcam put media --tag=movie tmdb`
  */
 
 package main
