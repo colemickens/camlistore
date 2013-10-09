@@ -18,8 +18,8 @@ limitations under the License.
  * How I'm testing this right now:
  * `rm -rf /tmp/camliroot-${USER} && devcam server`
  * `devcam put file --filenodes --tag=movie /media/data/Media/oblivion.2013.mp4` [empty file]
- * `devcam put media --tag=movie opensubs`
- * `devcam put media --tag=movie tmdb`
+ * `devcam put media --tag=movie`
+ * `devcam put media --tag=movie`
  */
 
 package main
@@ -28,6 +28,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"camlistore.org/pkg/blob"
@@ -44,8 +45,13 @@ import (
 
 type mediaCmd struct {
 	fixtitles bool
+	clean     bool //remove this entirely after dev
 	languages string
 	tag       string
+
+	client  *client.Client
+	tmdbApi *tmdb.TmdbApi
+	prober  *ffmpeg.Prober
 	//up        *Uploader
 }
 
@@ -53,6 +59,7 @@ func init() {
 	cmdmain.RegisterCommand("media", func(flags *flag.FlagSet) cmdmain.CommandRunner {
 		cmd := new(mediaCmd)
 		flags.BoolVar(&cmd.fixtitles, "fixtitles", false, `Fix the title on the file? permanode?`)
+		flags.BoolVar(&cmd.clean, "clean", false, `Clean removes all potential metadata we've added from all tagged blobs`)
 		flags.StringVar(&cmd.languages, "languages", "eng", `[type=opensubs] Subtitle languages to download`)
 		flags.StringVar(&cmd.tag, "tag", "", `the tag of media to scan`)
 		return cmd
@@ -75,12 +82,11 @@ func (c *mediaCmd) Examples() []string {
 }
 
 func (c *mediaCmd) RunCommand(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("Must specifiy one media service to lookup against.")
-		// TODO: Cmdmain.errorf vs return fmt.errorf?
-	}
-
-	subCommand := args[0]
+	// if len(args) != 1 {
+	// 	return fmt.Errorf("Must specifiy one media service to lookup against.")
+	// 	TODO: Cmdmain.errorf vs return fmt.errorf?
+	// }
+	// subCommand := args[0]
 	languages := strings.Split(c.languages, ",")
 	_ = languages
 
@@ -98,116 +104,142 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		ThumbnailSize: 0,
 	}
 
-	client := client.NewOrFail()
-	resp, err := client.GetPermanodesWithAttr(req)
+	c.client = client.NewOrFail()
+	resp, err := c.client.GetPermanodesWithAttr(req)
 	if err != nil {
 		return err
 	}
 
-	// INITIALIZE tmdb/etc here rather than on every single blerb
-
-	for _, v := range resp.WithAttr {
-		log.Printf("%+v\n", v)
-		//log.Printf(resp.Meta[v.Permanode])
+	c.tmdbApi, err = tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
+	if err != nil {
+		return err // TODO: make these non-fatal and just skip over them later
 	}
 
-	for h, describedBlob := range resp.Meta {
+	// initialize opensubs
 
-		log.Println("-----------------------------------")
-		log.Printf("%s: %s\n", describedBlob.BlobRef, describedBlob.CamliType)
+	// initialize ffprobe
+	c.prober, err = ffmpeg.NewProber("ffmpeg") // TODO: pipe this in? from env?
+	if err != nil {
+		return err
+	}
 
-		pnf, fi, ok := __permanodeFile(describedBlob)
-		if ok {
-			log.Println(pnf, fi)
-		} else {
-			// Why is it always in here?
-			// Hm
-			// I thought I could GetPermanodesWithAttr
-			// and then go from the file's permanode to it's PermanodeFile()
-			// to get to the FileInfo
-			// to then attach attrs to the blob
+	for _, wai := range resp.WithAttr {
+		var newClaims []*schema.Builder
 
-			// but PermanodeFile(), __permanodeFile() is failing... [see below]
+		permaRef := wai.Permanode
+		fileRef, ok := resp.Meta[permaRef.String()].ContentRef()
+		var fileBlob *search.DescribedBlob
 
-			// (eventually I'll skip this) continue
+		if !ok {
+			log.Println("skip, no content ref, weird")
+			continue // why would this happen?
 		}
-
-		switch describedBlob.CamliType {
-		case "file":
-			log.Printf(" + %v", describedBlob.File)
-		case "permanode":
-			log.Println(" + %v", describedBlob.Permanode)
-		}
-
-		// leaving this to keep playing around with getting as much
-		// info about the file blob as I can until I figure out the
-		// PermanodeFile() stuff
-		if describedBlob.CamliType == "file" {
-			switch subCommand {
-			case "tmdb":
-				tmdb, err := tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
-				if err != nil {
-					return err
-				}
-
-				log.Println("hash     ", h)
-				log.Println("file     ", describedBlob.File.FileName)
-				searchTerm := mediautil.ScrubFilename(describedBlob.File.FileName)
-				log.Println("search   ", searchTerm)
-				movies := tmdb.LookupMovies(searchTerm)
-				if len(movies) > 0 {
-					movie := movies[0]
-					log.Println("result   ", movie)
-
-					// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
-
-					for _, bb := range []*schema.Builder{
-						schema.NewAddAttributeClaim(describedBlob.BlobRef, "tmdb_title", movie.Title),
-						schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_backdrop_url", movie.Backdrop_path),
-						schema.NewSetAttributeClaim(describedBlob.BlobRef, "tmdb_poster_url", movie.Poster_path),
-					} {
-						log.Println("claim    ", bb)
-						put, err := getUploader().UploadAndSignBlob(bb)
-						handleResult(bb.Type(), put, err)
-					}
-				} else {
-					log.Println("tmdb failed to find any match")
-				}
-
-			case "tvdb":
-				// tvdb.LookupByFilename()
-
-			case "opensubs":
-				_ = opensubs.Hash
-				log.Println("opensubs: size:", describedBlob.File.Size)
-
-			case "ffprobe":
-				prober, err := ffmpeg.NewProber("ffprobe")
-				_ = prober.ProbeFile
-				if err != nil {
-					return err
-				}
-
-			default:
-				cmdmain.Errorf("Bad subcommand")
-
+		if fileBlob, ok = resp.Meta[fileRef.String()]; !ok {
+			log.Println("have to go retrieve it") // I'm guessing this is never true
+			fileBlob, ok = c.getFileBlob(fileRef)
+			if !ok {
+				log.Println("skip, not file blob, also strange")
+				continue // ?
 			}
+		}
+
+		log.Println(" no skip")
+
+		if !c.clean {
+			// type MediaClaimMaker interface {
+			// 	GetClaims(fileBlob *search.DescribedBlob) []schema.Builder
+			// }
+
+			// if Permanode.Tmdb_Id isn't set
+			// check that c.TmdbApi is initialized, c.TmdbApiOk?
+			newClaims = append(newClaims, c.getTmdbClaims(permaRef, fileBlob.File.FileName)...)
+
+			// if Permanode.Tvdb_Id isn't set
+			newClaims = append(newClaims, c.getTvdbClaims(permaRef, fileBlob.File.FileName)...)
+
+			// if Permanode.Opensubs_Id isn't set
+			newClaims = append(newClaims, c.getOpensubsClaims(permaRef, fileBlob)...)
+
+			// if Permanode.Ffprobe_??? isn't set
+			newClaims = append(newClaims, c.getFfprobeClaims(permaRef, fileBlob)...)
+		} else {
+			log.Println("cleaing attributes for permanode", permaRef)
+			for _, attrName := range []string{
+				// this ain't the cleanest but it'll do for now since it's tmp
+				"tmdb_id", "tmdb_title", "tmdb_backdrop_url", "tmdb_poster_url",
+			} {
+				newClaims = append(newClaims, schema.NewDelAttributeClaim(permaRef, attrName, ""))
+			}
+		}
+
+		// apply claims (or delete, in this case)
+		for _, claim := range newClaims {
+			log.Println("claim    ", claim)
+			put, err := getUploader().UploadAndSignBlob(claim)
+			handleResult(claim.Type(), put, err)
 		}
 	}
 
 	return nil
 }
 
-func __permanodeFile(b *search.DescribedBlob) (path []blob.Ref, fi *search.FileInfo, ok bool) {
-	if b == nil || b.Permanode == nil {
-		return
+func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
+	res, err := c.client.Describe(&search.DescribeRequest{
+		BlobRef: cr,
+		Depth:   3,
+	})
+	if err != nil {
+		panic(err) // I don't think this ever should happen?
+		return nil, false
 	}
-	if contentRef := b.Permanode.Attr.Get("camliContent"); contentRef != "" {
-		log.Println("b.Request", b.Request) // Why is this always nil?
-		cdes := b.Request.DescribedBlobStr(contentRef)
-		if cdes != nil && cdes.File != nil {
-			return []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true
-		}
+
+	fileBlob := res.Meta[cr.String()]
+	if fileBlob.CamliType != "file" {
+		// skip nonfile
+		return nil, false
 	}
-	return
+	return fileBlob, true
+}
+
+func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*schema.Builder) {
+	log.Println("file     ", filename)
+	searchTerm := mediautil.ScrubFilename(filename)
+	log.Println("search   ", searchTerm)
+	movies := c.tmdbApi.LookupMovies(searchTerm)
+	if len(movies) > 0 {
+		movie := movies[0]
+		log.Println("result   ", movie)
+
+		// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
+
+		result = append(result,
+			schema.NewSetAttributeClaim(permaRef, "tmdb_id", strconv.Itoa(movie.Id)),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_title", movie.Title),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_url", movie.Backdrop_path),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_url", movie.Poster_path),
+		)
+	} else {
+		log.Println("tmdb failed to find any match")
+	}
+	return result
+}
+
+func (c *mediaCmd) getTvdbClaims(permaRef blob.Ref, filename string) []*schema.Builder {
+	return []*schema.Builder{}
+}
+
+func (c *mediaCmd) getOpensubsClaims(permaRef blob.Ref, fileBlob *search.DescribedBlob) []*schema.Builder {
+	_ = opensubs.Hash
+	log.Println("opensubs: size:", fileBlob.File.Size)
+	// not sure there's a way to get an offset bytes from a file blob?
+	return []*schema.Builder{}
+}
+
+func (c *mediaCmd) getFfprobeClaims(permaRef blob.Ref, fileBlob *search.DescribedBlob) []*schema.Builder {
+	// blerg, feed this into ffmpeg stdin, or figure out a way
+	// to look at just the header or something
+
+	_ = c.prober.ProbeFile
+
+	return []*schema.Builder{}
 }

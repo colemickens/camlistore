@@ -685,7 +685,13 @@ func (b *DescribedBlob) PermanodeFile() (path []blob.Ref, fi *FileInfo, ok bool)
 		return
 	}
 	if contentRef := b.Permanode.Attr.Get("camliContent"); contentRef != "" {
+		if b.Request == nil {
+			log.Println("b.Request is nil -------------------------")
+		} else {
+			log.Println("b.Request is not nil -------------------------")
+		}
 		if cdes := b.Request.DescribedBlobStr(contentRef); cdes != nil && cdes.File != nil {
+			log.Println("PermanodeFile() returning: \n%+v\n%+v\n%+v", []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true)
 			return []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true
 		}
 	}
@@ -881,7 +887,7 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 
 			// TODO: different thumbnails based on peer.File.MIMEType.
 			const fileIconAspectRatio = 260.0 / 300.0
-			var width = int(math.Floor(float64(thumbSize) * fileIconAspectRatio + 0.5))
+			var width = int(math.Floor(float64(thumbSize)*fileIconAspectRatio + 0.5))
 			return "file.png", width, thumbSize, true
 		}
 		if peer.Dir != nil {
