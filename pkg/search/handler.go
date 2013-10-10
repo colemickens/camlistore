@@ -686,9 +686,9 @@ func (b *DescribedBlob) PermanodeFile() (path []blob.Ref, fi *FileInfo, ok bool)
 	}
 	if contentRef := b.Permanode.Attr.Get("camliContent"); contentRef != "" {
 		if b.Request == nil {
-			log.Println("b.Request is nil -------------------------")
+			log.Println("PermanodeFile() bailing: b.Request is nil -------------------------")
 		} else {
-			log.Println("b.Request is not nil -------------------------")
+			log.Println("PermanodeFile() bailing: b.Request is not nil -------------------------")
 		}
 		if cdes := b.Request.DescribedBlobStr(contentRef); cdes != nil && cdes.File != nil {
 			log.Println("PermanodeFile() returning: \n%+v\n%+v\n%+v", []blob.Ref{b.BlobRef, cdes.BlobRef}, cdes.File, true)

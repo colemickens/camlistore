@@ -21,6 +21,8 @@ limitations under the License.
  * `devcam put media --tag=movie`
  */
 
+// TODO: Is it a bug that you can set claims on non-permanodes?
+
 package main
 
 import (
@@ -82,11 +84,6 @@ func (c *mediaCmd) Examples() []string {
 }
 
 func (c *mediaCmd) RunCommand(args []string) error {
-	// if len(args) != 1 {
-	// 	return fmt.Errorf("Must specifiy one media service to lookup against.")
-	// 	TODO: Cmdmain.errorf vs return fmt.errorf?
-	// }
-	// subCommand := args[0]
 	languages := strings.Split(c.languages, ",")
 	_ = languages
 
@@ -127,57 +124,39 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 	for _, wai := range resp.WithAttr {
+		log.Println("matched permanode", wai.Permanode)
 		var newClaims []*schema.Builder
 
-		permaRef := wai.Permanode
-
-		// VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-		fileRef, ok := resp.Meta[permaRef.String()].ContentRef()
-		var fileBlob *search.DescribedBlob
-
+		fileBlob, ok := permanodeFile(resp.Meta, wai.Permanode)
 		if !ok {
-			log.Println("skip, no content ref, weird")
-			continue // why would this happen?
+			continue
+		} else {
+			log.Println("not skippping")
 		}
-		if fileBlob, ok = resp.Meta[fileRef.String()]; !ok {
-			log.Println("have to go retrieve it") // I'm guessing this is never true
-			fileBlob, ok = c.getFileBlob(fileRef)
-			if !ok {
-				log.Println("skip, not file blob, also strange")
-				continue // ?
-			}
-		}
-		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-		log.Println(" no skip")
 
 		if !c.clean {
-			// type MediaClaimMaker interface {
-			// 	GetClaims(fileBlob *search.DescribedBlob) []schema.Builder
-			// }
-
 			// if Permanode.Tmdb_Id isn't set
 			// check that c.TmdbApi is initialized, c.TmdbApiOk?
-			newClaims = append(newClaims, c.getTmdbClaims(permaRef, fileBlob.File.FileName)...)
+			newClaims = append(newClaims, c.getTmdbClaims(wai.Permanode, fileBlob.File.FileName)...)
 
 			// if Permanode.Tvdb_Id isn't set
-			newClaims = append(newClaims, c.getTvdbClaims(permaRef, fileBlob.File.FileName)...)
+			newClaims = append(newClaims, c.getTvdbClaims(wai.Permanode, fileBlob.File.FileName)...)
 
 			// if Permanode.Opensubs_Id isn't set
-			newClaims = append(newClaims, c.getOpensubsClaims(permaRef, fileBlob)...)
+			newClaims = append(newClaims, c.getOpensubsClaims(wai.Permanode, fileBlob)...)
 
 			// if Permanode.Ffprobe_??? isn't set
-			newClaims = append(newClaims, c.getFfprobeClaims(permaRef, fileBlob)...)
+			newClaims = append(newClaims, c.getFfprobeClaims(wai.Permanode, fileBlob)...)
 		} else {
-			log.Println("cleaing attributes for permanode", permaRef)
+			log.Println("cleaing attributes for permanode", wai.Permanode)
 			for _, attrName := range []string{
 				"tmdb_id", "tmdb_title", "tmdb_backdrop_url", "tmdb_poster_url",
 			} {
-				newClaims = append(newClaims, schema.NewDelAttributeClaim(permaRef, attrName, ""))
+				newClaims = append(newClaims, schema.NewDelAttributeClaim(wai.Permanode, attrName, ""))
 			}
 		}
 
-		// apply claims (or delete, in this case)
+		// apply claims
 		for _, claim := range newClaims {
 			log.Println("claim    ", claim)
 			put, err := getUploader().UploadAndSignBlob(claim)
@@ -188,6 +167,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 	return nil
 }
 
+/*
 func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
 	res, err := c.client.Describe(&search.DescribeRequest{
 		BlobRef: cr,
@@ -205,8 +185,7 @@ func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
 	}
 	return fileBlob, true
 }
-
-// TODO: Is it a bug that you can set claims on non-permanodes?
+*/
 
 func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*schema.Builder) {
 	log.Println("file     ", filename)
@@ -226,6 +205,7 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*
 				// TODO : handle
 				panic(err)
 			}
+			log.Println(imgBytes)
 			imgBlob, err := schema.BlobFromReader(blob.SHA1FromBytes(imgBytes), bytes.NewBuffer(imgBytes))
 			if err != nil {
 				// TODO : handle
@@ -271,4 +251,25 @@ func (c *mediaCmd) getFfprobeClaims(permaRef blob.Ref, fileBlob *search.Describe
 	_ = c.prober.ProbeFile
 
 	return []*schema.Builder{}
+}
+
+type MediaClaimMaker interface {
+	GetClaims(fileBlob *search.DescribedBlob) []schema.Builder
+}
+
+func permanodeFile(meta search.MetaMap, permaRef blob.Ref) (*search.DescribedBlob, bool) {
+	if fileRef, ok := meta[permaRef.String()].ContentRef(); ok {
+		db, ok := meta[fileRef.String()]
+		return db, ok
+	}
+	return nil, false
+
+	/*if !ok {
+		panic("TODO: Remove this panic, just want to see if it is EVER hit.")
+		fileBlob, ok = c.getFileBlob(fileRef)
+		if !ok {
+			// skip, there's not a file on the other side...
+			continue
+		}
+	}*/
 }

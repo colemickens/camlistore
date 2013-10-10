@@ -3,11 +3,9 @@ package tmdb
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 // create an interface and make a cached version ??
@@ -61,10 +59,10 @@ func (tmdbApi *TmdbApi) get(response interface{}, __url string, params url.Value
 		return err
 	}
 
-	rdr := io.TeeReader(resp.Body, os.Stdout)
-	jsonDec := json.NewDecoder(rdr)
+	//rdr := io.TeeReader(resp.Body, os.Stdout)
+	//jsonDec := json.NewDecoder(rdr)
 
-	//jsonDec := json.NewDecoder(resp.Body)
+	jsonDec := json.NewDecoder(resp.Body)
 	err = jsonDec.Decode(response)
 	if err != nil {
 		return err
