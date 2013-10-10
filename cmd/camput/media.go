@@ -17,14 +17,14 @@ limitations under the License.
 /*
  * How I'm testing this right now:
  * `rm -rf /tmp/camliroot-${USER} && devcam server`
- * `devcam put file --filenodes --tag=movie /media/data/Media/oblivion.2013.mp4` [empty file]
- * `devcam put media --tag=movie`
+ * `devcam put file --permanode --tag=movie /media/data/Media/oblivion.2013.mp4` [empty file]
  * `devcam put media --tag=movie`
  */
 
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -96,26 +96,17 @@ func (c *mediaCmd) RunCommand(args []string) error {
 
 	var err error
 
-	req := &search.WithAttrRequest{
-		N:             -1,
-		Attr:          "tag",
-		Value:         c.tag,
-		Fuzzy:         false,
-		ThumbnailSize: 0,
-	}
-
+	// initialize client
 	c.client = client.NewOrFail()
-	resp, err := c.client.GetPermanodesWithAttr(req)
-	if err != nil {
-		return err
-	}
 
+	// initialize tmdb
 	c.tmdbApi, err = tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
 	if err != nil {
 		return err // TODO: make these non-fatal and just skip over them later
 	}
 
 	// initialize opensubs
+	// TODO
 
 	// initialize ffprobe
 	c.prober, err = ffmpeg.NewProber("ffmpeg") // TODO: pipe this in? from env?
@@ -123,10 +114,24 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 
+	// Look up eligible movie permanodes
+	req := &search.WithAttrRequest{
+		N:             -1,
+		Attr:          "tag",
+		Value:         c.tag,
+		Fuzzy:         false,
+		ThumbnailSize: 0,
+	}
+	resp, err := c.client.GetPermanodesWithAttr(req)
+	if err != nil {
+		return err
+	}
 	for _, wai := range resp.WithAttr {
 		var newClaims []*schema.Builder
 
 		permaRef := wai.Permanode
+
+		// VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 		fileRef, ok := resp.Meta[permaRef.String()].ContentRef()
 		var fileBlob *search.DescribedBlob
 
@@ -142,6 +147,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 				continue // ?
 			}
 		}
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		log.Println(" no skip")
 
@@ -165,7 +171,6 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		} else {
 			log.Println("cleaing attributes for permanode", permaRef)
 			for _, attrName := range []string{
-				// this ain't the cleanest but it'll do for now since it's tmp
 				"tmdb_id", "tmdb_title", "tmdb_backdrop_url", "tmdb_poster_url",
 			} {
 				newClaims = append(newClaims, schema.NewDelAttributeClaim(permaRef, attrName, ""))
@@ -189,7 +194,7 @@ func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
 		Depth:   3,
 	})
 	if err != nil {
-		panic(err) // I don't think this ever should happen?
+		panic(err) // TODO
 		return nil, false
 	}
 
@@ -200,6 +205,8 @@ func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
 	}
 	return fileBlob, true
 }
+
+// TODO: Is it a bug that you can set claims on non-permanodes?
 
 func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*schema.Builder) {
 	log.Println("file     ", filename)
@@ -212,11 +219,33 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*
 
 		// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
 
+		var imagePutReses [2]*client.PutResult
+		for i, imgPath := range []string{movie.Backdrop_path, movie.Poster_path} {
+			imgBytes, err := c.tmdbApi.DownloadImage(imgPath)
+			if err != nil {
+				// TODO : handle
+				panic(err)
+			}
+			imgBlob, err := schema.BlobFromReader(blob.SHA1FromBytes(imgBytes), bytes.NewBuffer(imgBytes))
+			if err != nil {
+				// TODO : handle
+				panic(err)
+			}
+
+			imagePutReses[i], err = c.client.UploadBlob(imgBlob)
+			if err != nil {
+				// TODO : handle
+				panic(err)
+			}
+		}
+
+		// HELP: do I need to put keep claims on those files to keep 'em from being GC'd?
+
 		result = append(result,
 			schema.NewSetAttributeClaim(permaRef, "tmdb_id", strconv.Itoa(movie.Id)),
 			schema.NewSetAttributeClaim(permaRef, "tmdb_title", movie.Title),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_url", movie.Backdrop_path),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_url", movie.Poster_path),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_fileref", imagePutReses[0].BlobRef.String()),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_fileref", imagePutReses[1].BlobRef.String()),
 		)
 	} else {
 		log.Println("tmdb failed to find any match")

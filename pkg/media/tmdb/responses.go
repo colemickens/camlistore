@@ -8,7 +8,7 @@ type tmdbConfig struct {
 		BaseUrl        string   `json:"base_url"` // don't know if this works.
 		Poster_sizes   []string `json:"poster_sizes"`
 		Profile_sizes  []string `json:"profile_sizes"`
-	} `json:"image"`
+	} `json:"images"`
 }
 
 type tmdbMovieResult struct {
@@ -75,6 +75,7 @@ type Image struct {
 	Aspect_ratio float64
 }
 
+/*
 func (api *TmdbApi) convertImgPaths(_imgs []tmdbMovieImage) []Image {
 	imgs := make([]Image, len(_imgs))
 	for i, _img := range _imgs {
@@ -83,3 +84,4 @@ func (api *TmdbApi) convertImgPaths(_imgs []tmdbMovieImage) []Image {
 	}
 	return imgs
 }
+*/

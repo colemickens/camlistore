@@ -3,8 +3,11 @@ package tmdb
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 // create an interface and make a cached version ??
@@ -12,24 +15,20 @@ import (
 
 // Tmdb Types
 type TmdbApi struct {
-	ApiKey      string
-	Config      tmdbConfig
-	Client      *http.Client
-	mirror      string
-	imageMirror string
+	ApiKey string
+	Config tmdbConfig
+	client *http.Client
+	mirror string
 }
-
-func (api *TmdbApi) ImageMirror() string { return api.imageMirror }
 
 func NewTmdbApi(apiKey string, client *http.Client) (*TmdbApi, error) {
 	if client == nil {
 		client = &http.Client{}
 	}
 	tmdbApi := &TmdbApi{
-		ApiKey:      apiKey,
-		Client:      client,
-		mirror:      "http://api.themoviedb.org/3",
-		imageMirror: "THIS_MUST_BE_REPLACED",
+		ApiKey: apiKey,
+		client: client,
+		mirror: "http://api.themoviedb.org/3",
 	}
 
 	_url := tmdbApi.mirror + "/configuration"
@@ -57,15 +56,15 @@ func (tmdbApi *TmdbApi) get(response interface{}, __url string, params url.Value
 	}
 	req.Header.Add("Accept", "application/json")
 
-	resp, err := tmdbApi.Client.Do(req)
+	resp, err := tmdbApi.client.Do(req)
 	if err != nil {
 		return err
 	}
 
-	//rdr := io.TeeReader(resp.Body, os.Stdout)
-	//jsonDec := json.NewDecoder(rdr)
+	rdr := io.TeeReader(resp.Body, os.Stdout)
+	jsonDec := json.NewDecoder(rdr)
 
-	jsonDec := json.NewDecoder(resp.Body)
+	//jsonDec := json.NewDecoder(resp.Body)
 	err = jsonDec.Decode(response)
 	if err != nil {
 		return err
@@ -87,7 +86,10 @@ func (t *TmdbApi) LookupMovies(title string) []Movie {
 	for more {
 
 		movieResPage := tmdbMovieResultPage{}
-		t.get(&movieResPage, _url, values)
+		err := t.get(&movieResPage, _url, values)
+		if err != nil {
+			panic(err) // TODO: handle this
+		}
 		for _, res := range movieResPage.Results {
 			results = append(results, Movie(res))
 		}
@@ -101,4 +103,23 @@ func (t *TmdbApi) LookupMovies(title string) []Movie {
 	// then get then next page
 
 	return results
+}
+
+func (t *TmdbApi) DownloadImage(suffix string) (imageBytes []byte, err error) {
+	_url := t.url(t.Config.Images.BaseUrl + suffix)
+
+	req, err := http.NewRequest("GET", _url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := t.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (t *TmdbApi) url(path string) string {
+	return fmt.Sprintf("%s/", path)
 }

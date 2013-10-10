@@ -840,7 +840,9 @@ func (c *Client) UploadAndSignBlob(b schema.AnyBlob) (*PutResult, error) {
 func (c *Client) UploadBlob(b schema.AnyBlob) (*PutResult, error) {
 	// TODO(bradfitz): ask the blob for its own blobref, rather
 	// than changing the hash function with uploadString?
-	return c.uploadString(b.Blob().JSON())
+	blerb := b.Blob()
+	json := blerb.JSON()
+	return c.uploadString(json)
 }
 
 func (c *Client) uploadString(s string) (*PutResult, error) {
