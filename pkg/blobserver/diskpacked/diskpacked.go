@@ -41,14 +41,17 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/blobserver/local"
 	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/index/kvfile"
 	"camlistore.org/pkg/jsonconfig"
+	"camlistore.org/pkg/readerutil"
+	"camlistore.org/pkg/syncutil"
 	"camlistore.org/pkg/types"
 	"camlistore.org/third_party/github.com/camlistore/lock"
 )
 
-const defaultMaxFileSize = 512 << 20  // 512MB
+const defaultMaxFileSize = 512 << 20 // 512MB
 
 type storage struct {
 	root        string
@@ -62,6 +65,8 @@ type storage struct {
 	currentO int64     // current offset
 	closed   bool
 	closeErr error
+
+	*local.Generationer
 }
 
 // newStorage returns a new storage in path root with the given maxFileSize,
@@ -81,9 +86,14 @@ func newStorage(root string, maxFileSize int64) (*storage, error) {
 	if maxFileSize <= 0 {
 		maxFileSize = defaultMaxFileSize
 	}
-	s := &storage{root: root, index: index, maxFileSize: maxFileSize}
+	s := &storage{root: root, index: index, maxFileSize: maxFileSize,
+		Generationer: local.NewGenerationer(root),
+	}
 	if err := s.openCurrent(); err != nil {
 		return nil, err
+	}
+	if _, _, err := s.StorageGeneration(); err != nil {
+		return nil, fmt.Errorf("Error initialization generation for %q: %v", root, err)
 	}
 	return s, nil
 }
@@ -200,15 +210,14 @@ func (s *storage) Fetch(br blob.Ref) (types.ReadSeekCloser, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	// TODO(adg): pool open file descriptors
-	f, err := os.Open(s.filename(meta.file))
+	rac, err := readerutil.OpenSingle(s.filename(meta.file))
 	if err != nil {
 		return nil, 0, err
 	}
 	rsc := struct {
 		io.ReadSeeker
 		io.Closer
-	}{io.NewSectionReader(f, meta.offset, meta.size), f}
+	}{io.NewSectionReader(rac, meta.offset, meta.size), rac}
 	return rsc, meta.size, nil
 }
 
@@ -221,19 +230,29 @@ func (s *storage) RemoveBlobs(blobs []blob.Ref) error {
 	return errors.New("diskpacked: RemoveBlobs not implemented")
 }
 
+var statGate = syncutil.NewGate(20) // arbitrary
+
 func (s *storage) StatBlobs(dest chan<- blob.SizedRef, blobs []blob.Ref) (err error) {
-	// TODO(adg): parallelize. steal code from s3 Stat code.
+	var wg syncutil.Group
+
 	for _, br := range blobs {
-		m, err2 := s.meta(br)
-		if err2 != nil {
-			if err2 != os.ErrNotExist {
-				err = err2
+		br := br
+		statGate.Start()
+		wg.Go(func() error {
+			defer statGate.Done()
+
+			m, err := s.meta(br)
+			if err == nil {
+				dest <- m.SizedRef(br)
+				return nil
 			}
-			continue
-		}
-		dest <- m.SizedRef(br)
+			if err == os.ErrNotExist {
+				return nil
+			}
+			return err
+		})
 	}
-	return nil
+	return wg.Err()
 }
 
 func (s *storage) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit int) (err error) {
