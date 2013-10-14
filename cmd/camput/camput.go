@@ -129,6 +129,7 @@ func newUploader() *Uploader {
 		transport: httpStats,
 		pwd:       pwd,
 		fdGate:    syncutil.NewGate(100), // gate things that waste fds, assuming a low system limit
+		fileOpts:  &fileOptions{exifTime: false},
 	}
 }
 

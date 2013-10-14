@@ -507,7 +507,9 @@ func (up *Uploader) uploadNodeRegularFile(n *node) (*client.PutResult, error) {
 		return nil, err
 	}
 	defer file.Close()
-	if up.fileOpts.exifTime {
+	fopts := up.fileOpts
+	exifTi := fopts.exifTime
+	if exifTi {
 		ra, ok := file.(io.ReaderAt)
 		if !ok {
 			return nil, errors.New("Error asserting local file to io.ReaderAt")

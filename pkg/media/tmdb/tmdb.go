@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // create an interface and make a cached version ??
 // or like befor where we do it completel diff?
+
+const imageSize = "original"
 
 // Tmdb Types
 type TmdbApi struct {
@@ -72,30 +76,37 @@ func (tmdbApi *TmdbApi) get(response interface{}, __url string, params url.Value
 	return nil
 }
 
-func (t *TmdbApi) LookupMovies(title string) []Movie {
+func (t *TmdbApi) LookupMovies(title string, year int) []Movie {
 	_url := fmt.Sprintf("%s/search/movie", t.mirror)
-	values := url.Values{
-		"query": []string{title},
+
+	values := make(url.Values)
+	values.Set("query", title)
+	if year != -1 {
+		values.Set("year", strconv.Itoa(year))
 	}
 
 	var results []Movie
 
+	//maxPages := 2
 	more := true
-	for more {
+	//for more {
 
-		movieResPage := tmdbMovieResultPage{}
-		err := t.get(&movieResPage, _url, values)
-		if err != nil {
-			panic(err) // TODO: handle this
-		}
-		for _, res := range movieResPage.Results {
-			results = append(results, Movie(res))
-		}
-
-		if movieResPage.Page >= movieResPage.Total_pages {
-			more = false
-		}
+	movieResPage := tmdbMovieResultPage{}
+	err := t.get(&movieResPage, _url, values)
+	if err != nil {
+		panic(err) // TODO: handle this
 	}
+	for _, res := range movieResPage.Results {
+		results = append(results, Movie(res))
+	}
+
+	if movieResPage.Page >= movieResPage.Total_pages {
+		more = false
+		_ = more
+	}
+	//}
+	// TODO: re enable this, have a max pages somewhere
+	// too lazy to fix now
 
 	// check the page result size, if greater than current page
 	// then get then next page
@@ -104,7 +115,9 @@ func (t *TmdbApi) LookupMovies(title string) []Movie {
 }
 
 func (t *TmdbApi) DownloadImage(suffix string) (imageBytes []byte, err error) {
-	_url := t.url(t.Config.Images.BaseUrl + suffix)
+	_url := t.url(t.Config.Images.BaseUrl + imageSize + suffix)
+
+	log.Println("download", _url)
 
 	req, err := http.NewRequest("GET", _url, nil)
 	if err != nil {

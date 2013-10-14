@@ -26,10 +26,11 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -51,10 +52,9 @@ type mediaCmd struct {
 	languages string
 	tag       string
 
-	client  *client.Client
 	tmdbApi *tmdb.TmdbApi
 	prober  *ffmpeg.Prober
-	//up        *Uploader
+	up      *Uploader
 }
 
 func init() {
@@ -84,6 +84,8 @@ func (c *mediaCmd) Examples() []string {
 }
 
 func (c *mediaCmd) RunCommand(args []string) error {
+	c.up = getUploader()
+
 	languages := strings.Split(c.languages, ",")
 	_ = languages
 
@@ -94,7 +96,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 	var err error
 
 	// initialize client
-	c.client = client.NewOrFail()
+	c.up = getUploader()
 
 	// initialize tmdb
 	c.tmdbApi, err = tmdb.NewTmdbApi("00ce627bd2e3caf1991f1be7f02fe12c", nil)
@@ -119,7 +121,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		Fuzzy:         false,
 		ThumbnailSize: 0,
 	}
-	resp, err := c.client.GetPermanodesWithAttr(req)
+	resp, err := c.up.Client.GetPermanodesWithAttr(req)
 	if err != nil {
 		return err
 	}
@@ -127,30 +129,35 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		log.Println("matched permanode", wai.Permanode)
 		var newClaims []*schema.Builder
 
-		fileBlob, ok := permanodeFile(resp.Meta, wai.Permanode)
-		if !ok {
+		dPermaBlob, ok1 := resp.Meta[wai.Permanode.String()]
+		dFileBlob, ok2 := permanodeFile(resp.Meta, wai.Permanode)
+		if !ok1 || !ok2 {
 			continue
 		} else {
 			log.Println("not skippping")
 		}
+		dPermanode := dPermaBlob.Permanode
 
 		if !c.clean {
-			// if Permanode.Tmdb_Id isn't set
-			// check that c.TmdbApi is initialized, c.TmdbApiOk?
-			newClaims = append(newClaims, c.getTmdbClaims(wai.Permanode, fileBlob.File.FileName)...)
+			if _, present := dPermanode.Attr["tmdb_id"]; !present {
+				newClaims = append(newClaims, c.getTmdbClaims(wai.Permanode, dFileBlob)...)
+			}
 
-			// if Permanode.Tvdb_Id isn't set
-			newClaims = append(newClaims, c.getTvdbClaims(wai.Permanode, fileBlob.File.FileName)...)
+			if _, present := dPermanode.Attr["tvdb_id"]; !present {
+				newClaims = append(newClaims, c.getTvdbClaims(wai.Permanode, dFileBlob)...)
+			}
 
-			// if Permanode.Opensubs_Id isn't set
-			newClaims = append(newClaims, c.getOpensubsClaims(wai.Permanode, fileBlob)...)
+			if _, present := dPermanode.Attr["opensubs_id"]; !present {
+				newClaims = append(newClaims, c.getOpensubsClaims(wai.Permanode, dFileBlob)...)
+			}
 
-			// if Permanode.Ffprobe_??? isn't set
-			newClaims = append(newClaims, c.getFfprobeClaims(wai.Permanode, fileBlob)...)
+			if _, present := dPermanode.Attr["ffprobe_id"]; !present {
+				newClaims = append(newClaims, c.getFfprobeClaims(wai.Permanode, dFileBlob)...)
+			}
 		} else {
 			log.Println("cleaing attributes for permanode", wai.Permanode)
 			for _, attrName := range []string{
-				"tmdb_id", "tmdb_title", "tmdb_backdrop_url", "tmdb_poster_url",
+				"tmdb_id", "tmdb_title", "tmdb_backdrop_fileurl", "tmdb_poster_file",
 			} {
 				newClaims = append(newClaims, schema.NewDelAttributeClaim(wai.Permanode, attrName, ""))
 			}
@@ -159,7 +166,7 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		// apply claims
 		for _, claim := range newClaims {
 			log.Println("claim    ", claim)
-			put, err := getUploader().UploadAndSignBlob(claim)
+			put, err := c.up.Client.UploadAndSignBlob(claim)
 			handleResult(claim.Type(), put, err)
 		}
 	}
@@ -167,36 +174,15 @@ func (c *mediaCmd) RunCommand(args []string) error {
 	return nil
 }
 
-/*
-func (c *mediaCmd) getFileBlob(cr blob.Ref) (*search.DescribedBlob, bool) {
-	res, err := c.client.Describe(&search.DescribeRequest{
-		BlobRef: cr,
-		Depth:   3,
-	})
-	if err != nil {
-		panic(err) // TODO
-		return nil, false
-	}
+func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, fileBlob *search.DescribedBlob) (result []*schema.Builder) {
+	filename := fileBlob.File.FileName
 
-	fileBlob := res.Meta[cr.String()]
-	if fileBlob.CamliType != "file" {
-		// skip nonfile
-		return nil, false
-	}
-	return fileBlob, true
-}
-*/
-
-func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*schema.Builder) {
-	log.Println("file     ", filename)
 	searchTerm := mediautil.ScrubFilename(filename)
 	log.Println("search   ", searchTerm)
 	movies := c.tmdbApi.LookupMovies(searchTerm)
 	if len(movies) > 0 {
 		movie := movies[0]
 		log.Println("result   ", movie)
-
-		// should I just pull down the backdrop/poster and put it in camlistore as another blob? (think so)
 
 		var imagePutReses [2]*client.PutResult
 		for i, imgPath := range []string{movie.Backdrop_path, movie.Poster_path} {
@@ -206,26 +192,55 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*
 				panic(err)
 			}
 			log.Println(imgBytes)
-			imgBlob, err := schema.BlobFromReader(blob.SHA1FromBytes(imgBytes), bytes.NewBuffer(imgBytes))
+			// I really don't need the "file" attrs that are getting uploaded
+			// "raw file" or something?
+
+			// download temp file
+			f, err := ioutil.TempFile("", "")
+			log.Println(f.Name())
 			if err != nil {
-				// TODO : handle
+				// skip
+				panic(err)
+			}
+			n, err := f.Write(imgBytes)
+			if n != len(imgBytes) || err != nil {
 				panic(err)
 			}
 
-			imagePutReses[i], err = c.client.UploadBlob(imgBlob)
+			putRes, err := c.up.UploadFile(f.Name())
 			if err != nil {
-				// TODO : handle
 				panic(err)
 			}
+			log.Printf("%+v", putRes)
+			imagePutReses[i] = putRes
+
+			err = os.Remove(f.Name())
+			if err != nil {
+				panic(err)
+			}
+
+			/*
+				imgBlob, err := schema.BlobFromReader(blob.SHA1FromBytes(imgBytes), bytes.NewBuffer(imgBytes))
+				if err != nil {
+					// TODO : handle
+					panic(err)
+				}
+
+				imagePutReses[i], err = c.up.Client.UploadBlob(imgBlob)
+				if err != nil {
+					// TODO : handle
+					panic(err)
+				}
+			*/
+
+			// HELP: do I need to put keep claims on those files to keep 'em from being GC'd?
 		}
-
-		// HELP: do I need to put keep claims on those files to keep 'em from being GC'd?
 
 		result = append(result,
 			schema.NewSetAttributeClaim(permaRef, "tmdb_id", strconv.Itoa(movie.Id)),
 			schema.NewSetAttributeClaim(permaRef, "tmdb_title", movie.Title),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_fileref", imagePutReses[0].BlobRef.String()),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_fileref", imagePutReses[1].BlobRef.String()),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_file", imagePutReses[0].BlobRef.String()),
+			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_file", imagePutReses[1].BlobRef.String()),
 		)
 	} else {
 		log.Println("tmdb failed to find any match")
@@ -233,7 +248,7 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, filename string) (result []*
 	return result
 }
 
-func (c *mediaCmd) getTvdbClaims(permaRef blob.Ref, filename string) []*schema.Builder {
+func (c *mediaCmd) getTvdbClaims(permaRef blob.Ref, fileBlob *search.DescribedBlob) []*schema.Builder {
 	return []*schema.Builder{}
 }
 
