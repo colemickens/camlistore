@@ -268,10 +268,6 @@ func (c *mediaCmd) getFfprobeClaims(permaRef blob.Ref, fileBlob *search.Describe
 	return []*schema.Builder{}
 }
 
-type MediaClaimMaker interface {
-	GetClaims(fileBlob *search.DescribedBlob) []schema.Builder
-}
-
 func permanodeFile(meta search.MetaMap, permaRef blob.Ref) (*search.DescribedBlob, bool) {
 	if fileRef, ok := meta[permaRef.String()].ContentRef(); ok {
 		db, ok := meta[fileRef.String()]

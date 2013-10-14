@@ -2,205 +2,320 @@ warning: building out-of-date packages:
 	camlistore.org/pkg/media/util
 installing these packages with 'go test -i' will speed future tests.
 
-2013/10/14 00:46:36 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/14 00:46:36 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/14 00:46:36 SKIP .DS_Store
-2013/10/14 00:46:36 PARSE failed
-2013/10/14 00:46:36 atoi failed A Beautiful Mind.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed A Single Man.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed Adaptation.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed American Beauty.avi strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: American Beauty.avi "American Beauty" "American Beau"
-2013/10/14 00:46:36 atoi failed American Psycho.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed American.Gangster.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: American.Gangster.720p.mkv "American Gangster" "American Gangster 720p"
-2013/10/14 00:46:36 atoi failed Avatar.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed bad.teacher.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: bad.teacher.720p.mkv "bad teacher" "bad teacher 720p"
-2013/10/14 00:46:36 atoi failed Black Swan.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Black Swan.720p.avi "Black Swan" "Black Swan 720p"
-2013/10/14 00:46:36 atoi failed Blade Runner.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Blade Runner.dvdrip.avi "Blade Runner" "Blade Runner dvdrip"
-2013/10/14 00:46:36 atoi failed brazil.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: brazil.dvdrip.avi "brazil" "brazil dvdrip"
-2013/10/14 00:46:36 atoi failed Brick.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Brick.dvdrip.avi "Brick" "Brick dvdrip"
-2013/10/14 00:46:36 atoi failed Brokeback Mountain.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed captain.america.the.first.avenger.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: captain.america.the.first.avenger.720p.mkv "captain america the first avenger" "captain america the first avenger 720p"
-2013/10/14 00:46:36 atoi failed Children of Men.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Death at a Funeral.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Deja.Vu.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Deja.Vu.720p.mkv "Deja Vu" "Deja Vu 720p"
-2013/10/14 00:46:36 atoi failed District 9.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed Donnie Darko.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Due Date.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed Eternal Sunshine of the Spotless Mind.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed Exit Through the Gift Shop.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 WRONG YEAR: Fair Game.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG YEAR: ferris.buellers.day.off.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed fight.club.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed harry.potter.7.part.1.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: harry.potter.7.part.1.720p.mkv "harry potter 7 part 1" "harry potter 7 part 1 720p"
-2013/10/14 00:46:36 atoi failed hereafter.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: hereafter.720p.mkv "hereafter" "hereafter 720p"
-2013/10/14 00:46:36 atoi failed horrible.bosses.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: horrible.bosses.720p.mkv "horrible bosses" "horrible bosses 720p"
-2013/10/14 00:46:36 WRONG YEAR: inception.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed inside.job.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed insidious.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: insidious.720p.avi "insidious" "insidious 720p"
-2013/10/14 00:46:36 atoi failed jackass.3.5.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed jackass.3.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed Legion.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Little Fockers.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Little Fockers.720p.mkv "Little Fockers" "Little Fockers 720p"
-2013/10/14 00:46:36 atoi failed Lost in Space.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG YEAR: lotr.1.the.fellowship.of.the.ring.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG TITLE: lotr.2.the.two.towers.1080p.mkv "lord of the rings 2 two towers" "lord of the rings 2 the two towers"
-2013/10/14 00:46:36 WRONG YEAR: lotr.3.the.return.of.the.king.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed Milk.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Minority Report.mp4 strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Minority Report.mp4 "Minority Report" "Minori"
-2013/10/14 00:46:36 atoi failed Mysterious Skin.dvd.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Mysterious Skin.dvd.avi "Mysterious Skin" "Mysterious Skin dvd"
-2013/10/14 00:46:36 atoi failed Next 3 Days.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Next 3 Days.mkv "Next 3 Days " "Next 3 Days"
-2013/10/14 00:46:36 atoi failed Pandorum.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed prayers.for.bobby.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Religulous.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Religulous.avi "religulous" "Religulous"
-2013/10/14 00:46:36 atoi failed rise.of.the.planet.of.the.apes.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: rise.of.the.planet.of.the.apes.720p.mkv "rise of the planet of the apes" "rise of the planet of the apes 720p"
-2013/10/14 00:46:36 atoi failed Scott Pilgrim Vs The World.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Scott Pilgrim Vs The World.720p.mkv "Scott Pilgrim Vs The World" "Scott Pilgrim Vs The World 720p"
-2013/10/14 00:46:36 atoi failed serenity.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: serenity.720p.mkv "serenity" "sereni"
-2013/10/14 00:46:36 atoi failed Solaris.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed Surrogates.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed The Ghost Writer.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed The Green Hornet.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Green Hornet.720p.mkv "The Green Hornet" "The Green Hornet 720p"
-2013/10/14 00:46:36 WRONG YEAR: The Kings Speech.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed The Matrix Reloaded.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Matrix Reloaded.720p.mkv "The Matrix Reloaded" "The Matrix Reloaded 720p"
-2013/10/14 00:46:36 atoi failed The Matrix Revolutions.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Matrix Revolutions.720p.mkv "The Matrix Revolutions" "The Matrix Revolutions 720p"
-2013/10/14 00:46:36 atoi failed The Matrix.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Matrix.720p.mkv "The Matrix" "The Matrix 720p"
-2013/10/14 00:46:36 atoi failed The Mechanic.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Mechanic.720p.avi "The Mechanic" "The Mechanic 720p"
-2013/10/14 00:46:36 atoi failed The Orphanage.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed The Other Guys.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Other Guys.720p.mkv "The Other Guys" "The Other Guys 720p"
-2013/10/14 00:46:36 atoi failed The Rules Of Attraction.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed The Yes Men Fix the World.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed the.departed.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed the.island.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.island.dvdrip.avi "the island" "the island dvdrip"
-2013/10/14 00:46:36 atoi failed the.number.23.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.number.23.720p.mkv "the number 23" "the number 23 720p"
-2013/10/14 00:46:36 atoi failed the.silence.of.the.lambs.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.silence.of.the.lambs.720p.mkv "the silence of the lambs" "the silence of the lambs 720p"
-2013/10/14 00:46:36 atoi failed the.social.network.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.social.network.720p.mkv "the social network" "the social network 720p"
-2013/10/14 00:46:36 atoi failed the.truman.show.720p.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.truman.show.720p.mp4 "the truman show" "the truman show 720p"
-2013/10/14 00:46:36 WRONG YEAR: Tron Legacy.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed True Grit.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: True Grit.720p.mkv "True Grit" "True Grit 720p"
-2013/10/14 00:46:36 atoi failed Unknown.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Unknown.720p.mkv "Unknown" "Unknown 720p"
-2013/10/14 00:46:36 atoi failed Unstoppable.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Unstoppable.720p.mkv "Unstoppable" "Unstoppable 720p"
-2013/10/14 00:46:36 WRONG YEAR: Up.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed 30.minutes.or.less.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: 30.minutes.or.less.720p.mkv "30 minutes or less" "30 minutes or less 720p"
-2013/10/14 00:46:36 atoi failed 50.50.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: 50.50.720p.mkv "50 50" "50 50 720p"
-2013/10/14 00:46:36 atoi failed apollo.18.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: apollo.18.720p.mkv "apollo 18" "apollo 18 720p"
-2013/10/14 00:46:36 WRONG YEAR: borat.1080p.2006.mkv "%!s(int=2006)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed chronicle.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: chronicle.720p.mkv "chronicle" "chronicle 720p"
-2013/10/14 00:46:36 atoi failed collateral.720p.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: collateral.720p.mp4 "collateral" "collateral 720p"
-2013/10/14 00:46:36 WRONG YEAR: contact.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG YEAR: cowboys.and.aliens.2011.720p.mkv "%!s(int=2008)" "%!s(int=2011)"
-2013/10/14 00:46:36 atoi failed equilibrium.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: equilibrium.720p.mkv "equilibrium" "equilibrium 720p"
-2013/10/14 00:46:36 atoi failed get.him.to.the.greek.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: get.him.to.the.greek.720p.mkv "get him to the greek" "get him to the greek 720p"
-2013/10/14 00:46:36 atoi failed harold.kumar.christmas.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed harry.potter.7.part.2.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed Inglorious Basterds.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed j.edgar.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: j.edgar.720p.mkv "j edgar" "j edgar 720p"
-2013/10/14 00:46:36 atoi failed killer.elite.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: killer.elite.720p.mkv "killer elite" "killer elite 720p"
-2013/10/14 00:46:36 atoi failed Lockout.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Lockout.720p.mkv "Lockout" "Lockout 720p"
-2013/10/14 00:46:36 atoi failed outbreak.avi strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/14 00:46:36 atoi failed perfect.sense.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: perfect.sense.720p.mkv "perfect sense" "perfect sense 720p"
-2013/10/14 00:46:36 atoi failed terminator.salvation.2009.1080p.mkv strconv.ParseInt: parsing "rm": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: terminator.salvation.2009.1080p.mkv "terminator salvation" "te"
-2013/10/14 00:46:36 atoi failed the.bourne.supremacy.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed the.bourne.ultimatum.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed the.debt.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.debt.720p.mkv "the debt" "the debt 720p"
-2013/10/14 00:46:36 atoi failed the.fifth.element.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 atoi failed the.help.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.help.720p.mkv "the help" "the help 720p"
-2013/10/14 00:46:36 atoi failed the.inbetweeners.movie.avi strconv.ParseInt: parsing "mov": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.inbetweeners.movie.avi "the inbetweeners movie" "the inbetweeners"
-2013/10/14 00:46:36 atoi failed the.prestige.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 atoi failed the.rock.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.rock.720p.mkv "the rock" "the rock 720p"
-2013/10/14 00:46:36 WRONG TITLE: the.sitter.unrated.2011.1080p.mp4 "the sitter" "the sitter unrated"
-2013/10/14 00:46:36 atoi failed tinker.tailor.soldier.spy.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG YEAR: xmen.origins.wolverine.1080p.mp4 "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG YEAR: walk.the.line.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG YEAR: the.avengers.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 atoi failed the.bourne.identity.2002.mp4 strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.bourne.identity.2002.mp4 "the bourne identity" "the bourne identi"
-2013/10/14 00:46:36 atoi failed paranorman.2012.720p.mkv strconv.ParseInt: parsing "rm": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: paranorman.2012.720p.mkv "paranorman" "parano"
-2013/10/14 00:46:36 WRONG TITLE: The.Town.EXTENDED.2010.1080p.BrRip.x264.YIFY.mp4 "The Town" "The Town EXTENDED"
-2013/10/14 00:46:36 atoi failed The Town Extended Cut.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: The Town Extended Cut.mp4 "The Town" "The Town Extended Cut"
-2013/10/14 00:46:36 WRONG YEAR: the.big.lebowski.1080p.2.mkv "%!s(int=-1)" "%!s(int=1080)"
-2013/10/14 00:46:36 WRONG TITLE: step.brothers.unrated.2008.mkv "step brotheres" "step brothers unrated"
-2013/10/14 00:46:36 WRONG TITLE: role.models.unrated.2008.720p.mkv "role models" "role models unrated"
-2013/10/14 00:46:36 atoi failed silver.linings.playbook.dvdscr.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: silver.linings.playbook.dvdscr.mkv "silver linings playbook" "silver linings playbook dvdscr"
-2013/10/14 00:46:36 atoi failed sin.city.2005.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: sin.city.2005.720p.mkv "sin city" "sin ci"
-2013/10/14 00:46:36 atoi failed its.complicated.720p.mkv strconv.ParseInt: parsing "ts": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: its.complicated.720p.mkv "its complicated" "i"
-2013/10/14 00:46:36 atoi failed zero.dark.thirty.2012.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: zero.dark.thirty.2012.720p.mkv "zero dark thirty" "zero dark thir"
-2013/10/14 00:46:36 atoi failed Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv "Somebody Up There Likes Me" "Somebody Up There Likes Me 720p WEB-DL AAC2 0 H 264"
-2013/10/14 00:46:36 atoi failed shutter.island.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: shutter.island.720p.mkv "shutter island" "shutter island 720p"
-2013/10/14 00:46:36 SKIP sommersturm.2004.dvd
-2013/10/14 00:46:36 SKIP star.trek.1080p.collection
-2013/10/14 00:46:36 SKIP james.bond.720p.collection
-2013/10/14 00:46:36 SKIP zenith.movie
-2013/10/14 00:46:36 atoi failed 127.hours.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: 127.hours.720p.mkv "127 hours" "127 hours 720p"
-2013/10/14 00:46:36 atoi failed 21.jump.street.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: 21.jump.street.720p.mkv "21 jump street" "21 jump street 720p"
-2013/10/14 00:46:36 atoi failed identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv "identity thief" "identi"
-2013/10/14 00:46:36 atoi failed identity.thief.2013.1080p.bluray.x264-sparks.mkv strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: identity.thief.2013.1080p.bluray.x264-sparks.mkv "identity thief" "identi"
-2013/10/14 00:46:36 atoi failed Oz.The.Great.And.Powerful.720p.sparks.mkv strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: Oz.The.Great.And.Powerful.720p.sparks.mkv "Oz The Great And Powerful" "Oz The Great And Powerful 720p sparks"
-2013/10/14 00:46:36 SKIP cams
-2013/10/14 00:46:36 atoi failed the.great.gatsby.2013.1080p.bluray.dts.x264-publichd.mkv strconv.ParseInt: parsing "ts": invalid syntax
-2013/10/14 00:46:36 WRONG TITLE: the.great.gatsby.2013.1080p.bluray.dts.x264-publichd.mkv "the great gatsby" "the great ga"
-2013/10/14 00:46:36 WRONG TITLE: Samsara.DTS.1080p.mkv "Samsara" "Samsara DTS"
+2013/10/14 16:32:07 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 16:32:07 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: this.means.war.2012.unrated.720p.mkv expected("this means war") got("this means war 2012 unrated")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: source.code.2011.avi expected("source code") got("source code 2011")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: christopher.and.his.kind.2011.avi expected("christopher and his kind") got("christopher and his kind 2011")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: eagle.eye.2008.mp4 expected("eagle eye") got("eagle eye 2008")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG YEAR : equilibrium.720p.mkv expected("1997") got("-1")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: Gattaca.1997.mp4 expected("gattaca") got("gattaca 1997")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: mission.impossible.1.1996.mp4 expected("mission impossible 1") got("mission impossible 1 1996")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: mission.impossible.2.2000.mp4 expected("mission impossible 2") got("mission impossible 2 2000")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: mission.impossible.3.2006.mp4 expected("mission impossible 3") got("mission impossible 3 2006")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: batman.the.dark.knight.rises.2012.mkv expected("batman the dark knight rises") got("batman the dark knight rises 2012")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: the.bourne.identity.2002.mp4 expected("the bourne identity") got("the bourne identity 2002")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: the.saint.1997.avi expected("the saint") got("the saint 1997")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: total.recall.2012.extended.1080p.mkv expected("total recall") got("total recall 2012 extended")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: the.campaign.2012.extended.720p.mkv expected("the campaign") got("the campaign 2012 extended")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: The Hangover.2009.mp4 expected("the hangover") got("the hangover 2009")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: step.brothers.unrated.2008.mkv expected("step brothers unrated") got("step brothers unrated 2008")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: animal.house.1978.720.mkv expected("animal house") got("animal house 1978 720")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: bernie.2011.limited.720p.mkv expected("bernie") got("bernie 2011 limited")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: clerks.1994.the.first.cut.1080p.mkv expected("clerks") got("clerks 1994 the first cut")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: clerks.ii.2006.UNKNOWN.mkv expected("clerks ii") got("clerks ii 2006 unknown")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: hansel.and.gretel.2013.mkv expected("hansel and gretel") got("hansel and gretel 2013")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: project.x.2012.extended.720p.mkv expected("project x") got("project x 2012 extended")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: tropic.thunder.2008.dircut.720p.mkv expected("tropic thunder") got("tropic thunder 2008 dircut")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: In.Bruges.2008.MULTi.720p.BluRay.DTS.x264-SYNERGY.mkv expected("in bruges") got("in bruges 2008 multi")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: Shortbus.2006.LIMITED.720p.BluRay.X264-AMIABLE.mkv expected("shortbus") got("shortbus 2006 limited")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: star.trek.2009.mkv expected("star trek") got("star trek 2009")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: Upstream.Color.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv expected("upstream color") got("upstream color 2013 limited")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv expected("identity thief") got("identity thief 2013 unrated")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: gi.joe.retaliation.2013.extended.1080p.bluray.vedett.mkv expected("gi joe retaliation") got("gi joe retaliation 2013 extended")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: World.War.Z.2013.Unrated.Cut.720p.BluRay.x264.DTS-WiKi.mkv expected("world war z") got("world war z 2013 unrated cut")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: The.Heat.2013.UNRATED.720p.BluRay.DTS.x264-PublicHD.mkv expected("the heat") got("the heat 2013 unrated")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 WRONG TITLE: Samsara.DTS.1080p.mkv expected("samsara") got("samsara dts")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4 expected("indiana jones 1 raiders of the lost ark") got("indiana jones 1 raiders of the lost ark 1981")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: Indiana Jones 2 Temple Of Doom 1984.mp4 expected("indiana jones 2 temple of doom") got("indiana jones 2 temple of doom 1984")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: Indiana Jones 3 Last Crusade 1989.mp4 expected("indiana jones 3 last crusade") got("indiana jones 3 last crusade 1989")
+2013/10/14 16:32:07 fail regex1
+2013/10/14 16:32:07 fail regex2
+2013/10/14 16:32:07 fail regex3
+2013/10/14 16:32:07 WRONG TITLE: Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4 expected("indiana jones 4 kingdom of the crystal skull") got("indiana jones 4 kingdom of the crystal skull 2008")
+2013/10/14 16:32:07 TOTAL(269) OK(227) FAIL(42)
 PASS
-ok  	camlistore.org/pkg/media/tmdb	0.494s
+ok  	camlistore.org/pkg/media/tmdb	0.424s

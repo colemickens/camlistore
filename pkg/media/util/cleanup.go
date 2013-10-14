@@ -7,39 +7,61 @@ import (
 	"strings"
 )
 
-const videoFileExtensions string = "m4v|3gp|nsv|ts|ty|strm|rm|rmvb|m3u|ifo|mov|qt|divx|xvid|bivx|vob|nrg|pva|wmv|asf|asx|ogm|m2v|avi|bin|dat|dvr-ms|mpg|mpeg|mp4|mkv|avc|vp3|svq3|nuv|viv|fli|flv"
+const videoFileExtensions string = `mkv|avi|mp4|flv|mov|divx|webm|mpg|vp3|m4v`
 
-const filenameJunk string = "480p|720p|dvd|1080p|webdl|rip|brrip|readnfo|xvid|BluRay|nHD|extended edition|BRRip|READNFO|XViD-TDP|x264-NhaNc3|extended|bluray|x264-crossbow|UK|(ENG)|DTS|x264-ESiR|x264-BLOW|PublicHD|x264|DTS-HDChina|unrated|BR|QMax|web-dl|sparks|vedett|DVDRiP|YIFY|h264-nogrp|X264-BARC0DE|X264-AMIABLE"
+const formatTypes string = `dvdscr|dvdrip|dvd|480p|720p|1080p`
 
-const titleRegexStr string = `(.*?)(` + videoFileExtensions + `|[\{\(\[]?[0-9]{4}).*`
+const movieRegex1Str string = `(.*) (\d{4}) (?:` + formatTypes + `)`
+const movieRegex2Str string = `(.*) (?:` + formatTypes + `)`
+const movieRegex3Str string = `(.*) (\d{4})`
 
-var titleRegex = regexp.MustCompile(titleRegexStr)
+var movieRegex1 = regexp.MustCompile(movieRegex1Str)
+var movieRegex2 = regexp.MustCompile(movieRegex2Str)
+var movieRegex3 = regexp.MustCompile(movieRegex3Str)
 
 func ParseMovieFilename(filename string) (title string, year int) {
-	matches := titleRegex.FindStringSubmatch(filename)
+	filename = strings.ToLower(filename)
+	filename = strings.Replace(filename, "lotr", "lord of the rings", -1)
+	filename = strings.Replace(filename, "dir cut", "", -1)
+	filename = strings.Replace(filename, ".", " ", -1)
+	filename = strings.Replace(filename, "_", " ", -1)
 
-	title = ""
-	year = 0
-
-	var err error
-
-	if len(matches) > 1 {
-		title = matches[1]
-		title = strings.Replace(title, "lotr", "lord of the rings", -1)
-		title = strings.Replace(title, "dir cut", "", -1)
-		title = strings.Replace(title, ".", " ", -1)
-		title = strings.Replace(title, "_", " ", -1)
-		title = strings.Trim(title, " ")
-
+	matches := movieRegex1.FindStringSubmatch(filename)
+	if len(matches) == 3 {
+		logPrintln(true, "pass regex1", matches[1], ":", matches[2])
+		title = strings.Trim(matches[1], " ")
+		year, _ = strconv.Atoi(strings.Trim(matches[2], " "))
+		return title, year
+	} else {
+		logPrintln(false, "fail regex1")
 	}
 
-	if len(matches) >= 2 {
-		year, err = strconv.Atoi(matches[2])
-		if err != nil {
-			log.Println("atoi failed", filename, err)
-			return title, -1
-		}
+	matches = movieRegex2.FindStringSubmatch(filename)
+	if len(matches) == 2 {
+		logPrintln(true, "pass regex2", matches)
+		title = strings.Trim(matches[1], " ")
+		return title, -1
+	} else {
+		logPrintln(false, "fail regex2")
 	}
 
-	return title, year
+	matches = movieRegex3.FindStringSubmatch(filename)
+	if len(matches) == 2 {
+		logPrintln(true, "pass regex3", matches)
+		title = strings.Trim(matches[1], " ")
+		year, _ = strconv.Atoi(strings.Trim(matches[2], " "))
+		return title, year
+	} else {
+		logPrintln(false, "fail regex3")
+	}
+
+	return filename, -1
+}
+
+func logPrintln(success bool, s ...interface{}) {
+	_ = log.Println
+
+	if !success && false {
+		log.Println(s...)
+	}
 }
