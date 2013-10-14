@@ -40,9 +40,6 @@ func TestLookupMovies(t *testing.T) {
 		Year   int
 		TmdbId int
 	}{
-		//"star.trek.1080p.collection":                              {"", -1, 0},
-		//"james.bond.720p.collection":                              {"", -1, 0},
-
 		"lotr.1.the.fellowship.of.the.ring.1080p.mkv": {"lord of the rings 1 the fellowship of the ring", -1, 0},
 		"lotr.2.the.two.towers.1080p.mkv":             {"lord of the rings 2 two towers", -1, 0},
 		"lotr.3.the.return.of.the.king.1080p.mkv":     {"lord of the rings 3 the return of the king", -1, 0},
@@ -59,72 +56,71 @@ func TestLookupMovies(t *testing.T) {
 		"mission.impossible.3.2006.mp4":                    {"mission impossible 3", 2006, 956},
 		"mission.impossible.ghost.protocol.2011.1080p.mkv": {"mission impossible ghost protocol", 2011, 56292},
 
-		"Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4":      {"Indiana Jones 1 Raiders of the Lost Ark", 1981, 85},
-		"Indiana Jones 2 Temple Of Doom 1984.mp4":               {"Indiana Jones 2 Temple of Doom", 1984, 87},
+		"Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4":      {"Indiana Jones 1 Raiders Of The Lost Ark", 1981, 85},
+		"Indiana Jones 2 Temple Of Doom 1984.mp4":               {"Indiana Jones 2 Temple Of Doom", 1984, 87},
 		"Indiana Jones 3 Last Crusade 1989.mp4":                 {"Indiana Jones 3 Last Crusade", 1989, 89},
 		"Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4": {"Indiana Jones 4 Kingdom Of The Crystal Skull", 2008, 217},
 
-		"A Beautiful Mind.mp4":                                    {"A Beautiful Mind", -1, 0},
-		"A Single Man.mkv":                                        {"A Single Man", -1, 0},
-		"Adaptation.avi":                                          {"Adaptation", -1, 0},
+		"A Beautiful Mind.mp4":                                    {"A Beautiful Mind", -1, 453},
+		"A Single Man.mkv":                                        {"A Single Man", -1, 34653},
+		"Adaptation.avi":                                          {"Adaptation", -1, 2757},
 		"American Beauty.avi":                                     {"American Beauty", -1, 0},
-		"American Psycho.avi":                                     {"American Psycho", -1, 0},
+		"American Psycho.avi":                                     {"American Psycho", -1, 1359},
 		"American.Gangster.720p.mkv":                              {"American Gangster", -1, 0},
-		"Avatar.mkv":                                              {"Avatar", -1, 0},
+		"Avatar.mkv":                                              {"Avatar", -1, 19995},
 		"bad.teacher.720p.mkv":                                    {"bad teacher", -1, 0},
 		"Black Swan.720p.avi":                                     {"Black Swan", -1, 0},
 		"Blade Runner.dvdrip.avi":                                 {"Blade Runner", -1, 0},
 		"brazil.dvdrip.avi":                                       {"brazil", -1, 0},
 		"Brick.dvdrip.avi":                                        {"Brick", -1, 0},
-		"Brokeback Mountain.avi":                                  {"Brokeback Mountain", -1, 0},
+		"Brokeback Mountain.avi":                                  {"Brokeback Mountain", -1, 142},
 		"captain.america.the.first.avenger.720p.mkv":              {"captain america the first avenger", -1, 0},
-		"Children of Men.avi":                                     {"Children of Men", -1, 0},
-		"Death at a Funeral.avi":                                  {"Death at a Funeral", -1, 0},
+		"Children of Men.avi":                                     {"Children of Men", -1, 9693},
+		"Death at a Funeral.avi":                                  {"Death at a Funeral", -1, 2196},
 		"Deja.Vu.720p.mkv":                                        {"Deja Vu", -1, 0},
-		"District 9.mkv":                                          {"District 9", -1, 0},
-		"Donnie Darko.avi":                                        {"Donnie Darko", -1, 0},
-		"Due Date.mp4":                                            {"Due Date", -1, 0},
-		"Eternal Sunshine of the Spotless Mind.mkv":               {"Eternal Sunshine of the Spotless Mind", -1, 0},
-		"Exit Through the Gift Shop.mp4":                          {"Exit Through the Gift Shop", -1, 0},
+		"District 9.mkv":                                          {"District 9", -1, 17654},
+		"Donnie Darko.avi":                                        {"Donnie Darko", -1, 141},
+		"Due Date.mp4":                                            {"Due Date", -1, 41733},
+		"Eternal Sunshine of the Spotless Mind.mkv":               {"Eternal Sunshine of the Spotless Mind", -1, 38},
+		"Exit Through the Gift Shop.mp4":                          {"Exit Through the Gift Shop", -1, 39452},
 		"Fair Game.1080p.mkv":                                     {"Fair Game", -1, 0},
 		"ferris.buellers.day.off.1080p.mkv":                       {"ferris buellers day off", -1, 0},
-		"fight.club.mp4":                                          {"fight club", -1, 0},
+		"fight.club.mp4":                                          {"fight club", -1, 550},
 		"harry.potter.7.part.1.720p.mkv":                          {"harry potter 7 part 1", -1, 0},
 		"hereafter.720p.mkv":                                      {"hereafter", -1, 0},
 		"horrible.bosses.720p.mkv":                                {"horrible bosses", -1, 0},
 		"inception.1080p.mkv":                                     {"inception", -1, 0},
-		"inside.job.mkv":                                          {"inside job", -1, 0},
+		"inside.job.mkv":                                          {"inside job", -1, 44639},
 		"insidious.720p.avi":                                      {"insidious", -1, 0},
-		"Iron Man.avi":                                            {"Iron Man", -1, 0},
 		"jackass.3.5.avi":                                         {"jackass 3 5", -1, 0},
-		"jackass.3.mp4":                                           {"jackass 3", -1, 0},
-		"Legion.avi":                                              {"Legion", -1, 0},
+		"jackass.3.mp4":                                           {"jackass 3", -1, 16290},
+		"Legion.avi":                                              {"Legion", -1, 22894},
 		"Little Fockers.720p.mkv":                                 {"Little Fockers", -1, 0},
-		"Lost in Space.avi":                                       {"Lost in Space", -1, 0},
-		"Milk.avi":                                                {"Milk", -1, 0},
+		"Lost in Space.avi":                                       {"Lost in Space", -1, 2157},
+		"Milk.avi":                                                {"Milk", -1, 10139},
 		"Minority Report.mp4":                                     {"Minority Report", -1, 0},
 		"Mysterious Skin.dvd.avi":                                 {"Mysterious Skin", -1, 0},
-		"Next 3 Days.mkv":                                         {"Next 3 Days ", -1, 0},
-		"Pandorum.mkv":                                            {"Pandorum", -1, 0},
-		"prayers.for.bobby.avi":                                   {"prayers for bobby", -1, 0},
-		"Religulous.avi":                                          {"religulous", -1, 0},
+		"Next 3 Days.mkv":                                         {"Next 3 Days ", -1, 43539},
+		"Pandorum.mkv":                                            {"Pandorum", -1, 19898},
+		"prayers.for.bobby.avi":                                   {"prayers for bobby", -1, 21634},
+		"Religulous.avi":                                          {"religulous", -1, 13007},
 		"rise.of.the.planet.of.the.apes.720p.mkv":                 {"rise of the planet of the apes", -1, 0},
 		"Scott Pilgrim Vs The World.720p.mkv":                     {"Scott Pilgrim Vs The World", -1, 0},
 		"serenity.720p.mkv":                                       {"serenity", -1, 0},
-		"Solaris.avi":                                             {"Solaris", -1, 0},
-		"Surrogates.mkv":                                          {"Surrogates", -1, 0},
-		"The Ghost Writer.avi":                                    {"The Ghost Writer", -1, 0},
+		"Solaris.avi":                                             {"Solaris", -1, 2103},
+		"Surrogates.mkv":                                          {"Surrogates", -1, 19959},
+		"The Ghost Writer.avi":                                    {"The Ghost Writer", -1, 11439},
 		"The Green Hornet.720p.mkv":                               {"The Green Hornet", -1, 0},
 		"The Kings Speech.1080p.mkv":                              {"The Kings Speech", -1, 0},
 		"The Matrix Reloaded.720p.mkv":                            {"The Matrix Reloaded", -1, 0},
 		"The Matrix Revolutions.720p.mkv":                         {"The Matrix Revolutions", -1, 0},
 		"The Matrix.720p.mkv":                                     {"The Matrix", -1, 0},
 		"The Mechanic.720p.avi":                                   {"The Mechanic", -1, 0},
-		"The Orphanage.avi":                                       {"The Orphanage", -1, 0},
+		"The Orphanage.avi":                                       {"The Orphanage", -1, 6537},
 		"The Other Guys.720p.mkv":                                 {"The Other Guys", -1, 0},
-		"The Rules Of Attraction.avi":                             {"The Rules Of Attraction", -1, 0},
-		"The Yes Men Fix the World.avi":                           {"The Yes Men Fix the World", -1, 0},
-		"the.departed.mp4":                                        {"the departed", -1, 0},
+		"The Rules Of Attraction.avi":                             {"The Rules Of Attraction", -1, 1809},
+		"The Yes Men Fix the World.avi":                           {"The Yes Men Fix the World", -1, 18489},
+		"the.departed.mp4":                                        {"the departed", -1, 1422},
 		"the.island.dvdrip.avi":                                   {"the island", -1, 0},
 		"the.number.23.720p.mkv":                                  {"the number 23", -1, 0},
 		"the.silence.of.the.lambs.720p.mkv":                       {"the silence of the lambs", -1, 0},
@@ -135,7 +131,7 @@ func TestLookupMovies(t *testing.T) {
 		"Unknown.720p.mkv":                                        {"Unknown", -1, 0},
 		"Unstoppable.720p.mkv":                                    {"Unstoppable", -1, 0},
 		"Up.1080p.mkv":                                            {"Up", -1, 0},
-		"30.minutes.or.less.720p.mkv":                             {"30 minutes or less", -1, 0},
+		"30.minutes.or.less.720p.mkv":                             {"30 minutes or less", -1, 62206},
 		"50.50.720p.mkv":                                          {"50 50", -1, 0},
 		"chronicle.720p.mkv":                                      {"chronicle", -1, 0},
 		"collateral.720p.mp4":                                     {"collateral", -1, 0},
@@ -144,36 +140,38 @@ func TestLookupMovies(t *testing.T) {
 		"the.help.720p.mkv":                                       {"the help", -1, 0},
 		"the.avengers.1080p.mkv":                                  {"the avengers", -1, 0},
 		"get.him.to.the.greek.720p.mkv":                           {"get him to the greek", -1, 0},
-		"tinker.tailor.soldier.spy.mkv":                           {"tinker tailor soldier", -1, 0},
+		"tinker.tailor.soldier.spy.mkv":                           {"tinker tailor soldier spy", -1, 49517},
 		"walk.the.line.1080p.mkv":                                 {"walk the line", -1, 0},
 		"xmen.origins.wolverine.1080p.mp4":                        {"xmen origins wolverine", -1, 0},
-		"harold.kumar.christmas.mkv":                              {"harold kumar christmas", -1, 0},
-		"harry.potter.7.part.2.mkv":                               {"harry potter 7 part 2", -1, 0},
-		"the.inbetweeners.movie.avi":                              {"the inbetweeners movie", -1, 0},
-		"the.prestige.mp4":                                        {"the prestige", -1, 0},
+		"harold.kumar.christmas.mkv":                              {"harold kumar christmas", -1, 55465},
+		"harry.potter.7.part.2.mkv":                               {"harry potter 7 part 2", -1, 12445},
+		"the.inbetweeners.movie.avi":                              {"the inbetweeners movie", -1, 6979},
+		"the.prestige.mp4":                                        {"the prestige", -1, 1124},
 		"the.rock.720p.mkv":                                       {"the rock", -1, 0},
-		"Inglorious Basterds.mkv":                                 {"Inglorious Basterds", -1, 0},
+		"Inglorious Basterds.mkv":                                 {"Inglorious Basterds", -1, 16869},
 		"j.edgar.720p.mkv":                                        {"j edgar", -1, 0},
 		"killer.elite.720p.mkv":                                   {"killer elite", -1, 0},
 		"Lockout.720p.mkv":                                        {"Lockout", -1, 0},
-		"outbreak.avi":                                            {"outbreak", -1, 0},
+		"outbreak.avi":                                            {"outbreak", -1, 6950},
 		"perfect.sense.720p.mkv":                                  {"perfect sense", -1, 0},
-		"the.bourne.supremacy.mp4":                                {"the bourne supremacy", -1, 0},
-		"the.bourne.ultimatum.mp4":                                {"the bourne ultimatum", -1, 0},
+		"the.bourne.supremacy.mp4":                                {"the bourne supremacy", -1, 2502},
+		"the.bourne.ultimatum.mp4":                                {"the bourne ultimatum", -1, 2403},
 		"the.debt.720p.mkv":                                       {"the debt", -1, 0},
-		"the.fifth.element.mkv":                                   {"the fifth element", -1, 0},
+		"the.fifth.element.mkv":                                   {"the fifth element", -1, 18},
 		"The Town Extended Cut.mp4":                               {"The Town", -1, 0},
 		"the.big.lebowski.1080p.2.mkv":                            {"the big lebowski", -1, 115},
 		"silver.linings.playbook.dvdscr.mkv":                      {"silver linings playbook", -1, 0},
-		"its.complicated.720p.mkv":                                {"its complicated", -1, 0},
+		"its.complicated.720p.mkv":                                {"its complicated", -1, 217316},
 		"Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv": {"Somebody Up There Likes Me", -1, 0},
 		"shutter.island.720p.mkv":                                 {"shutter island", -1, 0},
 		"127.hours.720p.mkv":                                      {"127 hours", -1, 0},
 		"21.jump.street.720p.mkv":                                 {"21 jump street", -1, 0},
 		"Oz.The.Great.And.Powerful.720p.sparks.mkv":               {"Oz The Great And Powerful", -1, 0},
-		"IRON_MAN3_1080p_BLUEBIRD.mkv":                            {"IRON MAN3", -1, 0},
 		"Samsara.DTS.1080p.mkv":                                   {"Samsara", -1, 0},
+		"2001 A Space Odyssey.mkv":                                {"2001 A Space Odyssey", -1, 0},
 
+		"this.means.war.2012.unrated.720p.mkv":                                   {"this means war", 2012, 59962},
+		"limitless.2011.720p.mkv":                                                {"limitless", 2011, 51876},
 		"primer.2004.720p.web-dl.mkv":                                            {"primer", 2004, 14337},
 		"source.code.2011.avi":                                                   {"source code", 2011, 45612},
 		"In.Time.2011.720p.mkv":                                                  {"In Time", 2011, 49530},
@@ -224,7 +222,7 @@ func TestLookupMovies(t *testing.T) {
 		"x2.2003.1080p.mp4":                                                      {"x2", 2003, 36658},
 		"xmen.the.last.stand.2006.1080p.mp4":                                     {"xmen the last stand", 2006, 36668},
 		"xmen.first.class.2011.720p.avi":                                         {"xmen first class", 2011, 49538},
-		"paranorman.2012.720p.mkv":                                               {"paranorman", 2012, 0},
+		"paranorman.2012.720p.mkv":                                               {"paranorman", 2012, 1878},
 		"the.watch.2012.720p.mkv":                                                {"the watch", 2012, 80035},
 		"the.campaign.2012.extended.720p.mkv":                                    {"the campaign", 2012, 77953},
 		"the.hangover.part.ii.2011.720p.mkv":                                     {"the hangover part ii", 2011, 45243},
@@ -244,7 +242,7 @@ func TestLookupMovies(t *testing.T) {
 		"juno.2007.720p.mkv":                                                     {"juno", 2007, 7326},
 		"Man.on.a.Ledge.2012.720p.mkv":                                           {"Man on a Ledge", 2012, 49527},
 		"moonrise.kingdom.2012.720p.mkv":                                         {"moonrise kingdom", 2012, 83666},
-		"terminator.salvation.2009.1080p.mkv":                                    {"terminator salvation", 2009, 0},
+		"terminator.salvation.2009.1080p.mkv":                                    {"terminator salvation", 2009, 146249},
 		"the.dictator.2012.720p.mkv":                                             {"the dictator", 2012, 76493},
 		"the.girl.with.the.dragon.tattoo.2011.720p.mkv":                          {"the girl with the dragon tattoo", 2011, 65754},
 		"the.ides.of.march.2011.720p.mkv":                                        {"the ides of march", 2011, 10316},
@@ -319,42 +317,43 @@ func TestLookupMovies(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, fi := range fis {
-		log.Println("-------------------------")
 		expectedRes, ok := expectedResults[fi.Name()]
 		if !ok {
+			log.Println("SKIP", fi.Name())
 			continue
 		}
 
-		title, year, ok := mediautil.ParseMovieFilename(fi.Name())
-		if !ok {
-			//log.Println("PARSE", "failed")
-			continue
-		} else {
-			//log.Println("PARSE", "success", title, year)
-		}
-
-		movie := testLookupMovie(t, tmdbApi, title, year)
-
-		if movie == nil {
-			//log.Println("MATCH", "fail")
+		title, year := mediautil.ParseMovieFilename(fi.Name())
+		if title == "" {
+			log.Println("PARSE", "failed")
 			continue
 		}
-		//log.Println("MATCH", "good")
 
-		if expectedRes.TmdbId != movie.Id {
-			log.Println("WRONG TMDBID:", fi.Name(), expectedRes.TmdbId, movie.Id)
-			continue
+		if false { // change this once title/year parsing is totally fixed
+			movie := testLookupMovie(t, tmdbApi, title, year)
+
+			if movie == nil {
+				log.Println("MATCH", "fail", title, year)
+				continue
+			}
+
+			if expectedRes.TmdbId != movie.Id {
+				log.Println("WRONG TMDBID:", fi.Name(), expectedRes.TmdbId, movie.Id)
+				continue
+			}
+
 		}
+
+		_ = tmdbApi.DownloadImage
+
 		if expectedRes.Title != title {
-			//log.Println("WRONG TITLE:", fi.Name(), expectedRes.Title, title)
+			log.Printf(`WRONG TITLE: %s "%s" "%s"`+"\n", fi.Name(), expectedRes.Title, title)
 			continue
 		}
 		if expectedRes.Year != year {
-			//log.Println("WRONG YEAR:", fi.Name(), expectedRes.Year, year)
+			log.Printf(`WRONG YEAR: %s "%s" "%s"`+"\n", fi.Name(), expectedRes.Year, year)
 			continue
 		}
-
-		//log.Println("PASS: ", fi.Name())
 	}
 }
 

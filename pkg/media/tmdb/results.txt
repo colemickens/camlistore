@@ -2,651 +2,205 @@ warning: building out-of-date packages:
 	camlistore.org/pkg/media/util
 installing these packages with 'go test -i' will speed future tests.
 
-2013/10/13 17:52:03 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/13 17:52:04 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 A Beautiful Mind.mp4
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 A Single Man.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Adaptation.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 American Beauty.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 American Psycho.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 American.Gangster.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Avatar.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 bad.teacher.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Black Swan.720p.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Blade Runner.dvdrip.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 brazil.dvdrip.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Brick.dvdrip.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Brokeback Mountain.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 captain.america.the.first.avenger.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Children of Men.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Death at a Funeral.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Deja.Vu.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 District 9.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Donnie Darko.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Due Date.mp4
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Eternal Sunshine of the Spotless Mind.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Exit Through the Gift Shop.mp4
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Fair Game.1080p.mkv
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 ferris.buellers.day.off.1080p.mkv
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 fight.club.mp4
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 harry.potter.7.part.1.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 hereafter.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 horrible.bosses.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 inception.1080p.mkv
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 inside.job.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 insidious.720p.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Iron Man.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 jackass.3.5.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 jackass.3.mp4
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Legion.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Little Fockers.720p.mkv
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 Lost in Space.avi
-2013/10/13 17:52:04 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 lotr.1.the.fellowship.of.the.ring.1080p.mkv
-2013/10/13 17:52:04 -------------------------
-2013/10/13 17:52:04 lotr.2.the.two.towers.1080p.mkv
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 lotr.3.the.return.of.the.king.1080p.mkv
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Milk.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Minority Report.mp4
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Mysterious Skin.dvd.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Next 3 Days.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Pandorum.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 prayers.for.bobby.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Religulous.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 rise.of.the.planet.of.the.apes.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Scott Pilgrim Vs The World.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 serenity.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Solaris.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 source.code.2011.avi
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Surrogates.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Ghost Writer.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Green Hornet.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Kings Speech.1080p.mkv
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Matrix Reloaded.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Matrix Revolutions.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Matrix.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Mechanic.720p.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Orphanage.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Other Guys.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Rules Of Attraction.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 The Yes Men Fix the World.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.departed.mp4
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.island.dvdrip.avi
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.number.23.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.silence.of.the.lambs.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.social.network.720p.mkv
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 the.truman.show.720p.mp4
-2013/10/13 17:52:05 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:05 -------------------------
-2013/10/13 17:52:05 Tron Legacy.1080p.mkv
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 True Grit.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 Unknown.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 Unstoppable.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 Up.1080p.mkv
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 your.highness.2011.720p.mkv
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 30.minutes.or.less.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 50.50.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 a.scanner.darkly.2006.720p.avi
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 apollo.13.1995.720p.mkv
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 apollo.18.720p.mkv
-2013/10/13 17:52:06 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:06 -------------------------
-2013/10/13 17:52:06 borat.1080p.2006.mkv
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 catch.me.if.you.can.2002.720p.avi
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 christopher.and.his.kind.2011.avi
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 chronicle.720p.mkv
-2013/10/13 17:52:07 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 collateral.720p.mp4
-2013/10/13 17:52:07 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 contact.1080p.mkv
-2013/10/13 17:52:07 -------------------------
-2013/10/13 17:52:07 contagion.2011.720p.mkv
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 cowboys.and.aliens.2011.720p.mkv
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 eagle.eye.2008.mp4
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 equilibrium.720p.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 Gattaca.1997.mp4
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 get.him.to.the.greek.720p.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 harold.kumar.christmas.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 harry.potter.7.part.2.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 In.Time.2011.720p.mkv
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 Inglorious Basterds.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 j.edgar.720p.mkv
-2013/10/13 17:52:08 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:08 -------------------------
-2013/10/13 17:52:08 john.carter.2012.720p.mkv
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 juno.2007.720p.mkv
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 killer.elite.720p.mkv
-2013/10/13 17:52:09 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 Lockout.720p.mkv
-2013/10/13 17:52:09 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 Man.on.a.Ledge.2012.720p.mkv
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 mission.impossible.1.1996.mp4
-2013/10/13 17:52:09 -------------------------
-2013/10/13 17:52:09 mission.impossible.2.2000.mp4
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 mission.impossible.3.2006.mp4
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 mission.impossible.ghost.protocol.2011.1080p.mkv
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 moonrise.kingdom.2012.720p.mkv
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 outbreak.avi
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "avi": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 perfect.sense.720p.mkv
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 terminator.salvation.2009.1080p.mkv
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "rm": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 the.bourne.supremacy.mp4
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 the.bourne.ultimatum.mp4
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 the.debt.720p.mkv
-2013/10/13 17:52:10 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:10 -------------------------
-2013/10/13 17:52:10 the.dictator.2012.720p.mkv
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.fifth.element.mkv
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.girl.with.the.dragon.tattoo.2011.720p.mkv
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.help.720p.mkv
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.ides.of.march.2011.720p.mkv
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.inbetweeners.movie.avi
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mov": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.prestige.mp4
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.rock.720p.mkv
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 the.sitter.unrated.2011.1080p.mp4
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 tinker.tailor.soldier.spy.mkv
-2013/10/13 17:52:11 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 tower.heist.2011.720p.mkv
-2013/10/13 17:52:11 -------------------------
-2013/10/13 17:52:11 xmen.origins.wolverine.1080p.mp4
-2013/10/13 17:52:12 -------------------------
-2013/10/13 17:52:12 zoolander.2001.720p.mkv
-2013/10/13 17:52:12 -------------------------
-2013/10/13 17:52:12 the.hunger.games.2012.1080p.mkv
-2013/10/13 17:52:12 -------------------------
-2013/10/13 17:52:12 prometheus.2012.1080p.mkv
-2013/10/13 17:52:12 -------------------------
-2013/10/13 17:52:12 ray.2004.1080p.mkv
-2013/10/13 17:52:13 -------------------------
-2013/10/13 17:52:13 walk.the.line.1080p.mkv
-2013/10/13 17:52:13 -------------------------
-2013/10/13 17:52:13 men.in.black.3.2012.720p.mkv
-2013/10/13 17:52:13 -------------------------
-2013/10/13 17:52:13 the.amazing.spider-man.2012.1080p.mkv
-2013/10/13 17:52:13 -------------------------
-2013/10/13 17:52:13 ted.2012.720p.mkv
-2013/10/13 17:52:13 -------------------------
-2013/10/13 17:52:13 the.avengers.1080p.mkv
-2013/10/13 17:52:14 -------------------------
-2013/10/13 17:52:14 Thor.2011.1080p.mkv
-2013/10/13 17:52:14 -------------------------
-2013/10/13 17:52:14 batman.the.dark.knight.rises.2012.mkv
-2013/10/13 17:52:14 -------------------------
-2013/10/13 17:52:14 the.bourne.legacy.2012.720p.mp4
-2013/10/13 17:52:14 -------------------------
-2013/10/13 17:52:14 looper.2012.1080p.mkv
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 the.bourne.identity.2002.mp4
-2013/10/13 17:52:15 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 bruno.2009.720p.mkv
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 dilemma.2011.720p.mkv
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 Machete.2010.1080p.mkv
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 the.saint.1997.avi
-2013/10/13 17:52:15 -------------------------
-2013/10/13 17:52:15 Salt.2010.1080p.mkv
-2013/10/13 17:52:16 -------------------------
-2013/10/13 17:52:16 planes.trains.automobiles.1987.1080p.mkv
-2013/10/13 17:52:16 -------------------------
-2013/10/13 17:52:16 christmas.vacation.1989.1080p.mkv
-2013/10/13 17:52:16 -------------------------
-2013/10/13 17:52:16 cloud.atlas.2012.720p.mkv
-2013/10/13 17:52:16 -------------------------
-2013/10/13 17:52:16 total.recall.2012.extended.1080p.mkv
-2013/10/13 17:52:17 -------------------------
-2013/10/13 17:52:17 xmen.2000.1080p.mp4
-2013/10/13 17:52:17 -------------------------
-2013/10/13 17:52:17 x2.2003.1080p.mp4
-2013/10/13 17:52:17 -------------------------
-2013/10/13 17:52:17 xmen.the.last.stand.2006.1080p.mp4
-2013/10/13 17:52:17 -------------------------
-2013/10/13 17:52:17 xmen.first.class.2011.720p.avi
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 paranorman.2012.720p.mkv
-2013/10/13 17:52:18 atoi failed strconv.ParseInt: parsing "rm": invalid syntax
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 the.watch.2012.720p.mkv
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 the.campaign.2012.extended.720p.mkv
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 the.hangover.part.ii.2011.720p.mkv
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 The Hangover.2009.mp4
-2013/10/13 17:52:18 -------------------------
-2013/10/13 17:52:18 The.Town.EXTENDED.2010.1080p.BrRip.x264.YIFY.mp4
-2013/10/13 17:52:19 -------------------------
-2013/10/13 17:52:19 The Town Extended Cut.mp4
-2013/10/13 17:52:19 atoi failed strconv.ParseInt: parsing "mp4": invalid syntax
-2013/10/13 17:52:19 -------------------------
-2013/10/13 17:52:19 the.big.lebowski.1080p.2.mkv
-2013/10/13 17:52:19 -------------------------
-2013/10/13 17:52:19 the.big.lebowski.1998.1080p.mkv
-2013/10/13 17:52:19 -------------------------
-2013/10/13 17:52:19 zodiac.2007.720p.mkv
-2013/10/13 17:52:19 -------------------------
-2013/10/13 17:52:19 step.brothers.unrated.2008.mkv
-2013/10/13 17:52:20 -------------------------
-2013/10/13 17:52:20 lucky.number.slevin.2006.1080p.mkv
-2013/10/13 17:52:20 -------------------------
-2013/10/13 17:52:20 role.models.unrated.2008.720p.mkv
-2013/10/13 17:52:20 -------------------------
-2013/10/13 17:52:20 dredd.2012.720p.mkv
-2013/10/13 17:52:20 -------------------------
-2013/10/13 17:52:20 animal.house.1978.720.mkv
-2013/10/13 17:52:20 -------------------------
-2013/10/13 17:52:20 bernie.2011.limited.720p.mkv
-2013/10/13 17:52:21 -------------------------
-2013/10/13 17:52:21 clerks.1994.the.first.cut.1080p.mkv
-2013/10/13 17:52:21 -------------------------
-2013/10/13 17:52:21 clerks.ii.2006.720p.mkv
-2013/10/13 17:52:21 -------------------------
-2013/10/13 17:52:21 clerks.ii.2006.UNKNOWN.mkv
-2013/10/13 17:52:21 -------------------------
-2013/10/13 17:52:21 hot.fuzz.2007.1080p.mkv
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 silver.linings.playbook.dvdscr.mkv
-2013/10/13 17:52:22 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 hansel.and.gretel.2013.mkv
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 the.hit.list.2011.720p.mkv
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 project.x.2012.extended.720p.mkv
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 The.Adjustment.Bureau.2011.720p.BluRay.x264.DTS-CtrlHD.mkv
-2013/10/13 17:52:22 -------------------------
-2013/10/13 17:52:22 drive.2012.720p.mkv
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 sin.city.2005.720p.mkv
-2013/10/13 17:52:23 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 melancholia.2011.720p.mkv
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 monsters.2010.720p.mkv
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 its.complicated.720p.mkv
-2013/10/13 17:52:23 atoi failed strconv.ParseInt: parsing "ts": invalid syntax
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 bringing.down.the.house.2003.720p.mkv
-2013/10/13 17:52:23 -------------------------
-2013/10/13 17:52:23 battlestar.galactica.blood.and.chrome.2012.720p.bluray.x264-geckos.mkv
-2013/10/13 17:52:24 -------------------------
-2013/10/13 17:52:24 Life.of.Pi.2012.720p.WEB-DL.DD5.1.H.264-HD4FUN.mkv
-2013/10/13 17:52:24 -------------------------
-2013/10/13 17:52:24 zero.dark.thirty.2012.720p.mkv
-2013/10/13 17:52:24 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:24 -------------------------
-2013/10/13 17:52:24 lincoln.2012.720p.mkv
-2013/10/13 17:52:24 -------------------------
-2013/10/13 17:52:24 les.miserables.2012.720p.bluray.x264-sparks.mkv
-2013/10/13 17:52:24 -------------------------
-2013/10/13 17:52:24 the.hobbit.an.unexpected.journey.2012.720p.bluray.x264-sparks.mkv
-2013/10/13 17:52:25 -------------------------
-2013/10/13 17:52:25 mr.and.mrs.smith.2005.720p.mkv
-2013/10/13 17:52:25 -------------------------
-2013/10/13 17:52:25 moon.2009.720p.mkv
-2013/10/13 17:52:25 -------------------------
-2013/10/13 17:52:25 tropic.thunder.2008.dircut.720p.mkv
-2013/10/13 17:52:25 -------------------------
-2013/10/13 17:52:25 swordfish.2001.720p.mkv
-2013/10/13 17:52:26 -------------------------
-2013/10/13 17:52:26 Django.Unchained.2012.1080p.bluray.x264-sparks.ShareKiosk.mkv
-2013/10/13 17:52:26 -------------------------
-2013/10/13 17:52:26 Gangster.Squad.2013.720p.WEB-DL.AAC2.0.H264-HDClub.mkv
-2013/10/13 17:52:26 -------------------------
-2013/10/13 17:52:26 Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv
-2013/10/13 17:52:26 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:26 -------------------------
-2013/10/13 17:52:26 In.Bruges.2008.MULTi.720p.BluRay.DTS.x264-SYNERGY.mkv
-2013/10/13 17:52:26 -------------------------
-2013/10/13 17:52:26 Super.Troopers.2001.720p.BluRay.DTS.x264-CtrlHD.mkv
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 shutter.island.720p.mkv
-2013/10/13 17:52:27 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 knocked.up.2007.720p.mkv
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 Shortbus.2006.LIMITED.720p.BluRay.X264-AMIABLE.mkv
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 Melancholia.2011.720p.BluRay.x264-DON.mkv
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 argo.2012.720p.bluray.x264-sparks.mkv
-2013/10/13 17:52:27 -------------------------
-2013/10/13 17:52:27 the.american.2010.720p.mkv
-2013/10/13 17:52:28 -------------------------
-2013/10/13 17:52:28 team.america.world.police.2004.720p.mkv
-2013/10/13 17:52:28 -------------------------
-2013/10/13 17:52:28 taken.2.2012.1080p.mkv
-2013/10/13 17:52:28 -------------------------
-2013/10/13 17:52:28 star.trek.2009.mkv
-2013/10/13 17:52:28 -------------------------
-2013/10/13 17:52:28 sunshine.2007.720p.mkv
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 super.8.2011.720p.mkv
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 127.hours.720p.mkv
-2013/10/13 17:52:29 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 superbad.2007.720p.mkv
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 Upstream.Color.2013.1080p.Bluray.X264-BARC0DE.mkv
-2013/10/13 17:52:29 -------------------------
-2013/10/13 17:52:29 Upstream.Color.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 stand.up.guys.2012.1080p.bluray.mkv
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 A.Good.Day.To.Die.Hard.2013.720p.WEB-DL.X264-WEBiOS.mkv
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 21.jump.street.720p.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Star.Wars.Episode.1.the.phantom.menace.1999.720p.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Star.Wars.Episode.3.Revenge.of.the.Sith.2005.720p.BluRay.nHD.x264-NhaNc3.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Star.Wars.Episode.4.A.New.Hope.1977.720p.BluRay.nHD.x264-NhaNc3.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Star.Wars.Episode.5.The.Empire.Strikes.Back.1980.720p.BluRay.nHD.x264-NhaNc3.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Star.Wars.Episode.6.Return.of.the.Jedi.1983.720p.BluRay.nHD.x264-NhaNc3.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Seven.Psychopaths.2012.720p.Bluray.x264-BARC0DE.mkv
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 identity.thief.2013.1080p.bluray.x264-sparks.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "ty": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 Oz.The.Great.And.Powerful.720p.sparks.mkv
-2013/10/13 17:52:30 atoi failed strconv.ParseInt: parsing "mkv": invalid syntax
-2013/10/13 17:52:30 -------------------------
-2013/10/13 17:52:30 seven.psychopaths.2012.720p.bluray.x264-sparks.mkv
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 Pineapple.Express.2008.720p.BluRay.AC3.x264-HDWinG.mkv
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 Hot Rod 2007 DVDRiP x264 AC3-OFFLiNE.mp4
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 the.incredible.burt.wonderstone.2013.720p.bluray.x264-sparks.mkv
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 europa.report.2013.720p.web-dl.h264-publichd.mkv
-2013/10/13 17:52:31 -------------------------
-2013/10/13 17:52:31 gi.joe.retaliation.2013.extended.1080p.bluray.vedett.mkv
-2013/10/13 17:52:32 -------------------------
-2013/10/13 17:52:32 olympus.has.fallen.2013.720p.bluray.dts.x264-publichd.mkv
-2013/10/13 17:52:32 -------------------------
-2013/10/13 17:52:32 The.Call.2012.720p.BluRay.x264-SPARKS.mkv
-2013/10/13 17:52:32 -------------------------
-2013/10/13 17:52:32 oblivion.2013.1080p.bluray.x264-sparks.mkv
-2013/10/13 17:52:32 -------------------------
-2013/10/13 17:52:32 Iron.Man.3.2013.720p.HDTV.AC3.x264-TeRRa.mkv
-2013/10/13 17:52:33 -------------------------
-2013/10/13 17:52:33 Iron Man 2 2010 1080p BDRip AAC x264-tomcat12.mp4
-2013/10/13 17:52:33 -------------------------
-2013/10/13 17:52:33 Iron Man 2008 1080p BDRip AAC x264-tomcat12.mp4
-2013/10/13 17:52:33 -------------------------
-2013/10/13 17:52:33 IRON_MAN3_1080p_BLUEBIRD.mkv
-2013/10/13 17:52:33 -------------------------
-2013/10/13 17:52:33 star.trek.into.darkness.2013.1080p.web-dl.h264-publichd.mkv
-2013/10/13 17:52:34 -------------------------
-2013/10/13 17:52:34 The.Iceman.2012.720p.BluRay.x264-ALLiANCE.mkv
-2013/10/13 17:52:34 -------------------------
-2013/10/13 17:52:34 epic.2013.1080p.bluray.dts.x264-publichd.mkv
-2013/10/13 17:52:34 -------------------------
-2013/10/13 17:52:34 the.great.gatsby.2013.1080p.bluray.dts.x264-publichd.mkv
-2013/10/13 17:52:34 atoi failed strconv.ParseInt: parsing "ts": invalid syntax
-2013/10/13 17:52:34 -------------------------
-2013/10/13 17:52:34 Jack.Reacher.2012.720p.BluRay.X264-AMIABLE.mkv
-2013/10/13 17:52:34 -------------------------
-2013/10/13 17:52:34 Furious.6.2013.1080p.BluRay.x264.YIFY.mp4
-2013/10/13 17:52:35 -------------------------
-2013/10/13 17:52:35 World.War.Z.2013.Unrated.Cut.720p.BluRay.x264.DTS-WiKi.mkv
-2013/10/13 17:52:35 -------------------------
-2013/10/13 17:52:35 Charlie.Wilsons.War.2007.720p.BluRay.DD5.1.x264-EbP.mkv
-2013/10/13 17:52:35 -------------------------
-2013/10/13 17:52:35 This.is.the.End.2013.1080p.BluRay.x264-SPARKS.mkv
-2013/10/13 17:52:35 -------------------------
-2013/10/13 17:52:35 After.Earth.2013.1080p.BluRay.DTS.x264-PublicHD.mkv
-2013/10/13 17:52:35 -------------------------
-2013/10/13 17:52:35 The.Hangover.Part.III.2013.720p.BluRay.DTS.x264-PublicHD.mkv
-2013/10/13 17:52:36 -------------------------
-2013/10/13 17:52:36 Pacific.Rim.2013.720p.WEB-DL.H264-PublicHD.mkv
-2013/10/13 17:52:36 -------------------------
-2013/10/13 17:52:36 The.Heat.2013.UNRATED.720p.BluRay.DTS.x264-PublicHD.mkv
-2013/10/13 17:52:36 -------------------------
-2013/10/13 17:52:36 Samsara.DTS.1080p.mkv
-2013/10/13 17:52:36 -------------------------
-2013/10/13 17:52:36 safe.house.2012.720p.mkv
-2013/10/13 17:52:37 -------------------------
-2013/10/13 17:52:37 red.2010.720p.mkv
-2013/10/13 17:52:37 -------------------------
-2013/10/13 17:52:37 pulp.fiction.1994.720p.mkv
-2013/10/13 17:52:37 -------------------------
-2013/10/13 17:52:37 Star.Wars.Episode.2.Attack.of.the.Clones.2002.720p.BluRay.nHD.x264-NhaNc3.mkv
-2013/10/13 17:52:37 atoi failed strconv.ParseInt: parsing "iso": invalid syntax
-2013/10/13 17:52:37 -------------------------
-2013/10/13 17:52:37 primer.2004.720p.web-dl.mkv
-2013/10/13 17:52:37 -------------------------
-2013/10/13 17:52:37 Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4
-2013/10/13 17:52:38 -------------------------
-2013/10/13 17:52:38 Indiana Jones 2 Temple Of Doom 1984.mp4
-2013/10/13 17:52:38 -------------------------
-2013/10/13 17:52:38 Indiana Jones 3 Last Crusade 1989.mp4
-2013/10/13 17:52:38 -------------------------
-2013/10/13 17:52:38 Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4
+2013/10/14 00:46:36 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 00:46:36 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 00:46:36 SKIP .DS_Store
+2013/10/14 00:46:36 PARSE failed
+2013/10/14 00:46:36 atoi failed A Beautiful Mind.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed A Single Man.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed Adaptation.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed American Beauty.avi strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: American Beauty.avi "American Beauty" "American Beau"
+2013/10/14 00:46:36 atoi failed American Psycho.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed American.Gangster.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: American.Gangster.720p.mkv "American Gangster" "American Gangster 720p"
+2013/10/14 00:46:36 atoi failed Avatar.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed bad.teacher.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: bad.teacher.720p.mkv "bad teacher" "bad teacher 720p"
+2013/10/14 00:46:36 atoi failed Black Swan.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Black Swan.720p.avi "Black Swan" "Black Swan 720p"
+2013/10/14 00:46:36 atoi failed Blade Runner.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Blade Runner.dvdrip.avi "Blade Runner" "Blade Runner dvdrip"
+2013/10/14 00:46:36 atoi failed brazil.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: brazil.dvdrip.avi "brazil" "brazil dvdrip"
+2013/10/14 00:46:36 atoi failed Brick.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Brick.dvdrip.avi "Brick" "Brick dvdrip"
+2013/10/14 00:46:36 atoi failed Brokeback Mountain.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed captain.america.the.first.avenger.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: captain.america.the.first.avenger.720p.mkv "captain america the first avenger" "captain america the first avenger 720p"
+2013/10/14 00:46:36 atoi failed Children of Men.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Death at a Funeral.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Deja.Vu.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Deja.Vu.720p.mkv "Deja Vu" "Deja Vu 720p"
+2013/10/14 00:46:36 atoi failed District 9.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed Donnie Darko.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Due Date.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed Eternal Sunshine of the Spotless Mind.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed Exit Through the Gift Shop.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 WRONG YEAR: Fair Game.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG YEAR: ferris.buellers.day.off.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed fight.club.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed harry.potter.7.part.1.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: harry.potter.7.part.1.720p.mkv "harry potter 7 part 1" "harry potter 7 part 1 720p"
+2013/10/14 00:46:36 atoi failed hereafter.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: hereafter.720p.mkv "hereafter" "hereafter 720p"
+2013/10/14 00:46:36 atoi failed horrible.bosses.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: horrible.bosses.720p.mkv "horrible bosses" "horrible bosses 720p"
+2013/10/14 00:46:36 WRONG YEAR: inception.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed inside.job.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed insidious.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: insidious.720p.avi "insidious" "insidious 720p"
+2013/10/14 00:46:36 atoi failed jackass.3.5.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed jackass.3.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed Legion.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Little Fockers.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Little Fockers.720p.mkv "Little Fockers" "Little Fockers 720p"
+2013/10/14 00:46:36 atoi failed Lost in Space.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG YEAR: lotr.1.the.fellowship.of.the.ring.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG TITLE: lotr.2.the.two.towers.1080p.mkv "lord of the rings 2 two towers" "lord of the rings 2 the two towers"
+2013/10/14 00:46:36 WRONG YEAR: lotr.3.the.return.of.the.king.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed Milk.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Minority Report.mp4 strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Minority Report.mp4 "Minority Report" "Minori"
+2013/10/14 00:46:36 atoi failed Mysterious Skin.dvd.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Mysterious Skin.dvd.avi "Mysterious Skin" "Mysterious Skin dvd"
+2013/10/14 00:46:36 atoi failed Next 3 Days.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Next 3 Days.mkv "Next 3 Days " "Next 3 Days"
+2013/10/14 00:46:36 atoi failed Pandorum.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed prayers.for.bobby.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Religulous.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Religulous.avi "religulous" "Religulous"
+2013/10/14 00:46:36 atoi failed rise.of.the.planet.of.the.apes.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: rise.of.the.planet.of.the.apes.720p.mkv "rise of the planet of the apes" "rise of the planet of the apes 720p"
+2013/10/14 00:46:36 atoi failed Scott Pilgrim Vs The World.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Scott Pilgrim Vs The World.720p.mkv "Scott Pilgrim Vs The World" "Scott Pilgrim Vs The World 720p"
+2013/10/14 00:46:36 atoi failed serenity.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: serenity.720p.mkv "serenity" "sereni"
+2013/10/14 00:46:36 atoi failed Solaris.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed Surrogates.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed The Ghost Writer.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed The Green Hornet.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Green Hornet.720p.mkv "The Green Hornet" "The Green Hornet 720p"
+2013/10/14 00:46:36 WRONG YEAR: The Kings Speech.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed The Matrix Reloaded.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Matrix Reloaded.720p.mkv "The Matrix Reloaded" "The Matrix Reloaded 720p"
+2013/10/14 00:46:36 atoi failed The Matrix Revolutions.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Matrix Revolutions.720p.mkv "The Matrix Revolutions" "The Matrix Revolutions 720p"
+2013/10/14 00:46:36 atoi failed The Matrix.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Matrix.720p.mkv "The Matrix" "The Matrix 720p"
+2013/10/14 00:46:36 atoi failed The Mechanic.720p.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Mechanic.720p.avi "The Mechanic" "The Mechanic 720p"
+2013/10/14 00:46:36 atoi failed The Orphanage.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed The Other Guys.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Other Guys.720p.mkv "The Other Guys" "The Other Guys 720p"
+2013/10/14 00:46:36 atoi failed The Rules Of Attraction.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed The Yes Men Fix the World.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed the.departed.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed the.island.dvdrip.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.island.dvdrip.avi "the island" "the island dvdrip"
+2013/10/14 00:46:36 atoi failed the.number.23.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.number.23.720p.mkv "the number 23" "the number 23 720p"
+2013/10/14 00:46:36 atoi failed the.silence.of.the.lambs.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.silence.of.the.lambs.720p.mkv "the silence of the lambs" "the silence of the lambs 720p"
+2013/10/14 00:46:36 atoi failed the.social.network.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.social.network.720p.mkv "the social network" "the social network 720p"
+2013/10/14 00:46:36 atoi failed the.truman.show.720p.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.truman.show.720p.mp4 "the truman show" "the truman show 720p"
+2013/10/14 00:46:36 WRONG YEAR: Tron Legacy.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed True Grit.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: True Grit.720p.mkv "True Grit" "True Grit 720p"
+2013/10/14 00:46:36 atoi failed Unknown.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Unknown.720p.mkv "Unknown" "Unknown 720p"
+2013/10/14 00:46:36 atoi failed Unstoppable.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Unstoppable.720p.mkv "Unstoppable" "Unstoppable 720p"
+2013/10/14 00:46:36 WRONG YEAR: Up.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed 30.minutes.or.less.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: 30.minutes.or.less.720p.mkv "30 minutes or less" "30 minutes or less 720p"
+2013/10/14 00:46:36 atoi failed 50.50.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: 50.50.720p.mkv "50 50" "50 50 720p"
+2013/10/14 00:46:36 atoi failed apollo.18.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: apollo.18.720p.mkv "apollo 18" "apollo 18 720p"
+2013/10/14 00:46:36 WRONG YEAR: borat.1080p.2006.mkv "%!s(int=2006)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed chronicle.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: chronicle.720p.mkv "chronicle" "chronicle 720p"
+2013/10/14 00:46:36 atoi failed collateral.720p.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: collateral.720p.mp4 "collateral" "collateral 720p"
+2013/10/14 00:46:36 WRONG YEAR: contact.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG YEAR: cowboys.and.aliens.2011.720p.mkv "%!s(int=2008)" "%!s(int=2011)"
+2013/10/14 00:46:36 atoi failed equilibrium.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: equilibrium.720p.mkv "equilibrium" "equilibrium 720p"
+2013/10/14 00:46:36 atoi failed get.him.to.the.greek.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: get.him.to.the.greek.720p.mkv "get him to the greek" "get him to the greek 720p"
+2013/10/14 00:46:36 atoi failed harold.kumar.christmas.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed harry.potter.7.part.2.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed Inglorious Basterds.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed j.edgar.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: j.edgar.720p.mkv "j edgar" "j edgar 720p"
+2013/10/14 00:46:36 atoi failed killer.elite.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: killer.elite.720p.mkv "killer elite" "killer elite 720p"
+2013/10/14 00:46:36 atoi failed Lockout.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Lockout.720p.mkv "Lockout" "Lockout 720p"
+2013/10/14 00:46:36 atoi failed outbreak.avi strconv.ParseInt: parsing "avi": invalid syntax
+2013/10/14 00:46:36 atoi failed perfect.sense.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: perfect.sense.720p.mkv "perfect sense" "perfect sense 720p"
+2013/10/14 00:46:36 atoi failed terminator.salvation.2009.1080p.mkv strconv.ParseInt: parsing "rm": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: terminator.salvation.2009.1080p.mkv "terminator salvation" "te"
+2013/10/14 00:46:36 atoi failed the.bourne.supremacy.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed the.bourne.ultimatum.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed the.debt.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.debt.720p.mkv "the debt" "the debt 720p"
+2013/10/14 00:46:36 atoi failed the.fifth.element.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 atoi failed the.help.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.help.720p.mkv "the help" "the help 720p"
+2013/10/14 00:46:36 atoi failed the.inbetweeners.movie.avi strconv.ParseInt: parsing "mov": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.inbetweeners.movie.avi "the inbetweeners movie" "the inbetweeners"
+2013/10/14 00:46:36 atoi failed the.prestige.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 atoi failed the.rock.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.rock.720p.mkv "the rock" "the rock 720p"
+2013/10/14 00:46:36 WRONG TITLE: the.sitter.unrated.2011.1080p.mp4 "the sitter" "the sitter unrated"
+2013/10/14 00:46:36 atoi failed tinker.tailor.soldier.spy.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG YEAR: xmen.origins.wolverine.1080p.mp4 "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG YEAR: walk.the.line.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG YEAR: the.avengers.1080p.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 atoi failed the.bourne.identity.2002.mp4 strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.bourne.identity.2002.mp4 "the bourne identity" "the bourne identi"
+2013/10/14 00:46:36 atoi failed paranorman.2012.720p.mkv strconv.ParseInt: parsing "rm": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: paranorman.2012.720p.mkv "paranorman" "parano"
+2013/10/14 00:46:36 WRONG TITLE: The.Town.EXTENDED.2010.1080p.BrRip.x264.YIFY.mp4 "The Town" "The Town EXTENDED"
+2013/10/14 00:46:36 atoi failed The Town Extended Cut.mp4 strconv.ParseInt: parsing "mp4": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: The Town Extended Cut.mp4 "The Town" "The Town Extended Cut"
+2013/10/14 00:46:36 WRONG YEAR: the.big.lebowski.1080p.2.mkv "%!s(int=-1)" "%!s(int=1080)"
+2013/10/14 00:46:36 WRONG TITLE: step.brothers.unrated.2008.mkv "step brotheres" "step brothers unrated"
+2013/10/14 00:46:36 WRONG TITLE: role.models.unrated.2008.720p.mkv "role models" "role models unrated"
+2013/10/14 00:46:36 atoi failed silver.linings.playbook.dvdscr.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: silver.linings.playbook.dvdscr.mkv "silver linings playbook" "silver linings playbook dvdscr"
+2013/10/14 00:46:36 atoi failed sin.city.2005.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: sin.city.2005.720p.mkv "sin city" "sin ci"
+2013/10/14 00:46:36 atoi failed its.complicated.720p.mkv strconv.ParseInt: parsing "ts": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: its.complicated.720p.mkv "its complicated" "i"
+2013/10/14 00:46:36 atoi failed zero.dark.thirty.2012.720p.mkv strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: zero.dark.thirty.2012.720p.mkv "zero dark thirty" "zero dark thir"
+2013/10/14 00:46:36 atoi failed Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Somebody.Up.There.Likes.Me.720p.WEB-DL.AAC2.0.H.264.mkv "Somebody Up There Likes Me" "Somebody Up There Likes Me 720p WEB-DL AAC2 0 H 264"
+2013/10/14 00:46:36 atoi failed shutter.island.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: shutter.island.720p.mkv "shutter island" "shutter island 720p"
+2013/10/14 00:46:36 SKIP sommersturm.2004.dvd
+2013/10/14 00:46:36 SKIP star.trek.1080p.collection
+2013/10/14 00:46:36 SKIP james.bond.720p.collection
+2013/10/14 00:46:36 SKIP zenith.movie
+2013/10/14 00:46:36 atoi failed 127.hours.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: 127.hours.720p.mkv "127 hours" "127 hours 720p"
+2013/10/14 00:46:36 atoi failed 21.jump.street.720p.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: 21.jump.street.720p.mkv "21 jump street" "21 jump street 720p"
+2013/10/14 00:46:36 atoi failed identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: identity.thief.2013.unrated.720p.web-dl.h264-nogrp.mkv "identity thief" "identi"
+2013/10/14 00:46:36 atoi failed identity.thief.2013.1080p.bluray.x264-sparks.mkv strconv.ParseInt: parsing "ty": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: identity.thief.2013.1080p.bluray.x264-sparks.mkv "identity thief" "identi"
+2013/10/14 00:46:36 atoi failed Oz.The.Great.And.Powerful.720p.sparks.mkv strconv.ParseInt: parsing "mkv": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: Oz.The.Great.And.Powerful.720p.sparks.mkv "Oz The Great And Powerful" "Oz The Great And Powerful 720p sparks"
+2013/10/14 00:46:36 SKIP cams
+2013/10/14 00:46:36 atoi failed the.great.gatsby.2013.1080p.bluray.dts.x264-publichd.mkv strconv.ParseInt: parsing "ts": invalid syntax
+2013/10/14 00:46:36 WRONG TITLE: the.great.gatsby.2013.1080p.bluray.dts.x264-publichd.mkv "the great gatsby" "the great ga"
+2013/10/14 00:46:36 WRONG TITLE: Samsara.DTS.1080p.mkv "Samsara" "Samsara DTS"
 PASS
-ok  	camlistore.org/pkg/media/tmdb	35.171s
+ok  	camlistore.org/pkg/media/tmdb	0.494s

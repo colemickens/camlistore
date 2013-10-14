@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -116,8 +115,6 @@ func (t *TmdbApi) LookupMovies(title string, year int) []Movie {
 
 func (t *TmdbApi) DownloadImage(suffix string) (imageBytes []byte, err error) {
 	_url := t.url(t.Config.Images.BaseUrl + imageSize + suffix)
-
-	log.Println("download", _url)
 
 	req, err := http.NewRequest("GET", _url, nil)
 	if err != nil {
