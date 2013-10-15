@@ -12,21 +12,10 @@ func getTmdbApi(t *testing.T) *TmdbApi {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Println(tmdbApi.Config)
 	return tmdbApi
 }
 
-func TestTmdbConfig(t *testing.T) {
-	getTmdbApi(t)
-}
-
-func TestTmdbSearchMovies(t *testing.T) {
-
-	// extract checkStr() checkInt() into a helper pkg, tired of redoing them repeatedly
-}
-
 func TestLookupMovies(t *testing.T) {
-
 	tmdbApi := getTmdbApi(t)
 
 	totalCount := 0

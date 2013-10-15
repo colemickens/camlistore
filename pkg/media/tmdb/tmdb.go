@@ -42,9 +42,6 @@ func NewTmdbApi(apiKey string, client *http.Client) (*TmdbApi, error) {
 }
 
 func (tmdbApi *TmdbApi) get(response interface{}, __url string, params url.Values) error {
-	// add api key to the params
-	// decode into response
-	// TODO: seems like there's a better way to construct this url
 	params.Set("api_key", tmdbApi.ApiKey)
 	_url, err := url.Parse(__url + "?" + params.Encode())
 	if err != nil {
@@ -61,9 +58,6 @@ func (tmdbApi *TmdbApi) get(response interface{}, __url string, params url.Value
 	if err != nil {
 		return err
 	}
-
-	//rdr := io.TeeReader(resp.Body, os.Stdout)
-	//jsonDec := json.NewDecoder(rdr)
 
 	jsonDec := json.NewDecoder(resp.Body)
 	err = jsonDec.Decode(response)
@@ -86,29 +80,24 @@ func (t *TmdbApi) LookupMovies(title string, year int) []Movie {
 
 	var results []Movie
 
-	//maxPages := 2
+	maxPages := 1
 	more := true
-	//for more {
+	for more {
 
-	movieResPage := tmdbMovieResultPage{}
-	err := t.get(&movieResPage, _url, values)
-	if err != nil {
-		panic(err) // TODO: handle this
-	}
-	for _, res := range movieResPage.Results {
-		results = append(results, Movie(res))
-	}
+		movieResPage := tmdbMovieResultPage{}
+		err := t.get(&movieResPage, _url, values)
+		if err != nil {
+			panic(err) // TODO: handle this
+		}
+		for _, res := range movieResPage.Results {
+			results = append(results, Movie(res))
+		}
 
-	if movieResPage.Page >= movieResPage.Total_pages {
-		more = false
-		_ = more
+		maxPages--
+		if movieResPage.Page >= movieResPage.Total_pages || maxPages <= 0 {
+			more = false
+		}
 	}
-	//}
-	// TODO: re enable this, have a max pages somewhere
-	// too lazy to fix now
-
-	// check the page result size, if greater than current page
-	// then get then next page
 
 	return results
 }
