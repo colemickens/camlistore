@@ -1,216 +1,212 @@
-warning: building out-of-date packages:
-	camlistore.org/pkg/media/util
-installing these packages with 'go test -i' will speed future tests.
+2013/10/14 17:37:20 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 17:37:20 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
+2013/10/14 17:37:20 PARSE WRONG : tropic.thunder.2008.dircut.720p.mkv
+2013/10/14 17:37:20    expected : tropic thunder
+2013/10/14 17:37:20      parsed : tropic thunder 2008 dircut
+2013/10/14 17:37:20    expected : 2008
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:33 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/14 17:31:34 {{[w300 w780 w1280 original] http://d3gtl9l2a4fn1j.cloudfront.net/t/p/ [w92 w154 w185 w342 w500 original] [w45 w185 h632 original]}}
-2013/10/14 17:31:34 PARSE WRONG : batman.the.dark.knight.rises.2012.mkv
-2013/10/14 17:31:34    expected : batman the dark knight rises
-2013/10/14 17:31:34      actual : batman the dark knight rises 2012
-2013/10/14 17:31:34    expected : 2012
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : World.War.Z.2013.Unrated.Cut.720p.BluRay.x264.DTS-WiKi.mkv
+2013/10/14 17:37:20    expected : world war z
+2013/10/14 17:37:20      parsed : world war z 2013 unrated cut
+2013/10/14 17:37:20    expected : 2013
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : eagle.eye.2008.mp4
-2013/10/14 17:31:34    expected : eagle eye
-2013/10/14 17:31:34      actual : eagle eye 2008
-2013/10/14 17:31:34    expected : 2008
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : In.Bruges.2008.MULTi.720p.BluRay.DTS.x264-SYNERGY.mkv
+2013/10/14 17:37:20    expected : in bruges
+2013/10/14 17:37:20      parsed : in bruges 2008 multi
+2013/10/14 17:37:20    expected : 2008
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : step.brothers.unrated.2008.mkv
-2013/10/14 17:31:34    expected : step brothers unrated
-2013/10/14 17:31:34      actual : step brothers unrated 2008
-2013/10/14 17:31:34    expected : 2008
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Indiana Jones 2 Temple Of Doom 1984.mp4
+2013/10/14 17:37:20    expected : indiana jones 2 temple of doom
+2013/10/14 17:37:20      parsed : indiana jones 2 temple of doom 1984
+2013/10/14 17:37:20    expected : 1984
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : bernie.2011.limited.720p.mkv
-2013/10/14 17:31:34    expected : bernie
-2013/10/14 17:31:34      actual : bernie 2011 limited
-2013/10/14 17:31:34    expected : 2011
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Upstream.Color.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv
+2013/10/14 17:37:20    expected : upstream color
+2013/10/14 17:37:20      parsed : upstream color 2013 limited
+2013/10/14 17:37:20    expected : 2013
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : the.bourne.identity.2002.mp4
-2013/10/14 17:31:34    expected : the bourne identity
-2013/10/14 17:31:34      actual : the bourne identity 2002
-2013/10/14 17:31:34    expected : 2002
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : the.bourne.identity.2002.mp4
+2013/10/14 17:37:20    expected : the bourne identity
+2013/10/14 17:37:20      parsed : the bourne identity 2002
+2013/10/14 17:37:20    expected : 2002
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Samsara.DTS.1080p.mkv
-2013/10/14 17:31:34    expected : samsara
-2013/10/14 17:31:34      actual : samsara dts
-2013/10/14 17:31:34    expected : -1
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : clerks.1994.the.first.cut.1080p.mkv
+2013/10/14 17:37:20    expected : clerks
+2013/10/14 17:37:20      parsed : clerks 1994 the first cut
+2013/10/14 17:37:20    expected : 1994
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Gattaca.1997.mp4
-2013/10/14 17:31:34    expected : gattaca
-2013/10/14 17:31:34      actual : gattaca 1997
-2013/10/14 17:31:34    expected : 1997
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : eagle.eye.2008.mp4
+2013/10/14 17:37:20    expected : eagle eye
+2013/10/14 17:37:20      parsed : eagle eye 2008
+2013/10/14 17:37:20    expected : 2008
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : project.x.2012.extended.720p.mkv
-2013/10/14 17:31:34    expected : project x
-2013/10/14 17:31:34      actual : project x 2012 extended
-2013/10/14 17:31:34    expected : 2012
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : total.recall.2012.extended.1080p.mkv
+2013/10/14 17:37:20    expected : total recall
+2013/10/14 17:37:20      parsed : total recall 2012 extended
+2013/10/14 17:37:20    expected : 2012
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : gi.joe.retaliation.2013.extended.1080p.bluray.vedett.mkv
-2013/10/14 17:31:34    expected : gi joe retaliation
-2013/10/14 17:31:34      actual : gi joe retaliation 2013 extended
-2013/10/14 17:31:34    expected : 2013
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : christopher.and.his.kind.2011.avi
+2013/10/14 17:37:20    expected : christopher and his kind
+2013/10/14 17:37:20      parsed : christopher and his kind 2011
+2013/10/14 17:37:20    expected : 2011
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : mission.impossible.2.2000.mp4
-2013/10/14 17:31:34    expected : mission impossible 2
-2013/10/14 17:31:34      actual : mission impossible 2 2000
-2013/10/14 17:31:34    expected : 2000
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : source.code.2011.avi
+2013/10/14 17:37:20    expected : source code
+2013/10/14 17:37:20      parsed : source code 2011
+2013/10/14 17:37:20    expected : 2011
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : this.means.war.2012.unrated.720p.mkv
-2013/10/14 17:31:34    expected : this means war
-2013/10/14 17:31:34      actual : this means war 2012 unrated
-2013/10/14 17:31:34    expected : 2012
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : project.x.2012.extended.720p.mkv
+2013/10/14 17:37:20    expected : project x
+2013/10/14 17:37:20      parsed : project x 2012 extended
+2013/10/14 17:37:20    expected : 2012
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : World.War.Z.2013.Unrated.Cut.720p.BluRay.x264.DTS-WiKi.mkv
-2013/10/14 17:31:34    expected : world war z
-2013/10/14 17:31:34      actual : world war z 2013 unrated cut
-2013/10/14 17:31:34    expected : 2013
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : The Hangover.2009.mp4
+2013/10/14 17:37:20    expected : the hangover
+2013/10/14 17:37:20      parsed : the hangover 2009
+2013/10/14 17:37:20    expected : 2009
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Upstream.Color.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv
-2013/10/14 17:31:34    expected : upstream color
-2013/10/14 17:31:34      actual : upstream color 2013 limited
-2013/10/14 17:31:34    expected : 2013
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : The.Heat.2013.UNRATED.720p.BluRay.DTS.x264-PublicHD.mkv
+2013/10/14 17:37:20    expected : the heat
+2013/10/14 17:37:20      parsed : the heat 2013 unrated
+2013/10/14 17:37:20    expected : 2013
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : hansel.and.gretel.2013.mkv
-2013/10/14 17:31:34    expected : hansel and gretel
-2013/10/14 17:31:34      actual : hansel and gretel 2013
-2013/10/14 17:31:34    expected : 2013
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : batman.the.dark.knight.rises.2012.mkv
+2013/10/14 17:37:20    expected : batman the dark knight rises
+2013/10/14 17:37:20      parsed : batman the dark knight rises 2012
+2013/10/14 17:37:20    expected : 2012
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : The.Heat.2013.UNRATED.720p.BluRay.DTS.x264-PublicHD.mkv
-2013/10/14 17:31:34    expected : the heat
-2013/10/14 17:31:34      actual : the heat 2013 unrated
-2013/10/14 17:31:34    expected : 2013
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : clerks.ii.2006.UNKNOWN.mkv
+2013/10/14 17:37:20    expected : clerks ii
+2013/10/14 17:37:20      parsed : clerks ii 2006 unknown
+2013/10/14 17:37:20    expected : 2006
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : clerks.ii.2006.UNKNOWN.mkv
-2013/10/14 17:31:34    expected : clerks ii
-2013/10/14 17:31:34      actual : clerks ii 2006 unknown
-2013/10/14 17:31:34    expected : 2006
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Gattaca.1997.mp4
+2013/10/14 17:37:20    expected : gattaca
+2013/10/14 17:37:20      parsed : gattaca 1997
+2013/10/14 17:37:20    expected : 1997
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : clerks.1994.the.first.cut.1080p.mkv
-2013/10/14 17:31:34    expected : clerks
-2013/10/14 17:31:34      actual : clerks 1994 the first cut
-2013/10/14 17:31:34    expected : 1994
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : this.means.war.2012.unrated.720p.mkv
+2013/10/14 17:37:20    expected : this means war
+2013/10/14 17:37:20      parsed : this means war 2012 unrated
+2013/10/14 17:37:20    expected : 2012
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : mission.impossible.1.1996.mp4
-2013/10/14 17:31:34    expected : mission impossible 1
-2013/10/14 17:31:34      actual : mission impossible 1 1996
-2013/10/14 17:31:34    expected : 1996
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : gi.joe.retaliation.2013.extended.1080p.bluray.vedett.mkv
+2013/10/14 17:37:20    expected : gi joe retaliation
+2013/10/14 17:37:20      parsed : gi joe retaliation 2013 extended
+2013/10/14 17:37:20    expected : 2013
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : the.campaign.2012.extended.720p.mkv
-2013/10/14 17:31:34    expected : the campaign
-2013/10/14 17:31:34      actual : the campaign 2012 extended
-2013/10/14 17:31:34    expected : 2012
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : step.brothers.unrated.2008.mkv
+2013/10/14 17:37:20    expected : step brothers unrated
+2013/10/14 17:37:20      parsed : step brothers unrated 2008
+2013/10/14 17:37:20    expected : 2008
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Shortbus.2006.LIMITED.720p.BluRay.X264-AMIABLE.mkv
-2013/10/14 17:31:34    expected : shortbus
-2013/10/14 17:31:34      actual : shortbus 2006 limited
-2013/10/14 17:31:34    expected : 2006
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Shortbus.2006.LIMITED.720p.BluRay.X264-AMIABLE.mkv
+2013/10/14 17:37:20    expected : shortbus
+2013/10/14 17:37:20      parsed : shortbus 2006 limited
+2013/10/14 17:37:20    expected : 2006
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4
-2013/10/14 17:31:34    expected : indiana jones 4 kingdom of the crystal skull
-2013/10/14 17:31:34      actual : indiana jones 4 kingdom of the crystal skull 2008
-2013/10/14 17:31:34    expected : 2008
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Indiana Jones 3 Last Crusade 1989.mp4
+2013/10/14 17:37:20    expected : indiana jones 3 last crusade
+2013/10/14 17:37:20      parsed : indiana jones 3 last crusade 1989
+2013/10/14 17:37:20    expected : 1989
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Indiana Jones 3 Last Crusade 1989.mp4
-2013/10/14 17:31:34    expected : indiana jones 3 last crusade
-2013/10/14 17:31:34      actual : indiana jones 3 last crusade 1989
-2013/10/14 17:31:34    expected : 1989
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : animal.house.1978.720.mkv
+2013/10/14 17:37:20    expected : animal house
+2013/10/14 17:37:20      parsed : animal house 1978 720
+2013/10/14 17:37:20    expected : 1978
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : The Hangover.2009.mp4
-2013/10/14 17:31:34    expected : the hangover
-2013/10/14 17:31:34      actual : the hangover 2009
-2013/10/14 17:31:34    expected : 2009
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : the.campaign.2012.extended.720p.mkv
+2013/10/14 17:37:20    expected : the campaign
+2013/10/14 17:37:20      parsed : the campaign 2012 extended
+2013/10/14 17:37:20    expected : 2012
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : mission.impossible.3.2006.mp4
-2013/10/14 17:31:34    expected : mission impossible 3
-2013/10/14 17:31:34      actual : mission impossible 3 2006
-2013/10/14 17:31:34    expected : 2006
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : mission.impossible.1.1996.mp4
+2013/10/14 17:37:20    expected : mission impossible 1
+2013/10/14 17:37:20      parsed : mission impossible 1 1996
+2013/10/14 17:37:20    expected : 1996
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : the.saint.1997.avi
-2013/10/14 17:31:34    expected : the saint
-2013/10/14 17:31:34      actual : the saint 1997
-2013/10/14 17:31:34    expected : 1997
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4
+2013/10/14 17:37:20    expected : indiana jones 1 raiders of the lost ark
+2013/10/14 17:37:20      parsed : indiana jones 1 raiders of the lost ark 1981
+2013/10/14 17:37:20    expected : 1981
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4
-2013/10/14 17:31:34    expected : indiana jones 1 raiders of the lost ark
-2013/10/14 17:31:34      actual : indiana jones 1 raiders of the lost ark 1981
-2013/10/14 17:31:34    expected : 1981
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Samsara.DTS.1080p.mkv
+2013/10/14 17:37:20    expected : samsara
+2013/10/14 17:37:20      parsed : samsara dts
+2013/10/14 17:37:20    expected : -1
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : animal.house.1978.720.mkv
-2013/10/14 17:31:34    expected : animal house
-2013/10/14 17:31:34      actual : animal house 1978 720
-2013/10/14 17:31:34    expected : 1978
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : mission.impossible.2.2000.mp4
+2013/10/14 17:37:20    expected : mission impossible 2
+2013/10/14 17:37:20      parsed : mission impossible 2 2000
+2013/10/14 17:37:20    expected : 2000
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : tropic.thunder.2008.dircut.720p.mkv
-2013/10/14 17:31:34    expected : tropic thunder
-2013/10/14 17:31:34      actual : tropic thunder 2008 dircut
-2013/10/14 17:31:34    expected : 2008
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : hansel.and.gretel.2013.mkv
+2013/10/14 17:37:20    expected : hansel and gretel
+2013/10/14 17:37:20      parsed : hansel and gretel 2013
+2013/10/14 17:37:20    expected : 2013
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : christopher.and.his.kind.2011.avi
-2013/10/14 17:31:34    expected : christopher and his kind
-2013/10/14 17:31:34      actual : christopher and his kind 2011
-2013/10/14 17:31:34    expected : 2011
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4
+2013/10/14 17:37:20    expected : indiana jones 4 kingdom of the crystal skull
+2013/10/14 17:37:20      parsed : indiana jones 4 kingdom of the crystal skull 2008
+2013/10/14 17:37:20    expected : 2008
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : total.recall.2012.extended.1080p.mkv
-2013/10/14 17:31:34    expected : total recall
-2013/10/14 17:31:34      actual : total recall 2012 extended
-2013/10/14 17:31:34    expected : 2012
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : bernie.2011.limited.720p.mkv
+2013/10/14 17:37:20    expected : bernie
+2013/10/14 17:37:20      parsed : bernie 2011 limited
+2013/10/14 17:37:20    expected : 2011
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : star.trek.2009.mkv
-2013/10/14 17:31:34    expected : star trek
-2013/10/14 17:31:34      actual : star trek 2009
-2013/10/14 17:31:34    expected : 2009
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : mission.impossible.3.2006.mp4
+2013/10/14 17:37:20    expected : mission impossible 3
+2013/10/14 17:37:20      parsed : mission impossible 3 2006
+2013/10/14 17:37:20    expected : 2006
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : Indiana Jones 2 Temple Of Doom 1984.mp4
-2013/10/14 17:31:34    expected : indiana jones 2 temple of doom
-2013/10/14 17:31:34      actual : indiana jones 2 temple of doom 1984
-2013/10/14 17:31:34    expected : 1984
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : star.trek.2009.mkv
+2013/10/14 17:37:20    expected : star trek
+2013/10/14 17:37:20      parsed : star trek 2009
+2013/10/14 17:37:20    expected : 2009
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : In.Bruges.2008.MULTi.720p.BluRay.DTS.x264-SYNERGY.mkv
-2013/10/14 17:31:34    expected : in bruges
-2013/10/14 17:31:34      actual : in bruges 2008 multi
-2013/10/14 17:31:34    expected : 2008
-2013/10/14 17:31:34      actual : -1
+2013/10/14 17:37:20 PARSE WRONG : the.saint.1997.avi
+2013/10/14 17:37:20    expected : the saint
+2013/10/14 17:37:20      parsed : the saint 1997
+2013/10/14 17:37:20    expected : 1997
+2013/10/14 17:37:20      parsed : -1
 
-2013/10/14 17:31:34 PARSE WRONG : source.code.2011.avi
-2013/10/14 17:31:34    expected : source code
-2013/10/14 17:31:34      actual : source code 2011
-2013/10/14 17:31:34    expected : 2011
-2013/10/14 17:31:34      actual : -1
-
-2013/10/14 17:31:34 TOTAL(261) OK(227) FAIL(34) PERCENT(86.97%)
---- FAIL: TestLookupMovies (0.18 seconds)
-	tmdb_test.go:67: Non-zero failures, see above.
+2013/10/14 17:37:20 TOTAL(261) OK(227) FAIL(34) PERCENT(86.97%)
+--- FAIL: TestLookupMovies (0.28 seconds)
+	tmdb_test.go:65: Non-zero failures, see above.
 FAIL
 exit status 1
-FAIL	camlistore.org/pkg/media/tmdb	0.426s
+FAIL	camlistore.org/pkg/media/tmdb	0.556s

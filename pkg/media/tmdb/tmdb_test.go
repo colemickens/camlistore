@@ -5,8 +5,6 @@ package tmdb
 import (
 	"log"
 	"testing"
-
-	mediautil "camlistore.org/pkg/media/util"
 )
 
 func getTmdbApi(t *testing.T) *TmdbApi {
@@ -37,7 +35,7 @@ func TestLookupMovies(t *testing.T) {
 		totalCount++
 
 		search := filename[:len(filename)-4]
-		title, year := mediautil.ParseMovieFilename(search)
+		title, year := ParseMovieFilename(search)
 
 		if false {
 			movie := testLookupMovie(t, tmdbApi, title, year)
@@ -54,9 +52,9 @@ func TestLookupMovies(t *testing.T) {
 		if expectedRes.Title != title || expectedRes.Year != year {
 			log.Printf("PARSE WRONG : %s\n", filename)
 			log.Printf("   expected : %s\n", expectedRes.Title)
-			log.Printf("     actual : %s\n", title)
+			log.Printf("     parsed : %s\n", title)
 			log.Printf("   expected : %d\n", expectedRes.Year)
-			log.Printf("     actual : %d\n\n", year)
+			log.Printf("     parsed : %d\n\n", year)
 		} else {
 			okCount++
 		}
