@@ -9,6 +9,8 @@ goog.require('goog.dom');
 goog.require('goog.dom.classes');
 goog.require('goog.events.EventHandler');
 goog.require('goog.events.EventType');
+goog.require('goog.string');
+goog.require('goog.Uri');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.Textarea');
 goog.require('camlistore.BlobItemContainer');
@@ -65,6 +67,17 @@ camlistore.IndexPage = function(config, opt_domHelper) {
 goog.inherits(camlistore.IndexPage, goog.ui.Component);
 
 
+/**
+ * @enum {string}
+ * @private
+ */
+camlistore.IndexPage.SEARCH_PREFIX_ = {
+  TAG: 'tag',
+  TITLE: 'title',
+  BLOBREF: 'bre'
+};
+
+
 
 /**
  * Creates an initial DOM representation for the component.
@@ -111,6 +124,14 @@ camlistore.IndexPage.prototype.enterDocument = function() {
   );
 
   this.eh_.listen(
+      window, goog.events.EventType.POPSTATE, this.handleUrl_);
+
+  this.eh_.listen(
+      this.toolbar_, camlistore.Toolbar.EventType.SEARCH,
+      this.handleTextSearch_
+  );
+
+  this.eh_.listen(
       this.toolbar_, camlistore.Toolbar.EventType.BIGGER,
       function() {
         if (this.blobItemContainer_.bigger()) {
@@ -124,12 +145,6 @@ camlistore.IndexPage.prototype.enterDocument = function() {
         if (this.blobItemContainer_.smaller()) {
           this.blobItemContainer_.showRecent();
         }
-      });
-
-  this.eh_.listen(
-      this.toolbar_, camlistore.Toolbar.EventType.GOSEARCH,
-      function() {
-        window.location.href = "./search.html";
       });
 
   this.eh_.listen(
@@ -173,6 +188,11 @@ camlistore.IndexPage.prototype.enterDocument = function() {
         this.toolbar_.toggleAddToSetButton(false);
       });
 
+  this.eh_.listen(
+      this.toolbar_, camlistore.Toolbar.EventType.ROOTS,
+      this.blobItemContainer_.showRoots.bind(
+        this.blobItemContainer_, this.config_.signing));
+
   // TODO(mpl): those are getting large. make dedicated funcs.
   this.eh_.listen(
       this.blobItemContainer_,
@@ -215,7 +235,7 @@ camlistore.IndexPage.prototype.enterDocument = function() {
         }
       });
 
-  this.blobItemContainer_.showRecent();
+  this.handleUrl_();
 };
 
 
@@ -303,3 +323,61 @@ camlistore.IndexPage.prototype.handleServerStatus_ = function(resp) {
   }
 };
 
+/**
+ * @param {goog.events.Event} e The title form submit event.
+ * @private
+ */
+camlistore.IndexPage.prototype.handleTextSearch_ = function(e) {
+  var searchText = goog.string.trim(this.toolbar_.getSearchText());
+  var uri = new goog.Uri(location.href);
+  uri.setParameterValue('q', searchText);
+  if (history.pushState) {
+    history.pushState(null, '', uri.toString());
+    this.handleUrl_();
+  } else {
+    location.href = uri.toString();
+  }
+};
+
+
+/**
+ * Updates the UI based on the current URL.
+ * @private
+ */
+camlistore.IndexPage.prototype.handleUrl_ = function() {
+  var uri = new goog.Uri(location.href);
+  var searchText = uri.getParameterValue('q');
+  if (!searchText) {
+    this.blobItemContainer_.showRecent();
+    return;
+  }
+
+  var parts = searchText.split(':');
+  var attr = '';
+  var value = '';
+  var fuzzy = true;
+
+  if (parts.length > 1) {
+    switch (parts[0]) {
+      case this.constructor.SEARCH_PREFIX_.TAG:
+      case this.constructor.SEARCH_PREFIX_.TITLE:
+      case this.constructor.SEARCH_PREFIX_.BLOBREF:
+        attr = parts[0];
+        value = searchText.substr(attr.length + 1);
+        fuzzy = false;
+    }
+  }
+
+  if (attr == '') {
+    value = searchText;
+  }
+
+  if (attr == this.constructor.SEARCH_PREFIX_.BLOBREF) {
+    if (isPlausibleBlobRef(value)) {
+      this.blobItemContainer_.findByBlobref_(value);
+    }
+  } else {
+    this.blobItemContainer_.showWithAttr(this.config_.signing, attr, value,
+                                         fuzzy, this.maxInResponse_);
+  }
+};
