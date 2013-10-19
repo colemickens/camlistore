@@ -1,0 +1,5163 @@
+--- FAIL: TestParseTvshowFilename (0.06 seconds)
+	util_test.go:22: PARSE WRONG : it.crowd.s02e06-Men without Women.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 Dead is Dead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 12 - Seinimation - Van Wyck.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 209a - Death in Bloom {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 8 - Confidence Man.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Battlestar.Galactica.S04E19E20E21.Extended.720p.BluRay.DTS.x264-REPTiLE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 Special.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E08 - Therapy.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E13 - The Wedding.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 Tabula Rasa.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S04E01&02 - Fun Run [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Conan.2012.12.18.Chris.Pratt.720p.HDTV.x264-BAJSKORV.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 - The Nightman Cometh.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 19 The Brig.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 21 Greatest Hits.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.07.15.Aaron.Sorkin.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 18 - Dave.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Claire's Vision.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 04 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Rain Delays.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : stand.up.revolution.0202.720p-yestv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The World According to Sawyer.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 11 - The Elaine Story.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 - The Great Recession.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 08 - Larry Davids Farewell.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 20 - The Man Behind the Curtain.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Matthew Fox.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Weakness.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.13.Joshua.Oppenheimer.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (13) Whispers.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 23 Through the Looking Glass - Part 2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E04 - Business and Pleasure.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Stones & Boulders.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.07.30.720p.hdtv.x264-orenji.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 Raised by Another.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 112a - Rainy Day Daydream [fudog].avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 21 - Greatest Hits.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.03.11.snoop.lion.720p.hdtv.x264-bajskorv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Bloopers from the Set.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.15.Simon.Pegg.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Designing a Disaster.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : adventure.time.with.finn.and.jake.s05e01e02.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x06 - Quantocking.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E04 - Improving Your Life Through Improv.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Offshore Shoot.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.03.Andrew.Harper.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E04 - Bye Bye Greasy.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 The Lie.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 Maternity Leave.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.08.01.bryan.cranston.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office.US.S09E24E25.720p.HDTV.X264-DIMENSION.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Ana Lucia's Prisoner.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 - Bums; Making a Mess All Over the City.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : tvp-modernfamily-s02e02-720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 09 - Exclusive Standup.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 10 - Seinimation - Pinky Toe.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Next Level - Inside the Video Game.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 8 - Buried Secrets.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 The Man from Tallahassee.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x03 - Shrooming.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.06.20.Tom.Brokaw.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 30.Rock.S05E20E21.720p.HDTV.x264.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb203-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Charlie Carries On.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e03-Fifty-Fifty.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : archer.2009.pirates.e02.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 Solitary.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : For Vincent.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.09.24.richard.dawkins.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E01 - Politics.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Locke Escapes.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s03e15e16 - The Boyfriend.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 03.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (12) The Jack Situation.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 - The Gang Gets Racist.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep14.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (4) The Climb.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 This Place is Death.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 - Charlie Has Cancer.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 9 - The Shape of Things to Come.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 09 - Seinimation Thy Voice of Thee.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 - The Gang Solves the Gas Crisis.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : boston.legal.s03e1 - Angel of Death.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Where Did You Go.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 The Beginning of the End.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 Lighthouse.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 - Underage Drinking A National Concern.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E06 - Impressions.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 ??.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e01-From Hell.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : People Can Change.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 10 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Behind the Scenes of the Submarine Scene.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 11 - Regis & Kathie Lee Parody.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.venture.bros.s02.special.from.the.ladle.to.the.grave.the.shallow.gravy.story.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 - The Gang Gets Whacked (Part 1).avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.07.Lake.Bell.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e05-Friendface.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 1 - The Beginning of the End.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 Fire and Water.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E25E26.I.Remember.You_-_The.Lich.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.16.helen.mirren.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 The Economist.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 Eggtown.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Evangeline Lilly.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x02 - Sectioning.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 01 Extra 02 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 09 - Making a Seinfeld (Part 1 & 2).avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.04.Gary.England.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lost 100.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 The Life and Death of Jeremy Bentham.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Welcome to Oahu - The Making of the Pilot.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 - The Gang Wrestles for the Troops.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E15E16.Sons.of.Mars_-_Burning.Low.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.09.17.arne.duncan.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 12 - Whatever the Case May Be.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Stuck in a Tree.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.12.Sen.Sheldon.Whitehouse.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb201-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s09e23e24 - The Finale.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb213-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 Pilot Part 1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : mad.men.s06e01e02.proper.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.10.01.Daniel.Radcliffe.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 - America's Next Top Paddy;s Billboard Model Contest.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S04E05&06 - Launch Party [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E03E04.Web.Weirdos_-_Dream.of.Love.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Harold Perrineau.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.26.Robin.Williams.720p.WEBRip.AAC2.0.H.264-DCK.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E02 - Camp.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 Man of Science, Man of Faith.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : shark.tank.s03e143.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.18.Nicholson.Baker.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 16 17 The Incident.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episodes 16-17 - The Incident.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e01-Yesterday's Jam.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 17 In Translation.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 - Dennis And Dee Go on Welfare.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Naveen Andrews.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 Follow the Leader.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : A Hero's Journey.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 14 - The Candidate.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 14 - Special.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 6 - The Other Woman.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 Sundown.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 10 - He's Our You.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 02 LA X.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 The Last Recruit.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Mysteries of the Universe - The Dharma Initiative.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 04  -Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 19 Deus Ex Machina.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 04 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.05.John.Prine.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E10 - History.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Parks.and.Recreation.S06E01E02.720p.HDTV.X264-DIMENSION.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 207a - The Pods {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 - Charlie Goes America All Over Everybody's Ass.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 4 - Every Man For Himself.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Church Arrival.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 Namaste.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 05.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Emilie de Ravin.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E09 - Those Bitches Tried To Cheat Me.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Libby & Claire.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.10.03.David.Finkel.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 - Sweet Dee Has a Heart Attack.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.it.crowd.the.last.byte.proper.720p.hdtv.x264-tla.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 22 Born to Run.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.10.07.kathleen.serbelius.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 The Package.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 25 Exodust Part 3.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 And Found.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E03 - Hiatus.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.05.Michael.C.Hall.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s02e02-Return of the Golden Child.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Changing Our Luck.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Deleted Scene Blooper.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 - The Gang Finds a Dumptser Baby.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 09 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 All the Best Cowboys Have Daddy Issues.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (2) Chicken or Lasagna.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Secrets From the Hatch.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Unpopular Decision.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 21 The Greater Good.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Maggie Grace.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E05 - Four's Company.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 - The Gang Dances Their Asses Off.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 16 Outlaws.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.08.05.hugh.laurie.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 The Substitute.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : once.upon.a.time.s02.special.magic.is.coming.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : No Police.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x07 City of Thieves - The Witch's Garden.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 13.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 208b - Guardians of Sunshine {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Before They Were Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s07e21e22 - The Bottle Deposit.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.06.24.maggie.gyllenhaal.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.09.30.vince.gilligan.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 One of Them.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Arrested.Development.Documentary.Project.DOCU.2013.720p.WEB-DL.DD2.0.x264-JHD.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Trust.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dom's Christmas Joke.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 - Frank Sets Sweet Dee on Fire.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 08.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 - The Gang Sells Out.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 210b - Go With Me {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time with Finn & Jake 1x11 Henchman - Dungeon.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E09 - Storm Warning.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Lost Book Club.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.24.shailene.woodley.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office.US.S09E22E23.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 - Paddy's Pub Home of the Original Kitten Mittens.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x10 The Duke - Donny.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 Everybody Loves Hugo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x06 - Funeral.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.13.Rep.John.Lewis.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x02 - Jeremy Makes It.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.05.15.zach.galifianakis.720p.hdtv.x264-bajskorv.www.RapidMovieZ.com.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.22.louis.ck.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb208-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 - The Waitress Is Getting Married.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Freighter Folk.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.09.11.sheryl.crow.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E21E022.Marcelines.Closet_-_Paper.Pete.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E02 - Breaking Up Is Hard To Do.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.09.24.metallica.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E11E012.The.Creeps_-_From.Bad.to.Worse.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (1) Smoking.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 Because You Left.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 - The Gang Runs for Office.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 The Shape of Things to Come.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 'I Think He's One of Ben's People'.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Special Delivery.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.08.Colum.McCann.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 13 - Hearts and Minds.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 3 - King of the Castle.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 The Long Con.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 06.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 2 - Confirmed Dead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 202a - Loyalty to the King {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E25E026.Dads.Dungeon_-_Incendium.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 14.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 - Mac Bangs Dennis' Mom.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 Homecoming.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 Laid Bare.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E01E02.Hot.to.the.Touch_-_Five.Short.Graybles.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 11 - All the Best Cowboys Have Daddy Issues.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 14 -Exclusive Standup.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.10.08.malala.yousafzai.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Good With Kids.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 9 - Tropical Depression.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : tvs-poi-dd51-ded-dl-7p-bd-x264-102.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 04 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 - The Aluminum Monster vs. Fatty McGoo.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e04-The Red door.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 21 Question Mark.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 - Jack, Meet Ethan.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 205a - The Other Tarts {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 10 - Exclusive Standup.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb212-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Linus House Tour.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 12.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 11 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Wake.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 9 - Namaste.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : tvp-modernfamily-s02e03-720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 2 - The Adventures of Hurley and Frogurt.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 14 - Exposé.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 8 - Flashes Before Your Eyes.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 Confirmed Dead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Behind the Scenes of the Underwater Car Scene.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Cast In Clay - Creating The Toys of Todd McFarlane.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x02 - Spin War.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 Orientation.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.09.24.jane.lynch.720p.hdtv.x264-crooks.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Ideas of Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb204-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 House of the Rising Sun.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e04-The Speech.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 The Moth.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 - Dennis and Dee's Mom Is Dead.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Ian Somerhalder.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s09e21e22 - The Chronicle.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E11 - Definite Possible Murder.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 - Mac and Charlie Die (Part 2).avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E21E22.Who.Would.Win_-_Ignition.Point.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 204b - Crystals Have Power {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 - The Gang Gets Whacked (Part 2).avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 8 - Collision.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 What Kate Does.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 23-24 - Live Together, Die Alone.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 23 Live Together, Die Alone Part 1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep09.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 Ab Aeterno.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E15E016.No.One.Can.Hear.You_-_Jake.vs.Me-Mow.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 6 - Abandoned.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.07.09.mary-louise.parker.720p.hdtv.x264-bajskorv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E12 - Stow Away.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 - The D.E.N.N.I.S. System.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Josh Holloway.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.25.bob.bradley.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Birthday Song.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Crew Tribute With Evangeline Lilly.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 09 - Jason + Larry = George.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Backstage with Drive Shaft.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 207b - The Silent King {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E05 - The Party.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : zzgtv-futurama-s06e13.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Caring for Sawyer.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 - The Gang Gets Invincible.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 13 - The Man From Tallahassee.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x06 Wizard - Evicted!.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 Recon.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 12 - Jerry - Submarine Captain.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 - The Gang Goes Jihad.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x05 - Jurying.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lost at ComicCon.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 11 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E11 - Writer's Block.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 113a - His Hero [fudog].avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 201a - It Came from the Nightosphere {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : At the Airport - Sayid.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Jill the Butcher.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.14.Regis.Philbin.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Phil's Theory.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.10.02.Sandra.Bullock.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : archer.2009.pirates.e03.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 208a - The Real You {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 206b - Her Parents {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 There's No Place Like Home - Part 1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.08.01.colin.quinn.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Connected.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s05e 21 - The Hamptons.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.12.Sen.Rand.Paul.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 205b - To Cut a Woman's Hair {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 - The Gang Gets Extreme; Makeover Edition.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 16 The Whole Truth.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.25.Atoms.for.Peace.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 202b - Blood Under the Skin {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x06 - Wedding.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Mr McGibblets Fun House & Dojo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 23-25 - Exodus.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s02e04-The Dinner Party.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Live from the Museum of Television and Radio.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s05e19e20 - The Raincoats.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 - Dennis Looks Like a Registered Sex Offender.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : stand.up.revolution.0203.720p-yestv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x03 - Gym.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (3) Kate and Sayid.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E19E20.Lady.and.Peebles_-_You.Made.Me.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : louie.311.720p-dimension.sample.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 04 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.19.Chelsea.Clinton.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Hydra Tour.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 2 - The Glass Ballerina.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E09 - Class Trip.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 - So It Begins.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Vaginal Hubris.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 5 - Sleeper.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : See You in Another Life, Brotha.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 206a - The Chamber of Frozen Blades {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 - The Gang Gets Held Hostage.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x02 - Conference.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 Meet Kevin Johnson.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x03 - Jeremy's Broke.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e06-Calendar Geeks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 - Mac & Dennis; Manhunters.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 11 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dharma Cookies.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x04 - Jeremy's Mummy.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 - Mac and Charlie Die (Part 1).avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 7 - The Other 48 Days.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E13 - Focus Grill.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.getaway.2013.0101.720p-yestv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E19E020.Holly.Jolly.Secrets.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Terry O'Quinn - Throwing From The Handle.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 Pilot Part 2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x04 - Handyman.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S04E18&19 - Goodbye, Toby [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E03 - The Heart Smashers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 18 D.O.C.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.08.05.neal.thompson.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 203b - Slow Love {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 13 - Seinimation - Kramer Vs Monkey.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 10.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Operating Room Tour.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Thinking Ahead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 The Little Prince.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s04e23e24 - The Pilot.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 Serpent's Tooth.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E03E04.Memory.of.a.Memory_-_Hitman.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The New Au Pair.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 - The Gang Exploits the Mortgage Crisis.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 - Dennis and Dee Get a New Dad.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 Whatever Happened, Happened.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.03.Timothy.Cardinal.Dolan.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Oceanic Six - A Conspiracy of Lies.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 209b - Susan Strong {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 - The Envelope.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 - Mac's Banging the Waitress.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 LaFleur.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 01 Extra 01 - Deleted Scene.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 201b - The Eyes {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 Collision.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb205-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E05E06.Return.to.the.Nightosphere.(1)_-_Daddys.Little.Monster.(2).720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : boston.legal.s05e12e13 - Made In China & Last Call.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 11 - Whatever Happened, Happened.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.14.Kevin.Spacey.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 4 - The Substitute.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.08.08.Sen.Kirsten.Gillibrand.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.18.Hugh.Jackman.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Soundtrack of Survival - Composing for Character, Conflict & the Crash.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (7) The Huddle.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 Something Nice Back Home.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 210a - Mystery Train {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.09.23.cast.of.breaking.bad.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Genesis of Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 10 - Seinimation - George & The Whale.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 11 - Seinimation - Circus or Zoo.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 10 - Exclusive Standup.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep11.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E13E14.Princess.Cookies_-_Card.Wars.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 05.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : I Know Chicken.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.16.Andrew.Bacevich.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E08 - Guitarmegeddon.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 - Gun Fever.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 213a - Mortal Folly {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.08.08.jennifer.aniston.720p.hdtv.x264-bajskorv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Alex & Daddy.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 24 Live Together, Die Alone Part 2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 19 - S.O.S..mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep06.720p.BluRay.DTS.x264-ESiR v2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 20 The Man Behind the Curtain.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x04 - Sistering.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 12 - Seinimation - Seinfeld Noir.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : On Set with Jimmy Kimmel.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dinner Time.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Making Up for Lost Time.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.25.Joseph.Gordon-Levitt.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E05 - Psyche-Delicate.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E03 - Bad Influences.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 Every Man for Himself.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x05 - Jeremy's Manager.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Channel 4 UK Promo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x05 - Dream Job.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Desert Stash.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The New Man in Charge.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 Left Behind.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 2 - The Lie.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.10.02.Chris.Matthews.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb210-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dominic Monaghan.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Epoisode 22-23 - Through the Looking Glass.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 204a - Power Animal {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Hurley's Sweat.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 02.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 - The Gang Gives Frank an Intervention.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 The 23rd Psalm.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x03 - On the Pull.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 203a - Storytelling {C_P} (720p) v1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Othersville Tour.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 6 - Room 23.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.06.20.Joss.Whedon.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 04 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (6) Partners.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 The Constant.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 The Hunting Party.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 - The Gang Exploits a Miracle.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x08 What is Life - Ocean of Fear.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E17E18.BMO.Noire_-_King.Worm.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E07 - My Cheatin' Heart.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 1-2 - LA X.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lost Connections.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Acting on Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : On the Beach with Evi.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 Whatever the Case May Be.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Behind the Scenes of Sun & Jin's Deaths.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Locke's Father.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x05 - The Man Show.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.venture.bros.s03.a.very.venture.christmas.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Sex Talk.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 113b - Gut Grinder [fudog].avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 14 There's No Place Like Home - Part 2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 01 Extra 04 - Introduction.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E13E014.Apple.Thief_-_Beautopia.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 White Rabbit.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E10 - Time To Pay The Price.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Jorge Garcia.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x03 - Local Zero.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 Cabin Fever.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 18 Dave.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Sawyer's Visitor.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Funeral Scene.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Art of Matthew Fox.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Breaking Rocks.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Its.Always.Sunny.In.Philadelphia.S04E05E06.DSR.XviD-NoTV.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E07E08.Still_-_Wizard.Battle.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 2 - Adrift.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 07.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Analyzing Lost as Literature.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 The Other Woman.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.18.sarah.vowell.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 - Who Pooped the Bed.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 04 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seeing Walt.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 13 - The Last Lap.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 10 - Tricia Tanaka is Dead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Messages in a Bottle.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 04.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e02-Are We Not Men.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : archer.2009.pirates.e01.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 - A Very Sunny Christmas.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : A Little You Time.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 Walkabout.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E09E10.Princess.Monster.Wife_-_Goliad.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.07.30.Tim.Gunn.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 09.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E07 - The Wizard's Baker.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 04 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 212b - Heat Signature {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 02 - Deleted Scene.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E01 - Shore Leave.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep04.720p.BluRay.DTS.x264-ESiR v2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 Some Like It Hoth.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E01 - Everyone's Entitled to My Opinion.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s07e14e15 - The Cadillac.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.10.07.James.Spithill.HDTV.x264-2HD.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 A Tale of Two Cities.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.17.reza.aslan.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E11 - Broken Dreams.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Are You All Right.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 Exposé.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : mad.men.s05e01e02.720p.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Locke's Promise.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 112b - What Have You Done [fudog].avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time with Finn & Jake 1x04 Ricardio the Heart Guy - Business Time.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 211b - The Limit {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 7 - Not in Portland.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb206-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : I Need to Know.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 7 - The Life and Death of Jeremy Bentham.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 20 - Two for the Road.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 The Other 48 Days.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 09 - Seinimation - Del Boca Vista.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 10.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 13 Hearts and Minds.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E06 - Renaissance.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lost Journal.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep03.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.06.Robin.Thicke.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 Flashes Before Your Eyes.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep10.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 Confidence Man.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 17 Lockdown.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Doctor to the Rescue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 03 - Deleted Scene.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 - The Gang Hits the Road.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s04e03e04 - The Pitch and The Ticket.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 The Cost of Living.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 4 - The Little Prince.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.12.Philip.Mudd.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 24 Exodus Part 2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 5 - The Constant.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (10) Captive.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 Further Instructions.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 ??.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 Stranger in a Strange Land.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep12.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Doctor's Solution.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 Happily Ever After.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 - The Gang Solves the North Korea Situation.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Hurley & Rose.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 22 Three Minutes.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 - Dennis Reynolds; An Exotic Life.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Trouble with Boars.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : At the Airport - Claire.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.06.25.questlove.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Malcolm David Kelley.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 Par Avion.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 9 - Ab Aeterno.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Canine Castaway.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 17 Catch-22.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x04 - University Challenge.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 11.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 He's Our You.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Others Theme (Uncut).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Island Backlot - Lost in Hawaii.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.10.03.Kerry.Washington.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 What Kate Did.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lucky Guess.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S04E03&04 - Dunder Mifflin Infinity [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 09 - Seinimation - Dr. Cosmo.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.07.29.the.lumineers.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E17E018.Thank.You_-_The.New.Frontier.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E02 - Identifying a Body.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 15 Across the Sea.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 8 - Recon.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 - Mac and Charlie Write a Movie.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 9 - What Kate Did.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 20 Do No Harm.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Right to Bear Arms.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 3 Penis Wine Commercial.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e05-The Haunting of Bill Crouse.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.07.31.Emily.Matchar.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x01 - Burgling.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : seinfeld.s06e14e15 - The Highlights of 100.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x04 - Mark Makes a Friend.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.19.Jack.Johnson.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (9) A Deal's a Deal.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Archetypes in Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep02.720p.BluRay.DTS.x264-ESiR v2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Saw.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Moon Pool Tour.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Mysteries, Conspiracies, and Theories.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.07.29.mark.leibovich.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 02x01 - Dance Class.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The Journey to Jacob's Place.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.07.Ashton.Kutcher.720p.HDTV.x264-LMAO.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 Abandoned.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E23E024.Another.Way_-_Ghost.Princess.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 11.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Kate is a Girl, Jack.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Introducing Nikki & Paulo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Battlestar.Galactica.Razor.Extended.2007.720p.BluRay.DTS.x264-REPTiLE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 - Charlie Wants An Abortion.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (11) Secrets.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 10 - Seinimation - The Waiting Game.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.06.26.720p.hdtv.x264-orenji.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 Dr. Linus.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The End - Crafting A Final Season.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : peep_show.8x03.the_love_bunker.720p_hdtv_x264-fov.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb211-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 09 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 03 Jughead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E06 - Curses.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.07.31.Hank.Azaria.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Conan.2012.12.11.Nick.Offerman.720p.HDTV.x264-BAJSKORV.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Religion on Lost.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 Tricia Tanaka is Dead.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 10 - How It Began Documentary.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 06 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x09 Wedding Bells Thaw - Freak City.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Scissors.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 07 - The Tonight Show Appearences.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E12 - Temporary Blindness.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s02e01-The Work Outing.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Fox and Fahey's New Show.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 17 18 The End.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 16 - The Whole Truth.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 10 - Kramer Vs Kramer.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 07 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Alt Nation.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Daniel Dae Kim.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb209-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x05 - Holiday.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S3E13 - Coffins & Cradles.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb202-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Legalize Kevin's Pubic Smoke.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 212a - Video Makers {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 20 Two for the Road.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 16 What They Died For.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 14 - Bloopers.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Andre - Dress With Style, Win With Style.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (5) Finding the Tell.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 08 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep05.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 Enter 77.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 16 One of Us.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.getaway.2013.0102.720p-yestv.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 09.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E01E02.Conquest.of.Cuteness_-_Morituri.Te.Salutamus.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 07x06 - New Year's Eve.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 5 - White Rabbit.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Lost In A Day.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Building 23 & Beyond with Michael Emerson.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.09.09.billie.jean.king.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.09.30.bill.oreilly.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 - Mac and Dennis Break Up.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 11 - Seinimation - The Big Race.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.daily.show.2013.06.27.720p.hdtv.x264-orenji.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 4 - Everybody Hates Hugo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 7 - Arzt & Crafts.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : conan.2013.07.30.neil.patrick.harris.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : An Epic Day with Richard Alpert.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 02 Extra 08 - Exclusive Standup.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 316.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep01.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 The Glass Ballerina.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episodes 13-14 - There's No Place Like Home (Part 2).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Exploring Spanish with Nestor Carbonell.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 Not in Portland.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.09.10.Shane.Salerno.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E05E06.Too.Young_-_The.Monster.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 06 Extra 02 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x01 - Sophie's Parents.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Yunjin Kim.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 Ji Yeon.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : bb207-clue.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E08 - Honkey Magoo.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 - The Gang Finds A Dead Guy.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 01 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 The Variable.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 04 Extra 08 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Breakfast Time.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E07E08.In.Your.Footsteps_-_Hug Wolf.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 6 - House of the Rising Sun.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Daily.Show.2013.09.04.Mario.Livio.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 10 - The 23rd Psalm.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : the.colbert.report.2013.07.17.jerry.seinfeld.720p.hdtv.x264-2hd.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E23E24.The.Hard.Easy_-_Reign.of.Gunters.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 01 - Charlie Gets Crippled.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S03E24&25 - The Job [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Giacchino in Script.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : What's Your Story.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 - Jin Has a Temper-Tantrum on the Golf Course.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 14 The Candidate.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s03e03-Tramps Like Us.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 22 Through the Looking Glass - Part 1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 211a - Belly of the Beast {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E12 - Pizza Club.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 02 Adrift.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s02e05-Smoke and Mirrors.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : (8) Claire's Doctor Visit.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 07 - Charlie Got Molested.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 05 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 8 - Meet Kevin Johnson.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Finding LaFleur.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 05 - Hundred Dollar Baby.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 03x01 - Mugging.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Elementary.S01E23E24.720p.HDTV.X264-DIMENSION.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S4E10 - Cho & The Adventures of Amy Lee.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time - 213b - Mortal Recoil {C_P} (720p).mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S04E07&08 - Money [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 09 - Sweet Dee's Dating a Retarded Person.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 4 - The Deal.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 01 Extra 03 - Camera Test.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 09 Extra 15 - The Roundtable.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Flashbacks and Mythology.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 05x06 - Mark's Women.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : I Miss....mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S03E09E010.Fionna.and.Cake_-_What.Was.Missing.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office.S09.Special.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure.Time.S04E11E12.Beyond.This.Earthly.Realm_-_Gotcha.720p.WEB-DL.AAC2.0.H.264-BS.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 1 - The Watch.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 - The World Series Defense.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 12 - The Gang Reignites the Rivalry.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 04 Everybody Hates Hugo.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Evi and Jade.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 15.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Office S03E10&11 - A Benihana Christmas [720p].mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 11 - The Gang Cracks the Liberty Bell.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x01 - Warring Factions.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 01x02 - The Interview.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 03 Extra 03 - Deleted Scenes.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Seinfeld Season 07 Extra 05 - Inside Looks.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e02-Calamity Jen.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s01e06-Aunt Irma Visits.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep07.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep13.720p.BluRay.DTS.x264-ESiR.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 18 Numbers.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 7 - The Moth.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Adventure Time 1x05 My Two Favorite People - Memories of Boom Boom Mountain.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Home Movies - S2E07 - Dad.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Firefly.2002.Ep08.720p.BluRay.DTS.x264-ESiR v2.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 11 - Happily Ever After.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 10 - Mac is a Serial Killer.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Fire & Water - Anatomy of an Episode.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 19 S.O.S..mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The World of the Others.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Peep Show - 04x06 - Wedding.mp4
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : The.Colbert.Report.2013.08.15.Richard.Brodhead.720p.HDTV.x264-EVOLVE.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Dave Chapelle Show - Season 02 - Episode 08.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 - The Gang Gives Back.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 30.Rock.S06E06E07.720p.HDTV.X264-DIMENSION.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 23 Exodus Part 1.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Episode 01.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 06 I Do.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : it.crowd.s02e03-Moss and the German.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : 08 - Paddy's Pub; The Worst Bar in Philadelphia.avi
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:22: PARSE WRONG : Super Powers Dude.mkv
+	util_test.go:23:    expected : 
+	util_test.go:24:      parsed : 
+	util_test.go:25:    expected :  0 :  0
+	util_test.go:26:      parsed : -1 : -1
+		
+	util_test.go:31: TOTAL(3800) OK(2975) FAIL(825) PERCENT(78.29%)
+	util_test.go:34: Non-zero failures, see above.
+--- FAIL: TestParseMovieFilename (0.00 seconds)
+	util_test.go:70: PARSE WRONG : eagle.eye.2008.mp4
+	util_test.go:71:    expected : eagle eye
+	util_test.go:72:      parsed : eagle eye 2008
+	util_test.go:73:    expected : 2008
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Indiana Jones 3 Last Crusade 1989.mp4
+	util_test.go:71:    expected : indiana jones 3 last crusade
+	util_test.go:72:      parsed : indiana jones 3 last crusade 1989
+	util_test.go:73:    expected : 1989
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : batman.the.dark.knight.rises.2012.mkv
+	util_test.go:71:    expected : batman the dark knight rises
+	util_test.go:72:      parsed : batman the dark knight rises 2012
+	util_test.go:73:    expected : 2012
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Upstream.Color.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv
+	util_test.go:71:    expected : upstream color
+	util_test.go:72:      parsed : upstream color 2013 limited
+	util_test.go:73:    expected : 2013
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Indiana Jones 4 Kingdom Of The Crystal Skull 2008.mp4
+	util_test.go:71:    expected : indiana jones 4 kingdom of the crystal skull
+	util_test.go:72:      parsed : indiana jones 4 kingdom of the crystal skull 2008
+	util_test.go:73:    expected : 2008
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Samsara.DTS.1080p.mkv
+	util_test.go:71:    expected : samsara
+	util_test.go:72:      parsed : samsara dts
+	util_test.go:73:    expected : -1
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : The.Heat.2013.UNRATED.720p.BluRay.DTS.x264-PublicHD.mkv
+	util_test.go:71:    expected : the heat
+	util_test.go:72:      parsed : the heat 2013 unrated
+	util_test.go:73:    expected : 2013
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Indiana Jones 2 Temple Of Doom 1984.mp4
+	util_test.go:71:    expected : indiana jones 2 temple of doom
+	util_test.go:72:      parsed : indiana jones 2 temple of doom 1984
+	util_test.go:73:    expected : 1984
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : hansel.and.gretel.2013.mkv
+	util_test.go:71:    expected : hansel and gretel
+	util_test.go:72:      parsed : hansel and gretel 2013
+	util_test.go:73:    expected : 2013
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : total.recall.2012.extended.1080p.mkv
+	util_test.go:71:    expected : total recall
+	util_test.go:72:      parsed : total recall 2012 extended
+	util_test.go:73:    expected : 2012
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : World.War.Z.2013.Unrated.Cut.720p.BluRay.x264.DTS-WiKi.mkv
+	util_test.go:71:    expected : world war z
+	util_test.go:72:      parsed : world war z 2013 unrated cut
+	util_test.go:73:    expected : 2013
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : mission.impossible.1.1996.mp4
+	util_test.go:71:    expected : mission impossible 1
+	util_test.go:72:      parsed : mission impossible 1 1996
+	util_test.go:73:    expected : 1996
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : source.code.2011.avi
+	util_test.go:71:    expected : source code
+	util_test.go:72:      parsed : source code 2011
+	util_test.go:73:    expected : 2011
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : animal.house.1978.720.mkv
+	util_test.go:71:    expected : animal house
+	util_test.go:72:      parsed : animal house 1978 720
+	util_test.go:73:    expected : 1978
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : clerks.1994.the.first.cut.1080p.mkv
+	util_test.go:71:    expected : clerks
+	util_test.go:72:      parsed : clerks 1994 the first cut
+	util_test.go:73:    expected : 1994
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : the.campaign.2012.extended.720p.mkv
+	util_test.go:71:    expected : the campaign
+	util_test.go:72:      parsed : the campaign 2012 extended
+	util_test.go:73:    expected : 2012
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : christopher.and.his.kind.2011.avi
+	util_test.go:71:    expected : christopher and his kind
+	util_test.go:72:      parsed : christopher and his kind 2011
+	util_test.go:73:    expected : 2011
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : star.trek.2009.mkv
+	util_test.go:71:    expected : star trek
+	util_test.go:72:      parsed : star trek 2009
+	util_test.go:73:    expected : 2009
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : tropic.thunder.2008.dircut.720p.mkv
+	util_test.go:71:    expected : tropic thunder
+	util_test.go:72:      parsed : tropic thunder 2008 dircut
+	util_test.go:73:    expected : 2008
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : mission.impossible.2.2000.mp4
+	util_test.go:71:    expected : mission impossible 2
+	util_test.go:72:      parsed : mission impossible 2 2000
+	util_test.go:73:    expected : 2000
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : mission.impossible.3.2006.mp4
+	util_test.go:71:    expected : mission impossible 3
+	util_test.go:72:      parsed : mission impossible 3 2006
+	util_test.go:73:    expected : 2006
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : bernie.2011.limited.720p.mkv
+	util_test.go:71:    expected : bernie
+	util_test.go:72:      parsed : bernie 2011 limited
+	util_test.go:73:    expected : 2011
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : step.brothers.unrated.2008.mkv
+	util_test.go:71:    expected : step brothers unrated
+	util_test.go:72:      parsed : step brothers unrated 2008
+	util_test.go:73:    expected : 2008
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : gi.joe.retaliation.2013.extended.1080p.bluray.vedett.mkv
+	util_test.go:71:    expected : gi joe retaliation
+	util_test.go:72:      parsed : gi joe retaliation 2013 extended
+	util_test.go:73:    expected : 2013
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : The Hangover.2009.mp4
+	util_test.go:71:    expected : the hangover
+	util_test.go:72:      parsed : the hangover 2009
+	util_test.go:73:    expected : 2009
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : the.saint.1997.avi
+	util_test.go:71:    expected : the saint
+	util_test.go:72:      parsed : the saint 1997
+	util_test.go:73:    expected : 1997
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : clerks.ii.2006.UNKNOWN.mkv
+	util_test.go:71:    expected : clerks ii
+	util_test.go:72:      parsed : clerks ii 2006 unknown
+	util_test.go:73:    expected : 2006
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : In.Bruges.2008.MULTi.720p.BluRay.DTS.x264-SYNERGY.mkv
+	util_test.go:71:    expected : in bruges
+	util_test.go:72:      parsed : in bruges 2008 multi
+	util_test.go:73:    expected : 2008
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Gattaca.1997.mp4
+	util_test.go:71:    expected : gattaca
+	util_test.go:72:      parsed : gattaca 1997
+	util_test.go:73:    expected : 1997
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Shortbus.2006.LIMITED.720p.BluRay.X264-AMIABLE.mkv
+	util_test.go:71:    expected : shortbus
+	util_test.go:72:      parsed : shortbus 2006 limited
+	util_test.go:73:    expected : 2006
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : Indiana Jones 1 Raiders Of The Lost Ark 1981.mp4
+	util_test.go:71:    expected : indiana jones 1 raiders of the lost ark
+	util_test.go:72:      parsed : indiana jones 1 raiders of the lost ark 1981
+	util_test.go:73:    expected : 1981
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : project.x.2012.extended.720p.mkv
+	util_test.go:71:    expected : project x
+	util_test.go:72:      parsed : project x 2012 extended
+	util_test.go:73:    expected : 2012
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : the.bourne.identity.2002.mp4
+	util_test.go:71:    expected : the bourne identity
+	util_test.go:72:      parsed : the bourne identity 2002
+	util_test.go:73:    expected : 2002
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:70: PARSE WRONG : this.means.war.2012.unrated.720p.mkv
+	util_test.go:71:    expected : this means war
+	util_test.go:72:      parsed : this means war 2012 unrated
+	util_test.go:73:    expected : 2012
+	util_test.go:74:      parsed : -1
+		
+	util_test.go:79: TOTAL(261) OK(227) FAIL(34) PERCENT(86.97%)
+	util_test.go:82: Non-zero failures, see above.
+FAIL
+exit status 1
+FAIL	camlistore.org/pkg/media/util	0.070s

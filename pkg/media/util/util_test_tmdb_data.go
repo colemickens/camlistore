@@ -1,9 +1,9 @@
-package tmdb
+package util
 
-var expectedResults = map[string]struct {
+var movieTestData = map[string]struct {
 	Title  string
 	Year   int
-	TmdbId int
+	TmdbId int // refactor this out into the tmdb package
 }{
 	"lotr.1.the.fellowship.of.the.ring.1080p.mkv": {"lord of the rings 1 the fellowship of the ring", -1, 120},
 	"lotr.2.the.two.towers.1080p.mkv":             {"lord of the rings 2 the two towers", -1, 121},

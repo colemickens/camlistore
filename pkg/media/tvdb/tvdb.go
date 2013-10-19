@@ -6,42 +6,45 @@ package tvdb
 
 import (
 	"encoding/xml"
+	"io"
+	"net/url"
+	"strings"
 	//"log"
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 )
 
 const (
-	mirror = "http://thetvdb.com" // their wiki says this can be hard-coded
+	mirror = "http://thetvdb.com/" // their wiki says this can be hard-coded
 )
 
 type TvdbApi struct {
-	ApiKey string
-	Client *http.Client
+	ApiKey   string
+	Client   *http.Client
+	Language string
 }
+
+var cachedSeriesResps = make(map[string]*SeriesListResponse)
+var cachedLangResps = make(map[int]*LangResponse)
 
 func NewTvdbApi(apiKey string, client *http.Client) *TvdbApi {
 	if client == nil {
 		client = &http.Client{}
 	}
-	return &TvdbApi{apiKey, client}
+	return &TvdbApi{apiKey, client, "en"}
 }
 
-func fetch(url string, obj interface{}) error {
-	//log.Println("fetch:", url)
-
-	resp, err := http.Get(url)
+func fetch(url *url.URL, obj interface{}) error {
+	log.Println(url.String())
+	resp, err := http.Get(url.String())
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	//rdr := io.TeeReader(resp.Body, os.Stdout)
-	//xmlDec := xml.NewDecoder(rdr)
 	xmlDec := xml.NewDecoder(resp.Body)
 
 	if err = xmlDec.Decode(obj); err != nil {
@@ -51,8 +54,17 @@ func fetch(url string, obj interface{}) error {
 	return nil
 }
 
-func (t *TvdbApi) GetExtendedInfo(seriesId int, language string) (br *BannersResponse, ar *ActorsResponse, ser *LangResponse, e error) {
-	url := mirror + "/api/" + t.ApiKey + "/series/" + fmt.Sprintf("%d", seriesId) + "/all/" + language + ".zip"
+func (t *TvdbApi) Show(seriesId int) {
+
+}
+
+// TODO: make this thread safe
+func (t *TvdbApi) GetSeriesData(seriesId int) (ser *LangResponse, e error) {
+	if cachedLangResp, ok := cachedLangResps[seriesId]; ok {
+		return cachedLangResp, nil
+	}
+
+	url := mirror + "/api/" + t.ApiKey + "/series/" + fmt.Sprintf("%d", seriesId) + "/all/" + t.Language + ".zip"
 
 	log.Println("GET " + url)
 
@@ -64,7 +76,7 @@ func (t *TvdbApi) GetExtendedInfo(seriesId int, language string) (br *BannersRes
 	reader := bytes.NewReader(buf.Bytes())
 	r, err := zip.NewReader(reader, int64(reader.Len()))
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to open zip reader for series id: " + fmt.Sprintf("%d", seriesId))
+		return nil, fmt.Errorf("Failed to open zip reader for series id: " + fmt.Sprintf("%d", seriesId))
 	}
 
 	for _, f := range r.File {
@@ -75,76 +87,72 @@ func (t *TvdbApi) GetExtendedInfo(seriesId int, language string) (br *BannersRes
 
 		switch f.Name {
 		case "banners.xml":
-			//rdr := io.TeeReader(rc, os.Stdout)
-			//xmlDec := xml.NewDecoder(rdr)
-			xmlDec := xml.NewDecoder(rc)
-			br = &BannersResponse{}
-			err := xmlDec.Decode(br)
-			if err != nil {
-				log.Println("failed to decode banners.xml in ExtendedInfo TVDB")
-			}
+			/*
+				xmlDec := xml.NewDecoder(rc)
+				br = &BannersResponse{}
+				err := xmlDec.Decode(br)
+				if err != nil {
+					log.Println("failed to decode banners.xml in ExtendedInfo TVDB")
+				}
+			*/
 		case "actors.xml":
-			xmlDec := xml.NewDecoder(rc)
-			ar = &ActorsResponse{}
-			err := xmlDec.Decode(ar)
-			if err != nil {
-				log.Println("failed to decode actors.xml in ExtendedInfo TVDB")
-			}
-		case language + ".xml":
+			/*
+				xmlDec := xml.NewDecoder(rc)
+				ar = &ActorsResponse{}
+				err := xmlDec.Decode(ar)
+				if err != nil {
+					log.Println("failed to decode actors.xml in ExtendedInfo TVDB")
+				}
+			*/
+		case t.Language + ".xml":
 			xmlDec := xml.NewDecoder(rc)
 			ser = &LangResponse{}
 			err := xmlDec.Decode(ser)
 			if err != nil {
-				log.Println("failed to decode lang.xml in ExtendedInfo TVDB")
+				panic(err)
 			}
 		default:
-			log.Println("unknown file in ExtendedInfo TVDB")
+			//log.Println("unknown file in ExtendedInfo TVDB")
 		}
 	}
 
-	if br == nil {
-		return nil, nil, nil, fmt.Errorf("banners.xml was missing for series id: %d", seriesId)
-	}
-	if ar == nil {
-		return nil, nil, nil, fmt.Errorf("actors.xml was missing for series id: %d", seriesId)
-	}
+	// put it in the cachedExtendedInfo
+	cachedLangResps[seriesId] = ser
 	if ser == nil {
-		return nil, nil, nil, fmt.Errorf(language+".xml was missing for series id: %d", seriesId)
+		return nil, fmt.Errorf(t.Language+".xml was missing for series id: %d", seriesId)
 	}
 
 	return
 }
 
-func (t *TvdbApi) GetSeries(seriesname, language string) (*SeriesListResponse, error) {
-	url := mirror + "/api/GetSeries.php?seriesname=" + seriesname + "&language=" + language
+func (t *TvdbApi) SearchSeriesByName(seriesName string) ([]*Series, error) {
+	seriesName = strings.ToLower(seriesName)
+
+	if cachedSeriesResp, ok := cachedSeriesResps[seriesName]; ok {
+		return cachedSeriesResp.Series, nil
+	}
+	values := &url.Values{"seriesname": []string{seriesName}, "language": []string{t.Language}}
+	url := getUrl("api/GetSeries.php", values)
+	log.Println(url)
+	url.Query().Add("seriesname", seriesName)
+	url.Query().Add("language", t.Language)
+	log.Println(url)
 
 	slr := &SeriesListResponse{}
 	if err := fetch(url, slr); err != nil {
 		return nil, err
 	}
 
-	return slr, nil
+	cachedSeriesResps[seriesName] = slr
+
+	return slr.Series, nil
 }
 
-func (t *TvdbApi) GetSeriesByImdbId(imdbid string) (*SeriesListResponse, error) {
-	url := mirror + "/api/GetSeriesByRemoteID.php?imdbid=" + imdbid // include language?
-
-	sr := &SeriesListResponse{}
-	if err := fetch(url, sr); err != nil {
-		return nil, err
+func getUrl(relativePath string, values *url.Values) *url.URL {
+	copyurl, err := url.Parse(mirror + relativePath)
+	if err != nil {
+		panic(err)
 	}
-
-	return sr, nil
+	copyurl.RawQuery = values.Encode()
+	return copyurl
 }
-
-/*func (t *TvdbApi) GetEpisodeByAirDate(seriesid, airdate, language string) (*Episode, error) {
-	url := mirror + "/api/GetEpisodeByAirDate.php?apikey=" + t.ApiKey + "&seriesid=" + seriesid + "&airdate=" + airdate + "&language=" + language
-
-	er := &EpisodeResponse{}
-	if err := fetch(url, er); err != nil {
-		return nil, err
-	}
-
-	return er, nil
-}
-*/

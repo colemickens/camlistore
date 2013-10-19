@@ -2,12 +2,11 @@ package tvdb
 
 import (
 	"encoding/xml"
-	"time"
 )
 
 type SeriesListResponse struct {
 	XMLName xml.Name `xml:"Data"`
-	Series  []Series
+	Series  []*Series
 }
 
 // <?xml version="1.0" encoding="UTF-8" ?>
@@ -38,31 +37,31 @@ type Series struct {
 // <?xml version="1.0" encoding="UTF-8" ?>
 // <Data>
 //   <Episode>
-//     <id>332179</id> 
-//     <Combined_episodenumber>1</Combined_episodenumber> 
-//     <Combined_season>1</Combined_season> 
-//     <DVD_chapter /> 
-//     <DVD_discid /> 
-//     <DVD_episodenumber /> 
-//     <DVD_Season /> 
-//     <Director>McG</Director> 
-//     <EpImgFlag /> 
-//     <EpisodeName>Pilot</EpisodeName> 
-//     <EpisodeNumber>1</EpisodeNumber> 
-//     <FirstAired>2007-09-24</FirstAired> 
-//     <GuestStars>Mieko Hillman|Kristine Blackport|Jim Pirri|Diana Gitelman|Mel Fair|Lynn A. Henderson|Odessa Rae|Jordan Potter|Tasha Campbell|Dale Dye|Matthew Bomer|Bruno Amato|Nicolas Pajon|Wendy Makkena</GuestStars> 
-//     <IMDB_ID /> 
-//     <language>en</language> 
-//     <Overview>Chuck Bartowski is an average computer geek until files upon files of government secrets are downloaded into his brain. He is soon scouted by the CIA and NSA to act in place of their computer.</Overview> 
-//     <ProductionCode /> 
-//     <Rating /> 
-//     <SeasonNumber>1</SeasonNumber> 
-//     <Writer>Josh Schwartz|Chris Fedak</Writer> 
-//     <absolute_number /> 
-//     <filename>episodes/80348-332179.jpg</filename> 
-//     <lastupdated>1209586232</lastupdated> 
-//     <seasonid>27985</seasonid> 
-//     <seriesid>80348</seriesid> 
+//     <id>332179</id>
+//     <Combined_episodenumber>1</Combined_episodenumber>
+//     <Combined_season>1</Combined_season>
+//     <DVD_chapter />
+//     <DVD_discid />
+//     <DVD_episodenumber />
+//     <DVD_Season />
+//     <Director>McG</Director>
+//     <EpImgFlag />
+//     <EpisodeName>Pilot</EpisodeName>
+//     <EpisodeNumber>1</EpisodeNumber>
+//     <FirstAired>2007-09-24</FirstAired>
+//     <GuestStars>Mieko Hillman|Kristine Blackport|Jim Pirri|Diana Gitelman|Mel Fair|Lynn A. Henderson|Odessa Rae|Jordan Potter|Tasha Campbell|Dale Dye|Matthew Bomer|Bruno Amato|Nicolas Pajon|Wendy Makkena</GuestStars>
+//     <IMDB_ID />
+//     <language>en</language>
+//     <Overview>Chuck Bartowski is an average computer geek until files upon files of government secrets are downloaded into his brain. He is soon scouted by the CIA and NSA to act in place of their computer.</Overview>
+//     <ProductionCode />
+//     <Rating />
+//     <SeasonNumber>1</SeasonNumber>
+//     <Writer>Josh Schwartz|Chris Fedak</Writer>
+//     <absolute_number />
+//     <filename>episodes/80348-332179.jpg</filename>
+//     <lastupdated>1209586232</lastupdated>
+//     <seasonid>27985</seasonid>
+//     <seriesid>80348</seriesid>
 //   </Episode>
 // </Data>
 
@@ -217,9 +216,42 @@ type Banner struct {
 //   [...]
 // </Data>
 type LangResponse struct {
-	XMLName  xml.Name      `xml:"Data"`
-	Series   LangSeries    `xml:"Series"`
-	Episodes []LangEpisode `xml:"Episode"`
+	XMLName   xml.Name       `xml:"Data"`
+	Series    *LangSeries    `xml:"Series"`
+	Episodes  []*LangEpisode `xml:"Episode"`
+	seriesMap map[int]map[int]*LangEpisode
+	parsedMap bool
+}
+
+func (lr *LangResponse) parseMap() {
+	// process xml into the map
+	lr.seriesMap = make(map[int]map[int]*LangEpisode)
+
+	for _, episode := range lr.Episodes {
+		seasonMap, ok := lr.seriesMap[episode.SeasonNumber]
+		if !ok {
+			seasonMap = make(map[int]*LangEpisode)
+			lr.seriesMap[episode.SeasonNumber] = seasonMap
+		}
+		lr.seriesMap[episode.SeasonNumber][episode.EpisodeNumber] = episode
+	}
+
+	lr.parsedMap = true
+}
+
+func (lr *LangResponse) E(seasonNumber, episodeNumber int) *LangEpisode {
+	if lr.parsedMap == false {
+		lr.parseMap()
+	}
+	seasonMap, ok := lr.seriesMap[seasonNumber]
+	if !ok {
+		return nil
+	}
+	episode, ok := seasonMap[episodeNumber]
+	if !ok {
+		return nil
+	}
+	return episode
 }
 
 type LangSeries struct {
@@ -251,34 +283,34 @@ type LangSeries struct {
 }
 
 type LangEpisode struct {
-	id int `xml:"id"`
+	Id int `xml:"id"`
 
-	CombinedEpisodeNumber int       `xml:"Combined_episodenumber"`
-	CombinedSeason        int       `xml:"Combined_season"`
-	DvdChapter            int       `xml:"DVD_chapter"`
-	DvdDiscId             int       `xml:"DVD_discid"`
-	DvdEpisodeNumber      int       `xml:"DVD_episodenumber"`
-	DvdSeason             int       `xml:"DVD_season"`
-	Director              int       `xml:"Director"`
-	EpisodeImageFlag      int       `xml:"EpImgFlag"`
-	EpisodeName           int       `xml:"EpisodeName"`
-	EpisodeNumber         int       `xml:"EpisodeNumber"`
-	FirstAired            int       `xml:"FirstAired"`
-	GuestStars            int       `xml:"GuestStars"`
-	ImdbId                int       `xml:"IMDB_ID"`
-	Language              int       `xml:"Language"`
-	Overview              int       `xml:"Overview"`
-	ProductionCode        int       `xml:"ProductionCode"`
-	Rating                int       `xml:"Rating"`
-	RatingCount           int       `xml:"RatingCount"`
-	SeasonNumber          int       `xml:"SeasonNumber"`
-	Writer                int       `xml:"Writer"`
-	Absolute_number       int       `xml:"absolute_number"`
-	AirsAfterSeason       int       `xml:"airsafter_season"`
-	AirsBeforeEpisode     int       `xml:"airsbefore_episode"`
-	AirsBeforeSeason      int       `xml:"airsbefore_season"`
-	Filename              int       `xml:"filename"`
-	LastUpdated           time.Time `xml:"lastupdated"`
-	SeasonId              int       `xml:"seasonid"`
-	SeriesId              int       `xml:"seriesid"`
+	CombinedEpisodeNumber string `xml:"Combined_episodenumber"`
+	CombinedSeason        string `xml:"Combined_season"`
+	DvdChapter            string `xml:"DVD_chapter"`
+	DvdDiscId             string `xml:"DVD_discid"`
+	DvdEpisodeNumber      string `xml:"DVD_episodenumber"`
+	DvdSeason             string `xml:"DVD_season"`
+	Director              string `xml:"Director"`
+	EpisodeImageFlag      string `xml:"EpImgFlag"`
+	EpisodeName           string `xml:"EpisodeName"`
+	EpisodeNumber         int    `xml:"EpisodeNumber"`
+	FirstAired            string `xml:"FirstAired"`
+	GuestStars            string `xml:"GuestStars"`
+	ImdbId                string `xml:"IMDB_ID"`
+	Language              string `xml:"Language"`
+	Overview              string `xml:"Overview"`
+	ProductionCode        string `xml:"ProductionCode"`
+	Rating                string `xml:"Rating"`
+	RatingCount           string `xml:"RatingCount"`
+	SeasonNumber          int    `xml:"SeasonNumber"`
+	Writer                string `xml:"Writer"`
+	Absolute_number       string `xml:"absolute_number"`
+	AirsAfterSeason       string `xml:"airsafter_season"`
+	AirsBeforeEpisode     string `xml:"airsbefore_episode"`
+	AirsBeforeSeason      string `xml:"airsbefore_season"`
+	Filename              string `xml:"filename"`
+	LastUpdated           string `xml:"lastupdated"`
+	SeasonId              string `xml:"seasonid"`
+	SeriesId              string `xml:"seriesid"`
 }
