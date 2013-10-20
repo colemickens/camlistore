@@ -20,34 +20,97 @@ limitations under the License.
 package importer
 
 import (
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
+	"sync"
 
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/jsonconfig"
+	"camlistore.org/pkg/search"
 )
 
-// An Importer imports content from third-party websites into a Camlistore repo.
-type Importer struct {
-	// Target is the blobserver to populate.
-	Target blobserver.StatReceiver
+// A Host is the environment hosting an importer.
+type Host struct {
+	imp Importer
 
-	// TODO: SearchClient?
+	// target is the blobserver to populate.
+	target blobserver.StatReceiver
 
-	// ProgressChan optionally specifies a channel to receive
-	// progress messages of various types.  The types sent may be:
-	//   - *ProgressMessage
-	//   - *NewPermanodeMessage
-	ProgressChan chan<- interface{}
+	search *search.Handler
 
-	// Client optionally specifies how to fetch external network
+	// client optionally specifies how to fetch external network
 	// resources.  If nil, http.DefaultClient is used.
-	Client *http.Client
+	client *http.Client
+
+	mu           sync.Mutex
+	running      bool
+	stopreq      chan struct{} // closed to signal importer to stop and return an error
+	lastProgress *ProgressMessage
+	lastRunErr   error
 }
 
-func (im *Importer) client() *http.Client {
-	if im.Client == nil {
+func (h *Host) String() string {
+	return fmt.Sprintf("%s (a %T)", h.imp.Prefix(), h.imp)
+}
+
+func (h *Host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.FormValue("mode") {
+	case "":
+	case "start":
+		h.start()
+	case "stop":
+		h.stop()
+	default:
+		fmt.Fprintf(w, "Unknown mode")
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	fmt.Fprintf(w, "I am an importer of type %T; running=%v; last progress=%#v",
+		h.imp, h.running, h.lastProgress)
+}
+
+func (h *Host) start() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.running {
+		return
+	}
+	h.running = true
+	stopCh := make(chan struct{})
+	h.stopreq = stopCh
+	go func() {
+		log.Printf("Starting importer %s", h)
+		err := h.imp.Run(h, stopCh)
+		if err != nil {
+			log.Printf("Importer %s error: %v", h, err)
+		} else {
+			log.Printf("Importer %s finished.", h)
+		}
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		h.running = false
+		h.lastRunErr = err
+	}()
+}
+
+func (h *Host) stop() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if !h.running {
+		return
+	}
+	h.running = false
+	close(h.stopreq)
+}
+
+// HTTPClient returns the HTTP client to use.
+func (h *Host) HTTPClient() *http.Client {
+	if h.client == nil {
 		return http.DefaultClient
 	}
-	return im.Client
+	return h.client
 }
 
 type ProgressMessage struct {
@@ -55,40 +118,80 @@ type ProgressMessage struct {
 	BytesDone, BytesTotal int64
 }
 
-func (im *Importer) Fetch(url string) error {
-	res, err := im.client().Get(url)
-	if err != nil {
-		return err
+// ErrInterrupted should be returned by importers
+// when an Interrupt fires.
+var ErrInterrupted = errors.New("import interrupted by request")
+
+// An Interrupt is passed to importers for them to monitor
+// requests to stop importing.  The channel is closed as
+// a signal to stop.
+type Interrupt <-chan struct{}
+
+// ShouldStop returns whether the interrupt has fired.
+// If so, importers should return ErrInterrupted.
+func (i Interrupt) ShouldStop() bool {
+	select {
+	case <-i:
+		return true
+	default:
+		return false
 	}
-	return im.ImportResponse(res)
 }
 
-func (im *Importer) ImportResponse(res *http.Response) error {
-	defer res.Body.Close()
-	panic("TODO(bradfitz): implement")
+// An Importer imports from a third-party site.
+type Importer interface {
+	// Run runs a full or increment import.
+	Run(*Host, Interrupt) error
+
+	// Prefix returns the unique prefix for this importer.
+	// It should be of the form "serviceType:username".
+	// Further colons are added to form the names of planned
+	// permanodes.
+	Prefix() string
+
+	// CanHandleURL returns whether a URL (such as one a user is
+	// viewing in their browser and dragged onto Camlistore) is a
+	// form recognized by this importer.  If so, its full metadata
+	// and full data (e.g. unscaled image) can be fetched, rather
+	// than just fetching the HTML of the URL.
+	//
+	// TODO: implement and use this. For now importers can return
+	// stub these and return false/errors. They're unused.
+	CanHandleURL(url string) bool
+	ImportURL(url string) error
 }
 
-var parsers = make(map[string]Parser)
+type Constructor func(jsonconfig.Obj) (Importer, error)
 
-func RegisterParser(name string, p Parser) {
-	if _, dup := parsers[name]; dup {
-		panic("Dup registration of parser " + name)
-	}
-	parsers[name] = p
-}
-
-// YesNoMaybe is a tri-state of "yes", "no", and "maybe".
-type YesNoMaybe int
-
-const (
-	No YesNoMaybe = iota
-	Yes
-	Maybe
+var (
+	mu    sync.Mutex
+	ctors = make(map[string]Constructor)
 )
 
-// A Parser
-type Parser interface {
-	CanHandleURL(url string) YesNoMaybe
-	CanHandleResponse(res *http.Response) bool
-	Import(im *Importer) error
+func Register(name string, fn Constructor) {
+	mu.Lock()
+	defer mu.Unlock()
+	if _, dup := ctors[name]; dup {
+		panic("Dup registration of importer " + name)
+	}
+	ctors[name] = fn
+}
+
+func Create(name string, hl blobserver.Loader, cfg jsonconfig.Obj) (*Host, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	fn := ctors[name]
+	if fn == nil {
+		return nil, fmt.Errorf("Unknown importer type %q", name)
+	}
+	imp, err := fn(cfg)
+	if err != nil {
+		return nil, err
+	}
+	h := &Host{
+		imp: imp,
+		// TODO: get search & blobserver from the HandlerLoader
+		// via the "root" type.
+	}
+	return h, nil
 }
