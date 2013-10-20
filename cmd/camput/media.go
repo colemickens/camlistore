@@ -110,12 +110,6 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 
-	// initialize opensubs
-	c.opensubs, err = opensubs.NewOpensubsApi("", nil)
-	if err != nil {
-		return err
-	}
-
 	// initialize ffprobe
 	c.prober, err = ffmpeg.NewProber("ffmpeg") // TODO: pipe this in? from env?
 	if err != nil {
@@ -134,7 +128,6 @@ func (c *mediaCmd) RunCommand(args []string) error {
 		return err
 	}
 	for _, wai := range resp.WithAttr {
-		log.Println("matched permanode", wai.Permanode)
 		var newClaims []*schema.Builder
 
 		dPermaBlob, ok1 := resp.Meta[wai.Permanode.String()]
@@ -148,17 +141,17 @@ func (c *mediaCmd) RunCommand(args []string) error {
 			newClaims = append(newClaims, c.getTmdbClaims(wai.Permanode, dFileBlob)...)
 		}
 
-		if _, present := dPermanode.Attr["tvdb_id"]; !present {
+		/*if _, present := dPermanode.Attr["tvdb_episode_id"]; !present {
 			newClaims = append(newClaims, c.getTvdbClaims(wai.Permanode, dFileBlob)...)
-		}
+		}*/
 
-		if _, present := dPermanode.Attr["opensubs_id"]; !present {
+		/*if _, present := dPermanode.Attr["opensubs_id"]; !present {
 			newClaims = append(newClaims, c.getOpensubsClaims(wai.Permanode, dFileBlob)...)
-		}
+		}*/
 
-		if _, present := dPermanode.Attr["ffprobe_id"]; !present {
+		/*if _, present := dPermanode.Attr["ffprobe_id"]; !present {
 			newClaims = append(newClaims, c.getFfprobeClaims(wai.Permanode, dFileBlob)...)
-		}
+		}*/
 
 		for _, claim := range newClaims {
 			log.Println("claim    ", claim)
@@ -223,7 +216,7 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, fileBlob *search.DescribedBl
 			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_file", imagePutReses[1].BlobRef.String()),
 		)
 	} else {
-		log.Println("tmdb failed to find any match")
+		// log.Println("tmdb failed to find any match")
 	}
 	return result
 }
@@ -232,38 +225,80 @@ func (c *mediaCmd) getTvdbClaims(permaRef blob.Ref, fileBlob *search.DescribedBl
 	filename := fileBlob.File.FileName
 
 	showName, seasonNumber, episodeNumber := mediautil.ParseTvshowFilename(filename)
-	log.Printf("parsed (%s) (%s) (%s)\n", showName, seasonNumber, episodeNumber)
+	if showName == "" || seasonNumber == -1 || episodeNumber == -1 {
+		return result
+	}
+
 	serieses, err := c.tvdbApi.SearchSeriesByName(showName)
 	if err != nil {
-		panic(err)
+		return result
 	}
 	if len(serieses) > 0 {
 		seriesData, err := c.tvdbApi.GetSeriesData(serieses[0].Id)
 		if err != nil {
-			panic(err)
+			log.Println("Unexpectedly failed to retrieve tvdb series data for", serieses[0].Id)
 		}
 		epInfo := seriesData.E(seasonNumber, episodeNumber)
 		if epInfo == nil {
 			log.Println("failed to retrieve episode info")
 			return result
 		}
-		log.Println(epInfo)
-		/*
-			result = append(result,
-				schema.NewSetAttributeClaim(permaRef, "tvdb_episode_id", epInfo.Id),
-				schema.NewSetAttributeClaim(permaRef, "tvdb_episode_name", epInfo.EpisodeName),
-				schema.NewSetAttributeClaim(permaRef, "tvdb_episode_backdrop_file", ""),
-				schema.NewSetAttributeClaim(permaRef, "tvdb_episode_poster_file", ""),
-			)
-		*/
+		log.Printf("%+v\n", epInfo)
+		result = append(result,
+			schema.NewSetAttributeClaim(permaRef, "tvdb_episode_id", strconv.Itoa(epInfo.Id)),
+			schema.NewSetAttributeClaim(permaRef, "tvdb_episode_name", epInfo.EpisodeName),
+			schema.NewSetAttributeClaim(permaRef, "tvdb_episode_overview", epInfo.Overview),
+			schema.NewSetAttributeClaim(permaRef, "tvdb_episode_number", strconv.Itoa(epInfo.EpisodeNumber)),
+			schema.NewSetAttributeClaim(permaRef, "tvdb_season_number", strconv.Itoa(epInfo.SeasonNumber)),
+			schema.NewSetAttributeClaim(permaRef, "tvdb_series_thumbnail_filref", "?"),
+		)
 	}
 	return result
 }
 
 func (c *mediaCmd) getOpensubsClaims(permaRef blob.Ref, fileBlob *search.DescribedBlob) (result []*schema.Builder) {
-	_ = opensubs.Hash
-	log.Println("opensubs: size:", fileBlob.File.Size)
-	// not sure there's a way to get an offset bytes from a file blob?
+	size := fileBlob.File.Size
+
+	header_blobs := make([]byte, opensubs.HashChunkSize)
+	footer_blobs := make([]byte, opensubs.HashChunkSize)
+
+	bf := getUploader().Client.GetBlobFetcher()
+	blob, size, err := bf.Fetch(fileBlob.BlobRef)
+	if err != nil {
+		panic(err)
+	}
+
+	n, err := blob.Read(header_blobs)
+	if err != nil {
+		panic(err)
+	}
+
+	ret, err := blob.Seek(-opensubs.HashChunkSize, 2)
+	// what is ret?
+	if err != nil {
+		panic(err)
+	}
+
+	n, err = blob.Read(footer_blobs)
+	if err != nil {
+		panic(err)
+	}
+
+	_, _ = n, ret
+
+	blob.Close()
+
+	hash, err := opensubs.Hash(size, header_blobs, footer_blobs)
+	if err != nil {
+		panic(err)
+	}
+	movies, err := opensubs.LookupMovieByHash(hash)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("******", movies)
+
+	result = append(result)
 	return result
 }
 
@@ -282,13 +317,4 @@ func permanodeFile(meta search.MetaMap, permaRef blob.Ref) (*search.DescribedBlo
 		return db, ok
 	}
 	return nil, false
-
-	/*if !ok {
-		panic("TODO: Remove this panic, just want to see if it is EVER hit.")
-		fileBlob, ok = c.getFileBlob(fileRef)
-		if !ok {
-			// skip, there's not a file on the other side...
-			continue
-		}
-	}*/
 }

@@ -15,6 +15,8 @@ const (
 	pass       = ""
 	lang       = "eng"
 	user_agent = "OS Test User Agent"
+
+	HashChunkSize = 8192 * 8
 )
 
 func Hash(size int64, header, footer []byte) (hash uint64, err error) {
@@ -81,5 +83,5 @@ func LookupMovieByHash(hash uint64) (res xmlrpc.Struct, err error) {
 	log.Printf("", result["data"])
 	//movie := result["data"].(xmlrpc.Struct)[shash] // TODO: handle... dupes for a hash, I guess?
 
-	return nil, nil
+	return result, nil
 }

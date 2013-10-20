@@ -30,11 +30,12 @@ type TvdbApi struct {
 var cachedSeriesResps = make(map[string]*SeriesListResponse)
 var cachedLangResps = make(map[int]*LangResponse)
 
-func NewTvdbApi(apiKey string, client *http.Client) *TvdbApi {
+func NewTvdbApi(apiKey string, client *http.Client) (*TvdbApi, error) {
 	if client == nil {
 		client = &http.Client{}
 	}
-	return &TvdbApi{apiKey, client, "en"}
+	// should probably fire a test query and return err if we dont get an expected result
+	return &TvdbApi{apiKey, client, "en"}, nil
 }
 
 func fetch(url *url.URL, obj interface{}) error {
