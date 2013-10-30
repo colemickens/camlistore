@@ -212,8 +212,10 @@ func (c *mediaCmd) getTmdbClaims(permaRef blob.Ref, fileBlob *search.DescribedBl
 		result = append(result,
 			schema.NewSetAttributeClaim(permaRef, "tmdb_id", strconv.Itoa(movie.Id)),
 			schema.NewSetAttributeClaim(permaRef, "tmdb_title", movie.Title),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_file", imagePutReses[0].BlobRef.String()),
-			schema.NewSetAttributeClaim(permaRef, "tmdb_poster_file", imagePutReses[1].BlobRef.String()),
+			//schema.NewSetAttributeClaim(permaRef, "tmdb_backdrop_file", imagePutReses[0].BlobRef.String()),
+			//schema.NewSetAttributeClaim(permaRef, "tmdb_poster_file", imagePutReses[1].BlobRef.String()),
+			schema.NewSetAttributeClaim(permaRef, "camliPath:tmdb_backdrop", imagePutReses[0].BlobRef.String()),
+			schema.NewSetAttributeClaim(permaRef, "camliPath:tmdb_poster", imagePutReses[1].BlobRef.String()),
 		)
 	} else {
 		// log.Println("tmdb failed to find any match")
