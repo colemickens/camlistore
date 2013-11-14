@@ -254,3 +254,136 @@ func TestQueryLogicalNot(t *testing.T) {
 	}
 	wantRes(t, sres, foo, bar)
 }
+
+func TestQueryPermanodeAttrExact(t *testing.T) {
+	id, h := querySetup(t)
+
+	p1 := id.NewPlannedPermanode("1")
+	p2 := id.NewPlannedPermanode("2")
+	id.SetAttribute(p1, "someAttr", "value1")
+	id.SetAttribute(p2, "someAttr", "value2")
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Attribute: &AttributeConstraint{
+				Attr:  "someAttr",
+				Value: "value1",
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p1)
+}
+
+func TestQueryPermanodeAttrAny(t *testing.T) {
+	id, h := querySetup(t)
+
+	p1 := id.NewPlannedPermanode("1")
+	p2 := id.NewPlannedPermanode("2")
+	id.SetAttribute(p1, "someAttr", "value1")
+	id.SetAttribute(p2, "someAttr", "value2")
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Attribute: &AttributeConstraint{
+				Attr:     "someAttr",
+				ValueAny: []string{"value1", "value3"},
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p1)
+}
+
+func TestQueryPermanodeAttrSet(t *testing.T) {
+	id, h := querySetup(t)
+
+	p1 := id.NewPlannedPermanode("1")
+	id.SetAttribute(p1, "x", "y")
+	p2 := id.NewPlannedPermanode("2")
+	id.SetAttribute(p2, "someAttr", "value2")
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Attribute: &AttributeConstraint{
+				Attr:     "someAttr",
+				ValueSet: true,
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p2)
+}
+
+// find a permanode (p2) that has a property being a blobref pointing
+// to a sub-query
+func TestQueryPermanodeValueMatches(t *testing.T) {
+	id, h := querySetup(t)
+
+	p1 := id.NewPlannedPermanode("1")
+	id.SetAttribute(p1, "bar", "baz")
+	p2 := id.NewPlannedPermanode("2")
+	id.SetAttribute(p2, "foo", p1.String())
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Attribute: &AttributeConstraint{
+				Attr: "foo",
+				ValueMatches: &Constraint{
+					Attribute: &AttributeConstraint{
+						Attr:  "bar",
+						Value: "baz",
+					},
+				},
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p2)
+}
+
+// find permanodes matching a certain file query
+func TestQueryFileConstraint(t *testing.T) {
+	id, h := querySetup(t)
+
+	fileRef, _ := id.UploadFile("some-stuff.txt", "hello", time.Unix(123, 0))
+	p1 := id.NewPlannedPermanode("1")
+	id.SetAttribute(p1, "camliContent", fileRef.String())
+
+	fileRef2, _ := id.UploadFile("other-file", "hellooooo", time.Unix(456, 0))
+	p2 := id.NewPlannedPermanode("2")
+	id.SetAttribute(p2, "camliContent", fileRef2.String())
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Attribute: &AttributeConstraint{
+				Attr: "camliContent",
+				ValueMatches: &Constraint{
+					File: &FileConstraint{
+						FileName: &StringConstraint{
+							Contains: "-stuff",
+						},
+						MaxSize: 5,
+					},
+				},
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p1)
+}
