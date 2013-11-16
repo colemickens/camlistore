@@ -79,6 +79,7 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 	indexPrefix := conf.RequiredString("index") // TODO: add optional help tips here?
 	ownerBlobStr := conf.RequiredString("owner")
 	devBlockStartupPrefix := conf.OptionalString("devBlockStartupOn", "")
+	slurpToMemory := conf.OptionalBool("slurpToMemory", false)
 	if err := conf.Validate(); err != nil {
 		return nil, err
 	}
@@ -102,6 +103,13 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 	if !ok {
 		return nil, fmt.Errorf("search 'owner' has malformed blobref %q; expecting e.g. sha1-xxxxxxxxxxxx",
 			ownerBlobStr)
+	}
+	if slurpToMemory {
+		// TODO: tell the index to do so. Something like:
+		// ii := indexer.(*index.Index)
+		// if _, err := ii.KeepInMemory(); err != nil {
+		//   return nil, fmt.Errorf("error slurping index to memory: %v", err)
+		// }
 	}
 	return &Handler{
 		index: indexer,
@@ -909,7 +917,8 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 }
 
 type DescribedPermanode struct {
-	Attr url.Values `json:"attr"` // a map[string][]string
+	Attr    url.Values `json:"attr"` // a map[string][]string
+	ModTime time.Time
 }
 
 func (dp *DescribedPermanode) jsonMap() map[string]interface{} {
@@ -1237,6 +1246,8 @@ func (dr *DescribeRequest) populatePermanodeFields(pi *DescribedPermanode, pn, s
 claimLoop:
 	for _, cl := range claims {
 		switch cl.Type {
+		default:
+			continue
 		case "del-attribute":
 			if cl.Value == "" {
 				delete(attr, cl.Attr)
@@ -1270,6 +1281,7 @@ claimLoop:
 			}
 			attr[cl.Attr] = append(sl, cl.Value)
 		}
+		pi.ModTime = cl.Date
 	}
 
 	// If the content permanode is now known, look up its type

@@ -45,9 +45,9 @@ const (
 
 // TODO: extend/merge/delete this type? probably dups in this package.
 type BlobMeta struct {
-	Ref      blob.Ref
-	Size     int
-	MIMEType string
+	Ref       blob.Ref
+	Size      int
+	CamliType string // or empty if unknown; TODO: replace with small int enum?
 }
 
 type SearchQuery struct {
@@ -99,13 +99,10 @@ type Constraint struct {
 	File *FileConstraint
 	Dir  *DirConstraint
 
-	// For claims:
-	Claim *ClaimConstraint `json:"claim"`
+	Claim    *ClaimConstraint `json:"claim"`
+	BlobSize *IntConstraint   `json:"blobSize"`
 
-	BlobSize *BlobSizeConstraint `json:"blobSize"`
-
-	// For permanodes:
-	Attribute *AttributeConstraint `json:"attribute"`
+	Permanode *PermanodeConstraint `json:"permanode"`
 }
 
 type FileConstraint struct {
@@ -140,7 +137,22 @@ type DirConstraint struct {
 }
 
 type IntConstraint struct {
-	Min, Max int64
+	// Min and Max are both optional.
+	// Zero means don't check.
+	Min     int64
+	Max     int64
+	ZeroMin bool
+	ZeroMax bool
+}
+
+func (c *IntConstraint) intMatches(v int64) bool {
+	if (c.Min != 0 || c.ZeroMin) && v < c.Min {
+		return false
+	}
+	if (c.Max != 0 || c.ZeroMax) && v > c.Max {
+		return false
+	}
+	return true
 }
 
 type EXIFConstraint struct {
@@ -200,18 +212,18 @@ type LogicalConstraint struct {
 	B  *Constraint `json:"b"` // only valid if Op == "not"
 }
 
-type BlobSizeConstraint struct {
-	Min int `json:"min"` // inclusive
-	Max int `json:"max"` // inclusive. if zero, ignored.
-}
-
-type AttributeConstraint struct {
+// PermanodeConstraint matches permanodes.
+type PermanodeConstraint struct {
 	// At specifies the time at which to pretend we're resolving attributes.
 	// Attribute claims after this point in time are ignored.
 	// If zero, the current time is used.
+	// TODO: implement. not supported.
 	At time.Time `json:"at"`
 
-	// Attr is the attribute to match.
+	// ModTime optionally matches on the last modtime of the permanode.
+	ModTime *TimeConstraint
+
+	// Attr optionally specifies the attribute to match.
 	// e.g. "camliContent", "camliMember", "tag"
 	// TODO: field to control whether first vs. all permanode values are considered?
 	Attr         string      `json:"attr"`
@@ -219,6 +231,10 @@ type AttributeConstraint struct {
 	ValueAny     []string    `json:"valueAny"`     // Value is any of these strings
 	ValueMatches *Constraint `json:"valueMatches"` // if non-zero, Attr value is blobref in this set of matches
 	ValueSet     bool        `json:"valueSet"`     // value is set to something non-blank
+
+	// TODO:
+	// NumClaims *IntConstraint  // by owner
+	// Owner  blob.Ref // search for permanodes by an owner
 }
 
 // search is the state of an in-progress search
@@ -231,9 +247,19 @@ type search struct {
 	matches map[blob.Ref]bool
 }
 
+// "application/json; camliType=file" => "file"
+// "image/gif" => ""
+func camliTypeFromMIME(mime string) string {
+	if v := strings.TrimPrefix(mime, camliTypeMIME); v != mime {
+		return v
+	}
+	return ""
+}
+
 func (s *search) blobMeta(br blob.Ref) (BlobMeta, error) {
 	mime, size, err := s.h.index.GetBlobMIMEType(br)
-	return BlobMeta{Ref: br, Size: int(size), MIMEType: mime}, err
+	camliType := camliTypeFromMIME(mime)
+	return BlobMeta{Ref: br, Size: int(size), CamliType: camliType}, err
 }
 
 // optimizePlan returns an optimized version of c which will hopefully
@@ -293,7 +319,7 @@ func alwaysMatch(*search, blob.Ref, BlobMeta) (bool, error) {
 }
 
 func anyCamliType(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-	return strings.HasPrefix(bm.MIMEType, camliTypeMIME), nil
+	return bm.CamliType != "", nil
 }
 
 func (c *Constraint) blobMatches(s *search, br blob.Ref, blobMeta BlobMeta) (bool, error) {
@@ -309,14 +335,14 @@ func (c *Constraint) blobMatches(s *search, br blob.Ref, blobMeta BlobMeta) (boo
 	}
 	if c.CamliType != "" {
 		addCond(func(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-			return strings.TrimPrefix(bm.MIMEType, camliTypeMIME) == c.CamliType, nil
+			return bm.CamliType == c.CamliType, nil
 		})
 	}
 	if c.AnyCamliType {
 		addCond(anyCamliType)
 	}
-	if c.Attribute != nil {
-		addCond(c.Attribute.blobMatches)
+	if c.Permanode != nil {
+		addCond(c.Permanode.blobMatches)
 	}
 	// TODO: ClaimConstraint
 	if c.File != nil {
@@ -327,13 +353,7 @@ func (c *Constraint) blobMatches(s *search, br blob.Ref, blobMeta BlobMeta) (boo
 	}
 	if bs := c.BlobSize; bs != nil {
 		addCond(func(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-			if bm.Size < bs.Min {
-				return false, nil
-			}
-			if bs.Max > 0 && bm.Size > bs.Max {
-				return false, nil
-			}
-			return true, nil
+			return bs.intMatches(int64(bm.Size)), nil
 		})
 
 	}
@@ -348,7 +368,13 @@ func (c *Constraint) blobMatches(s *search, br blob.Ref, blobMeta BlobMeta) (boo
 	case 1:
 		return conds[0](s, br, blobMeta)
 	default:
-		panic("TODO")
+		for _, condFn := range conds {
+			match, err := condFn(s, br, blobMeta)
+			if !match || err != nil {
+				return match, err
+			}
+		}
+		return true, nil
 	}
 }
 
@@ -406,8 +432,8 @@ func (c *LogicalConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (bo
 	}
 }
 
-func (c *AttributeConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-	if bm.MIMEType != "application/json; camliType=permanode" {
+func (c *PermanodeConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
+	if bm.CamliType != "permanode" {
 		return false, nil
 	}
 	dr, err := s.h.Describe(&DescribeRequest{
@@ -420,7 +446,24 @@ func (c *AttributeConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (
 	if db == nil || db.Permanode == nil {
 		return false, nil
 	}
-	attrs := db.Permanode.Attr // url.Values: a map[string][]string
+	dp := db.Permanode // DescribedPermanode
+	if c.Attr != "" {
+		if !c.At.IsZero() {
+			panic("PermanodeConstraint.At not implemented")
+		}
+		ok, err := c.permanodeMatchesAttr(s, dp)
+		if !ok || err != nil {
+			return false, err
+		}
+	}
+	if c.ModTime != nil && !c.ModTime.timeMatches(dp.ModTime) {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (c *PermanodeConstraint) permanodeMatchesAttr(s *search, dp *DescribedPermanode) (bool, error) {
+	attrs := dp.Attr // url.Values: a map[string][]string
 	if c.Value != "" {
 		got := attrs.Get(c.Attr)
 		return got == c.Value, nil
@@ -464,14 +507,13 @@ func (c *AttributeConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (
 		}
 		return false, nil
 	}
-
-	log.Printf("br=%v meta=%+v: %#v", br, bm, dr)
+	log.Printf("PermanodeConstraint=%#v", c)
 	panic("TODO: not implemented")
 	return false, nil
 }
 
 func (c *FileConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-	if bm.MIMEType != "application/json; camliType=file" {
+	if bm.CamliType != "file" {
 		return false, nil
 	}
 	fi, err := s.h.index.GetFileInfo(br)
@@ -532,7 +574,7 @@ func (c *TimeConstraint) timeMatches(t time.Time) bool {
 }
 
 func (c *DirConstraint) blobMatches(s *search, br blob.Ref, bm BlobMeta) (bool, error) {
-	if bm.MIMEType != "application/json; camliType=directory" {
+	if bm.CamliType != "directory" {
 		return false, nil
 	}
 

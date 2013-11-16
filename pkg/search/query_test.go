@@ -103,7 +103,7 @@ func TestQueryBlobSize(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			BlobSize: &BlobSizeConstraint{
+			BlobSize: &IntConstraint{
 				Min: 4 << 10,
 				Max: 6 << 10,
 			},
@@ -142,6 +142,29 @@ func TestQueryBlobRefPrefix(t *testing.T) {
 			t.Errorf("matched blob %s didn't begin with sha1-0", brStr)
 		}
 	}
+}
+
+func TestQueryTwoConstraints(t *testing.T) {
+	id, h := querySetup(t)
+
+	id.UploadString("a")      // 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+	b := id.UploadString("b") // e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98
+	id.UploadString("c4")     // e4666a670f042877c67a84473a71675ee0950a08
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			BlobRefPrefix: "sha1-e", // matches b and c4
+			BlobSize: &IntConstraint{ // matches a and b
+				Min: 1,
+				Max: 1,
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, b)
 }
 
 func TestQueryLogicalOr(t *testing.T) {
@@ -188,8 +211,8 @@ func TestQueryLogicalAnd(t *testing.T) {
 					BlobRefPrefix: "sha1-0",
 				},
 				B: &Constraint{
-					BlobSize: &BlobSizeConstraint{
-						Max: len("foo"), // excludes "bar.."
+					BlobSize: &IntConstraint{
+						Max: int64(len("foo")), // excludes "bar.."
 					},
 				},
 			},
@@ -265,7 +288,7 @@ func TestQueryPermanodeAttrExact(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			Attribute: &AttributeConstraint{
+			Permanode: &PermanodeConstraint{
 				Attr:  "someAttr",
 				Value: "value1",
 			},
@@ -288,7 +311,7 @@ func TestQueryPermanodeAttrAny(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			Attribute: &AttributeConstraint{
+			Permanode: &PermanodeConstraint{
 				Attr:     "someAttr",
 				ValueAny: []string{"value1", "value3"},
 			},
@@ -311,7 +334,7 @@ func TestQueryPermanodeAttrSet(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			Attribute: &AttributeConstraint{
+			Permanode: &PermanodeConstraint{
 				Attr:     "someAttr",
 				ValueSet: true,
 			},
@@ -326,7 +349,7 @@ func TestQueryPermanodeAttrSet(t *testing.T) {
 
 // find a permanode (p2) that has a property being a blobref pointing
 // to a sub-query
-func TestQueryPermanodeValueMatches(t *testing.T) {
+func TestQueryPermanodeAttrValueMatches(t *testing.T) {
 	id, h := querySetup(t)
 
 	p1 := id.NewPlannedPermanode("1")
@@ -336,10 +359,10 @@ func TestQueryPermanodeValueMatches(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			Attribute: &AttributeConstraint{
+			Permanode: &PermanodeConstraint{
 				Attr: "foo",
 				ValueMatches: &Constraint{
-					Attribute: &AttributeConstraint{
+					Permanode: &PermanodeConstraint{
 						Attr:  "bar",
 						Value: "baz",
 					},
@@ -368,7 +391,7 @@ func TestQueryFileConstraint(t *testing.T) {
 
 	sq := &SearchQuery{
 		Constraint: &Constraint{
-			Attribute: &AttributeConstraint{
+			Permanode: &PermanodeConstraint{
 				Attr: "camliContent",
 				ValueMatches: &Constraint{
 					File: &FileConstraint{
@@ -386,4 +409,32 @@ func TestQueryFileConstraint(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRes(t, sres, p1)
+}
+
+func TestQueryPermanodeModtime(t *testing.T) {
+	id, h := querySetup(t)
+
+	// indextest advances time one second per operation:
+	p1 := id.NewPlannedPermanode("1")
+	p2 := id.NewPlannedPermanode("2")
+	p3 := id.NewPlannedPermanode("3")
+	id.SetAttribute(p1, "someAttr", "value1") // 2011-11-28 01:32:37.000123456 +0000 UTC 1322443957
+	id.SetAttribute(p2, "someAttr", "value2") // 2011-11-28 01:32:38.000123456 +0000 UTC 1322443958
+	id.SetAttribute(p3, "someAttr", "value3") // 2011-11-28 01:32:39.000123456 +0000 UTC 1322443959
+
+	sq := &SearchQuery{
+		Constraint: &Constraint{
+			Permanode: &PermanodeConstraint{
+				ModTime: &TimeConstraint{
+					After:  time.Unix(1322443957, 456789),
+					Before: time.Unix(1322443959, 0),
+				},
+			},
+		},
+	}
+	sres, err := h.Query(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRes(t, sres, p2)
 }

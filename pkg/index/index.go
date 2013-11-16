@@ -150,6 +150,8 @@ type Index struct {
 	// of the blobs in the index. It makes for faster reads than the otherwise
 	// recursive calls on the index.
 	deletes *deletionCache
+
+	corpus *Corpus // or nil, if not being kept in memory
 }
 
 var _ blobserver.Storage = (*Index)(nil)
@@ -944,9 +946,9 @@ func (x *Index) EnumerateBlobMeta(ch chan<- search.BlobMeta) (err error) {
 			continue
 		}
 		ch <- search.BlobMeta{
-			Ref:      br,
-			Size:     size,
-			MIMEType: v[pipe+1:],
+			Ref:       br,
+			Size:      size,
+			CamliType: camliTypeFromMIME(v[pipe+1:]),
 		}
 	}
 	return err
@@ -963,4 +965,13 @@ func (x *Index) Close() error {
 		return cl.Close()
 	}
 	return nil
+}
+
+// "application/json; camliType=file" => "file"
+// "image/gif" => ""
+func camliTypeFromMIME(mime string) string {
+	if v := strings.TrimPrefix(mime, "application/json; camliType="); v != mime {
+		return v
+	}
+	return ""
 }
