@@ -35,9 +35,11 @@ import (
 	"camlistore.org/pkg/blobserver"
 	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/images"
+	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/syncutil"
 	"camlistore.org/pkg/types"
+	"camlistore.org/pkg/types/camtypes"
 )
 
 const buffered = 32     // arbitrary channel buffer size
@@ -54,8 +56,14 @@ func init() {
 
 // Handler handles search queries.
 type Handler struct {
-	index Index
+	index index.Interface
 	owner blob.Ref
+
+	// Corpus optionally specifies the full in-memory metadata corpus
+	// to use.
+	// TODO: this may be required in the future, or folded into the index
+	// interface.
+	corpus *index.Corpus
 }
 
 // IGetRecentPermanodes is the interface encapsulating the GetRecentPermanodes query.
@@ -71,8 +79,12 @@ var (
 	_ IGetRecentPermanodes = (*Handler)(nil)
 )
 
-func NewHandler(index Index, owner blob.Ref) *Handler {
+func NewHandler(index index.Interface, owner blob.Ref) *Handler {
 	return &Handler{index: index, owner: owner}
+}
+
+func (h *Handler) SetCorpus(c *index.Corpus) {
+	h.corpus = c
 }
 
 func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handler, error) {
@@ -95,7 +107,7 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 	if err != nil {
 		return nil, fmt.Errorf("search config references unknown handler %q", indexPrefix)
 	}
-	indexer, ok := indexHandler.(Index)
+	indexer, ok := indexHandler.(index.Interface)
 	if !ok {
 		return nil, fmt.Errorf("search config references invalid indexer %q (actually a %T)", indexPrefix, indexHandler)
 	}
@@ -104,17 +116,19 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 		return nil, fmt.Errorf("search 'owner' has malformed blobref %q; expecting e.g. sha1-xxxxxxxxxxxx",
 			ownerBlobStr)
 	}
-	if slurpToMemory {
-		// TODO: tell the index to do so. Something like:
-		// ii := indexer.(*index.Index)
-		// if _, err := ii.KeepInMemory(); err != nil {
-		//   return nil, fmt.Errorf("error slurping index to memory: %v", err)
-		// }
-	}
-	return &Handler{
+	h := &Handler{
 		index: indexer,
 		owner: ownerBlobRef,
-	}, nil
+	}
+	if slurpToMemory {
+		ii := indexer.(*index.Index)
+		corpus, err := ii.KeepInMemory()
+		if err != nil {
+			return nil, fmt.Errorf("error slurping index to memory: %v", err)
+		}
+		h.corpus = corpus
+	}
+	return h, nil
 }
 
 // Owner returns Handler owner's public key blobref.
@@ -124,7 +138,7 @@ func (h *Handler) Owner() blob.Ref {
 	return h.owner
 }
 
-func (h *Handler) Index() Index {
+func (h *Handler) Index() index.Interface {
 	return h.index
 }
 
@@ -451,7 +465,7 @@ var testHookBug121 = func() {}
 
 // GetRecentPermanodes returns recently-modified permanodes.
 func (sh *Handler) GetRecentPermanodes(req *RecentRequest) (*RecentResponse, error) {
-	ch := make(chan *Result)
+	ch := make(chan camtypes.RecentPermanode)
 	errch := make(chan error, 1)
 	go func() {
 		errch <- sh.index.GetRecentPermanodes(ch, sh.owner, req.n())
@@ -461,11 +475,11 @@ func (sh *Handler) GetRecentPermanodes(req *RecentRequest) (*RecentResponse, err
 
 	var recent []*RecentItem
 	for res := range ch {
-		dr.Describe(res.BlobRef, 2)
+		dr.Describe(res.Permanode, 2)
 		recent = append(recent, &RecentItem{
-			BlobRef: res.BlobRef,
+			BlobRef: res.Permanode,
 			Owner:   res.Signer,
-			ModTime: types.Time3339(time.Unix(res.LastModTime, 0)),
+			ModTime: types.Time3339(res.LastModTime),
 		})
 		testHookBug121() // http://camlistore.org/issue/121
 	}
@@ -510,7 +524,7 @@ func (sh *Handler) GetPermanodesWithAttr(req *WithAttrRequest) (*WithAttrRespons
 			signer = sh.owner
 		}
 		errch <- sh.index.SearchPermanodesWithAttr(ch,
-			&PermanodeByAttrRequest{
+			&camtypes.PermanodeByAttrRequest{
 				Attribute:  req.Attr,
 				Query:      req.Value,
 				Signer:     signer,
@@ -563,15 +577,15 @@ func (sh *Handler) servePermanodesWithAttr(rw http.ResponseWriter, req *http.Req
 
 // GetClaims returns the claims on req.Permanode signed by sh.owner.
 func (sh *Handler) GetClaims(req *ClaimsRequest) (*ClaimsResponse, error) {
-	// TODO: rename GetOwnerClaims to GetClaims?
 	if !req.Permanode.Valid() {
 		return nil, errors.New("Error getting claims: nil permanode.")
 	}
-	claims, err := sh.index.GetOwnerClaims(req.Permanode, sh.owner)
+	var claims []camtypes.Claim
+	claims, err := sh.index.AppendClaims(claims, req.Permanode, sh.owner, "")
 	if err != nil {
 		return nil, fmt.Errorf("Error getting claims of %s: %v", req.Permanode.String(), err)
 	}
-	sort.Sort(claims)
+	sort.Sort(camtypes.ClaimsByDate(claims))
 	var jclaims []*ClaimsItem
 	for _, claim := range claims {
 		jclaim := &ClaimsItem{
@@ -670,19 +684,18 @@ type DescribedBlob struct {
 	Request *DescribeRequest `json:"-"`
 
 	BlobRef   blob.Ref `json:"blobRef"`
-	MIMEType  string   `json:"mimeType"`
-	CamliType string   `json:"camliType"`
+	CamliType string   `json:"camliType,omitempty"`
 	Size      int64    `json:"size,"`
 
 	// if camliType "permanode"
 	Permanode *DescribedPermanode `json:"permanode,omitempty"`
 
 	// if camliType "file"
-	File *FileInfo `json:"file,omitempty"`
+	File *camtypes.FileInfo `json:"file,omitempty"`
 	// if camliType "directory"
-	Dir *FileInfo `json:"dir,omitempty"`
+	Dir *camtypes.FileInfo `json:"dir,omitempty"`
 	// if camliType "file", and File.IsImage()
-	Image *ImageInfo `json:"image,omitempty"`
+	Image *camtypes.ImageInfo `json:"image,omitempty"`
 	// if camliType "directory"
 	DirChildren []blob.Ref `json:"dirChildren,omitempty"`
 
@@ -698,7 +711,7 @@ type DescribedBlob struct {
 // and the blobref of its File camliContent.
 // If b isn't a permanode, or doesn't have a camliContent that
 // is a file blob, ok is false.
-func (b *DescribedBlob) PermanodeFile() (path []blob.Ref, fi *FileInfo, ok bool) {
+func (b *DescribedBlob) PermanodeFile() (path []blob.Ref, fi *camtypes.FileInfo, ok bool) {
 	if b == nil || b.Permanode == nil {
 		return
 	}
@@ -720,7 +733,7 @@ func (b *DescribedBlob) PermanodeFile() (path []blob.Ref, fi *FileInfo, ok bool)
 // and the blobref of its Directory camliContent.
 // If b isn't a permanode, or doesn't have a camliContent that
 // is a directory blob, ok is false.
-func (b *DescribedBlob) PermanodeDir() (path []blob.Ref, fi *FileInfo, ok bool) {
+func (b *DescribedBlob) PermanodeDir() (path []blob.Ref, fi *camtypes.FileInfo, ok bool) {
 	if b == nil || b.Permanode == nil {
 		return
 	}
@@ -882,9 +895,8 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 	if b.Stub {
 		return "node.png", thumbSize, thumbSize, true
 	}
-	pnAttr := b.Permanode.Attr
 
-	if members := pnAttr["camliMember"]; len(members) > 0 {
+	if b.Permanode.IsContainer() {
 		return "folder.png", thumbSize, thumbSize, true
 	}
 
@@ -918,7 +930,21 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 
 type DescribedPermanode struct {
 	Attr    url.Values `json:"attr"` // a map[string][]string
-	ModTime time.Time
+	ModTime time.Time  `json:"modtime,omitempty"`
+}
+
+// IsContainer returns whether the permanode has either named ("camliPath:"-prefixed) or unnamed
+// ("camliMember") member attributes.
+func (dp *DescribedPermanode) IsContainer() bool {
+	if members := dp.Attr["camliMember"]; len(members) > 0 {
+		return true
+	}
+	for k := range dp.Attr {
+		if strings.HasPrefix(k, "camliPath:") {
+			return true
+		}
+	}
+	return false
 }
 
 func (dp *DescribedPermanode) jsonMap() map[string]interface{} {
@@ -1117,7 +1143,7 @@ func (dr *DescribeRequest) addError(br blob.Ref, err error) {
 }
 
 func (dr *DescribeRequest) describeReally(br blob.Ref, depth int) {
-	mime, size, err := dr.sh.index.GetBlobMIMEType(br)
+	meta, err := dr.sh.index.GetBlobMeta(br)
 	if err == os.ErrNotExist {
 		return
 	}
@@ -1130,16 +1156,17 @@ func (dr *DescribeRequest) describeReally(br blob.Ref, depth int) {
 	// DescribedBlob/DescribedPermanode/DescribedFile, not json
 	// maps.  Then add JSON marhsallers to those types. Add tests.
 	des := dr.describedBlob(br)
-	des.setMIMEType(mime)
-	des.Size = size
+	if meta.CamliType != "" {
+		des.setMIMEType("application/json; camliType=" + meta.CamliType)
+	}
+	des.Size = int64(meta.Size)
 
 	switch des.CamliType {
 	case "permanode":
 		des.Permanode = new(DescribedPermanode)
 		dr.populatePermanodeFields(des.Permanode, br, dr.sh.owner, depth)
 	case "file":
-		var err error
-		des.File, err = dr.sh.index.GetFileInfo(br)
+		fi, err := dr.sh.index.GetFileInfo(br)
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Printf("index.GetFileInfo(file %s) failed; index stale?", br)
@@ -1148,8 +1175,9 @@ func (dr *DescribeRequest) describeReally(br blob.Ref, depth int) {
 			}
 			return
 		}
+		des.File = &fi
 		if des.File.IsImage() {
-			des.Image, err = dr.sh.index.GetImageInfo(br)
+			imgInfo, err := dr.sh.index.GetImageInfo(br)
 			if err != nil {
 				if os.IsNotExist(err) {
 					log.Printf("index.GetImageInfo(file %s) failed; index stale?", br)
@@ -1157,13 +1185,17 @@ func (dr *DescribeRequest) describeReally(br blob.Ref, depth int) {
 					dr.addError(br, err)
 				}
 			}
+			des.Image = &imgInfo
 		}
 	case "directory":
 		var g syncutil.Group
 		g.Go(func() (err error) {
-			des.Dir, err = dr.sh.index.GetFileInfo(br)
+			fi, err := dr.sh.index.GetFileInfo(br)
 			if os.IsNotExist(err) {
 				log.Printf("index.GetFileInfo(directory %s) failed; index stale?", br)
+			}
+			if err == nil {
+				des.Dir = &fi
 			}
 			return
 		})
@@ -1235,14 +1267,14 @@ func (dr *DescribeRequest) populatePermanodeFields(pi *DescribedPermanode, pn, s
 	pi.Attr = make(url.Values)
 	attr := pi.Attr
 
-	claims, err := dr.sh.index.GetOwnerClaims(pn, signer)
+	claims, err := dr.sh.index.AppendClaims(nil, pn, signer, "")
 	if err != nil {
 		log.Printf("Error getting claims of %s: %v", pn.String(), err)
 		dr.addError(pn, fmt.Errorf("Error getting claims of %s: %v", pn.String(), err))
 		return
 	}
 
-	sort.Sort(claims)
+	sort.Sort(camtypes.ClaimsByDate(claims))
 claimLoop:
 	for _, cl := range claims {
 		switch cl.Type {
@@ -1381,7 +1413,7 @@ func (sh *Handler) EdgesTo(req *EdgesRequest) (*EdgesResponse, error) {
 		err  error
 	}
 	resc := make(chan edgeOrError)
-	verify := func(edge *Edge) {
+	verify := func(edge *camtypes.Edge) {
 		db, err := sh.NewDescribeRequest().DescribeSync(edge.From)
 		if err != nil {
 			resc <- edgeOrError{err: err}
@@ -1390,7 +1422,7 @@ func (sh *Handler) EdgesTo(req *EdgesRequest) (*EdgesResponse, error) {
 		found := false
 		if db.Permanode != nil {
 			for attr, vv := range db.Permanode.Attr {
-				if IsBlobReferenceAttribute(attr) {
+				if index.IsBlobReferenceAttribute(attr) {
 					for _, v := range vv {
 						if v == toRefStr {
 							found = true
@@ -1522,8 +1554,7 @@ func (sh *Handler) serveSignerPaths(rw http.ResponseWriter, req *http.Request) {
 const camliTypePrefix = "application/json; camliType="
 
 func (d *DescribedBlob) setMIMEType(mime string) {
-	d.MIMEType = mime
 	if strings.HasPrefix(mime, camliTypePrefix) {
-		d.CamliType = mime[len(camliTypePrefix):]
+		d.CamliType = strings.TrimPrefix(mime, camliTypePrefix)
 	}
 }

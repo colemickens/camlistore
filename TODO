@@ -4,6 +4,9 @@ There are two TODO lists. This file (good for airplanes) and the online bug trac
 
 Offline list:
 
+-- genconfig needs to be updated to route incoming blobs to sync handlers;
+   or should sync handlers subscribe to their source's blobhub?
+
 -- bring in the google glog package to third_party and use it in
    places that want selective logging (e.g. pkg/index/receive.go)
 
@@ -34,13 +37,6 @@ Offline list:
 -- support for running cammount under camlistored. especially for OS X,
    where the lifetime of the background daemon will be the same as the
    user's login session.
-
--- support syncing from a storage type that doesn't support
-   QueueCreator by using local disk instead. writes go to both 1) that
-   storage target not supporting QueueCreator and 2) local disk before
-   being acknowledged. Then sync goes from local disk to wherever,
-   deleting from local disk when done as normal (except in that case,
-   the hardlink refcount would drop from 1 to 0, not 2 to 1)
 
 -- website: remove the "Installation" heading for /cmd/*, since
    they're misleading and people should use "go run make.go" in the

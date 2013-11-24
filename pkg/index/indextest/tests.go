@@ -35,8 +35,8 @@ import (
 	"camlistore.org/pkg/jsonsign"
 	"camlistore.org/pkg/osutil"
 	"camlistore.org/pkg/schema"
-	"camlistore.org/pkg/search"
 	"camlistore.org/pkg/test"
+	"camlistore.org/pkg/types/camtypes"
 )
 
 // An IndexDeps is a helper for populating and querying an Index for tests.
@@ -74,7 +74,7 @@ func (id *IndexDeps) Set(key, value string) error {
 	return id.Index.Storage().Set(key, value)
 }
 
-func (id *IndexDeps) dumpIndex(t *testing.T) {
+func (id *IndexDeps) DumpIndex(t *testing.T) {
 	t.Logf("Begin index dump:")
 	it := id.Index.Storage().Find("")
 	for it.Next() {
@@ -258,7 +258,7 @@ Enpn/oOOfYFa5h0AFndZd1blMvruXfdAobjVABEBAAE=
 			Fetcher: &jsonsign.FileEntityFetcher{File: secretRingFile},
 		},
 		SignerBlobRef: pubKey.BlobRef(),
-		now:           time.Unix(1322443956, 123456),
+		now:           test.ClockOrigin,
 		Fataler:       logFataler{},
 	}
 	// Add dev client test key public key, keyid 26F5ABDA,
@@ -341,7 +341,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 	)
 
 	lastPermanodeMutation := id.lastTime()
-	id.dumpIndex(t)
+	id.DumpIndex(t)
 
 	key := "signerkeyid:sha1-ad87ca5c78bd0ce1195c46f7c98e6025abbaf007"
 	if g, e := id.Get(key), "2931A67C26F5ABDA"; g != e {
@@ -406,7 +406,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 	// SearchPermanodesWithAttr - match attr type "tag" and value "foo1"
 	{
 		ch := make(chan blob.Ref, 10)
-		req := &search.PermanodeByAttrRequest{
+		req := &camtypes.PermanodeByAttrRequest{
 			Signer:    id.SignerBlobRef,
 			Attribute: "tag",
 			Query:     "foo1"}
@@ -427,7 +427,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 	// SearchPermanodesWithAttr - match all with attr type "tag"
 	{
 		ch := make(chan blob.Ref, 10)
-		req := &search.PermanodeByAttrRequest{
+		req := &camtypes.PermanodeByAttrRequest{
 			Signer:    id.SignerBlobRef,
 			Attribute: "tag"}
 		err := id.Index.SearchPermanodesWithAttr(ch, req)
@@ -459,42 +459,42 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 
 	// GetRecentPermanodes
 	{
-		ch := make(chan *search.Result, 10) // expect 2 results, but maybe more if buggy.
+		ch := make(chan camtypes.RecentPermanode, 10) // expect 2 results, but maybe more if buggy.
 		err := id.Index.GetRecentPermanodes(ch, id.SignerBlobRef, 50)
 		if err != nil {
 			t.Fatalf("GetRecentPermanodes = %v", err)
 		}
-		got := []*search.Result{}
+		got := []camtypes.RecentPermanode{}
 		for r := range ch {
 			got = append(got, r)
 		}
-		want := []*search.Result{
-			&search.Result{
-				BlobRef:     pn,
+		want := []camtypes.RecentPermanode{
+			{
+				Permanode:   pn,
 				Signer:      id.SignerBlobRef,
-				LastModTime: lastPermanodeMutation.Unix(),
+				LastModTime: lastPermanodeMutation,
 			},
-			&search.Result{
-				BlobRef:     pnChild,
+			{
+				Permanode:   pnChild,
 				Signer:      id.SignerBlobRef,
-				LastModTime: br3Time.Unix(),
+				LastModTime: br3Time,
 			},
 		}
 		if len(got) != len(want) {
 			t.Errorf("GetRecentPermanode results differ.\n got: %v\nwant: %v",
-				search.Results(got), search.Results(want))
+				searchResults(got), searchResults(want))
 		}
 		for _, w := range want {
 			found := false
 			for _, g := range got {
-				if reflect.DeepEqual(g, w) {
+				if g.Equal(w) {
 					found = true
 					break
 				}
 			}
 			if !found {
 				t.Errorf("GetRecentPermanode: %v was not found.\n got: %v\nwant: %v",
-					w, search.Results(got), search.Results(want))
+					w, searchResults(got), searchResults(want))
 			}
 		}
 	}
@@ -518,7 +518,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		for _, w := range want {
 			found := false
 			for _, g := range got {
-				if w.String() == g.String() {
+				if w == g {
 					found = true
 					break
 				}
@@ -529,33 +529,33 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		}
 	}
 
-	// GetBlobMIMEType
+	// GetBlobMeta
 	{
-		mime, size, err := id.Index.GetBlobMIMEType(pn)
+		meta, err := id.Index.GetBlobMeta(pn)
 		if err != nil {
-			t.Errorf("GetBlobMIMEType(%q) = %v", pn, err)
+			t.Errorf("GetBlobMeta(%q) = %v", pn, err)
 		} else {
-			if e := "application/json; camliType=permanode"; mime != e {
-				t.Errorf("GetBlobMIMEType(%q) mime = %q, want %q", pn, mime, e)
+			if e := "permanode"; meta.CamliType != e {
+				t.Errorf("GetBlobMeta(%q) mime = %q, want %q", pn, meta.CamliType, e)
 			}
-			if size == 0 {
-				t.Errorf("GetBlobMIMEType(%q) size is zero", pn)
+			if meta.Size == 0 {
+				t.Errorf("GetBlobMeta(%q) size is zero", pn)
 			}
 		}
-		_, _, err = id.Index.GetBlobMIMEType(blob.ParseOrZero("abc-123"))
+		_, err = id.Index.GetBlobMeta(blob.ParseOrZero("abc-123"))
 		if err != os.ErrNotExist {
-			t.Errorf("GetBlobMIMEType(dummy blobref) = %v; want os.ErrNotExist", err)
+			t.Errorf("GetBlobMeta(dummy blobref) = %v; want os.ErrNotExist", err)
 		}
 	}
 
-	// GetOwnerClaims
+	// AppendClaims
 	{
-		claims, err := id.Index.GetOwnerClaims(pn, id.SignerBlobRef)
+		claims, err := id.Index.AppendClaims(nil, pn, id.SignerBlobRef, "")
 		if err != nil {
-			t.Errorf("GetOwnerClaims = %v", err)
+			t.Errorf("AppendClaims = %v", err)
 		} else {
-			want := search.ClaimList([]*search.Claim{
-				&search.Claim{
+			want := []camtypes.Claim{
+				{
 					BlobRef:   br1,
 					Permanode: pn,
 					Signer:    id.SignerBlobRef,
@@ -564,7 +564,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 					Attr:      "tag",
 					Value:     "foo1",
 				},
-				&search.Claim{
+				{
 					BlobRef:   br2,
 					Permanode: pn,
 					Signer:    id.SignerBlobRef,
@@ -573,7 +573,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 					Attr:      "tag",
 					Value:     "foo2",
 				},
-				&search.Claim{
+				{
 					BlobRef:   rootClaim,
 					Permanode: pn,
 					Signer:    id.SignerBlobRef,
@@ -582,7 +582,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 					Attr:      "camliRoot",
 					Value:     "rootval",
 				},
-				&search.Claim{
+				{
 					BlobRef:   memberRef,
 					Permanode: pn,
 					Signer:    id.SignerBlobRef,
@@ -591,9 +591,9 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 					Attr:      "camliMember",
 					Value:     pnChild.String(),
 				},
-			})
+			}
 			if !reflect.DeepEqual(claims, want) {
-				t.Errorf("GetOwnerClaims results differ.\n got: %v\nwant: %v",
+				t.Errorf("AppendClaims results differ.\n got: %v\nwant: %v",
 					claims, want)
 			}
 		}
@@ -610,7 +610,7 @@ func PathsOfSignerTarget(t *testing.T, initIdx func() *index.Index) {
 	claim2 := id.SetAttribute(pn, "camliPath:with|pipe", "targ-124")
 	t.Logf("made path claims %q and %q", claim1, claim2)
 
-	id.dumpIndex(t)
+	id.DumpIndex(t)
 
 	type test struct {
 		blobref string
@@ -657,7 +657,7 @@ func Files(t *testing.T, initIdx func() *index.Index) {
 	fileTime := time.Unix(1361250375, 0)
 	fileRef, wholeRef := id.UploadFile("foo.html", "<html>I am an html file.</html>", fileTime)
 	t.Logf("uploaded fileref %q, wholeRef %q", fileRef, wholeRef)
-	id.dumpIndex(t)
+	id.DumpIndex(t)
 
 	// ExistingFileSchemas
 	{
@@ -714,7 +714,7 @@ func EdgesTo(t *testing.T, initIdx func() *index.Index) {
 
 	t.Logf("edge %s --> %s", pn1, pn2)
 
-	id.dumpIndex(t)
+	id.DumpIndex(t)
 
 	// Look for pn1
 	{
@@ -725,7 +725,7 @@ func EdgesTo(t *testing.T, initIdx func() *index.Index) {
 		if len(edges) != 1 {
 			t.Fatalf("num edges = %d; want 1", len(edges))
 		}
-		wantEdge := &search.Edge{
+		wantEdge := &camtypes.Edge{
 			From:     pn1,
 			To:       pn2,
 			FromType: "permanode",
@@ -740,7 +740,7 @@ func IsDeleted(t *testing.T, initIdx func() *index.Index) {
 	idx := initIdx()
 	id := NewIndexDeps(idx)
 	id.Fataler = t
-	defer id.dumpIndex(t)
+	defer id.DumpIndex(t)
 	pn1 := id.NewPermanode()
 
 	// delete pn1
@@ -790,7 +790,7 @@ func DeletedAt(t *testing.T, initIdx func() *index.Index) {
 	idx := initIdx()
 	id := NewIndexDeps(idx)
 	id.Fataler = t
-	defer id.dumpIndex(t)
+	defer id.DumpIndex(t)
 	pn1 := id.NewPermanode()
 
 	// Test the never, ever, deleted case
@@ -883,4 +883,17 @@ func appendReverseString(b []byte, s string) []byte {
 		}
 	}
 	return b
+}
+
+type searchResults []camtypes.RecentPermanode
+
+func (s searchResults) String() string {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "[%d search results: ", len(s))
+	for _, r := range s {
+		fmt.Fprintf(&buf, "{BlobRef: %s, Signer: %s, LastModTime: %d}",
+			r.Permanode, r.Signer, r.LastModTime.Unix())
+	}
+	buf.WriteString("]")
+	return buf.String()
 }

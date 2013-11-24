@@ -19,6 +19,7 @@ package blobserver
 import (
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -34,9 +35,21 @@ const MaxBlobSize = 16 << 20
 
 var ErrCorruptBlob = errors.New("corrupt blob; digest doesn't match")
 
+// BlobReceiver is the interface for receiving
 type BlobReceiver interface {
 	// ReceiveBlob accepts a newly uploaded blob and writes it to
-	// disk.
+	// permanent storage.
+	//
+	// Implementations of BlobReceiver downstream of the HTTP
+	// server can trust that the source isn't larger than
+	// MaxBlobSize and that its digest matches the provided blob
+	// ref. (If not, the read of the source will fail before EOF)
+	//
+	// To ensure those guarantees, callers of ReceiveBlob should
+	// not call ReceiveBlob directly but instead use either
+	// blobserver.Receive or blobserver.ReceiveString, which also
+	// take care of notifying the BlobReceiver's "BlobHub"
+	// notification bus for observers.
 	ReceiveBlob(br blob.Ref, source io.Reader) (blob.SizedRef, error)
 }
 
@@ -93,9 +106,10 @@ type BlobReceiveConfiger interface {
 }
 
 type Config struct {
-	Writable, Readable bool
-	IsQueue            bool // supports deletes
-	CanLongPoll        bool
+	Writable    bool
+	Readable    bool
+	Deletable   bool
+	CanLongPoll bool
 
 	// the "http://host:port" and optional path (but without trailing slash) to have "/camli/*" appended
 	URLBase       string
@@ -117,6 +131,13 @@ type Storage interface {
 	BlobStatter
 	BlobEnumerator
 	BlobRemover
+}
+
+// StorageHandler is a storage implementation that also exports an HTTP
+// status page.
+type StorageHandler interface {
+	Storage
+	http.Handler
 }
 
 // Optional interface for storage implementations which can be asked
@@ -168,16 +189,6 @@ type Configer interface {
 type StorageConfiger interface {
 	Storage
 	Configer
-}
-
-// StorageQueueCreator is implemented by Storage interfaces which support
-// creating queues in which all new uploads go to both the root
-// storage as well as the named queue, which is then returned.  This
-// is used by replication.
-type StorageQueueCreator interface {
-	Storage
-
-	CreateQueue(name string) (Storage, error)
 }
 
 // MaxEnumerateConfig is an optional interface implemented by Storage

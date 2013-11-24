@@ -10,7 +10,7 @@
          "handler": "root",
          "handlerArgs": {
              "ownerName": ["_env", "${USER}-dev"],
-             "blobRoot": "/bs-and-maybe-also-index/",
+             "blobRoot": "/bs-recv/",
              "statusRoot": "/status/",
              "searchRoot": "/my-search/",
              "stealth": false
@@ -21,9 +21,10 @@
           "handler": "publish",
           "handlerArgs": {
               "rootName": "dev-blog-root",
-              "blobRoot": "/bs-and-maybe-also-index/",
+              "blobRoot": "/bs/",
               "searchRoot": "/my-search/",
               "cache": "/cache/",
+              "goTemplate": "blog.html",
               "devBootstrapPermanodeUsing": "/sighelper/"
           }
       },
@@ -32,12 +33,13 @@
           "handler": "publish",
           "handlerArgs": {
               "rootName": "dev-pics-root",
-              "blobRoot": "/bs-and-maybe-also-index/",
+              "blobRoot": "/bs/",
               "searchRoot": "/my-search/",
               "cache": "/cache/",
               "scaledImage": "lrucache",
               "css": ["pics.css"],
               "js": ["pics.js"],
+              "goTemplate": "gallery.html",
               "devBootstrapPermanodeUsing": "/sighelper/"
           }
       },
@@ -64,13 +66,23 @@
          "handler": "status"
      },
 
-      "/sync/": {
+      "/sync-index/": {
           "handler": "sync",
           "handlerArgs": {
               "from": "/bs/",
               "to": ["_env", "${CAMLI_INDEXER_PATH}"],
+              "queue": { "type": "memory" },
               "fullSyncOnStart": ["_env", "${CAMLI_MEMINDEX_ENABLED}"],
               "blockingFullSyncOnStart": ["_env", "${CAMLI_MEMINDEX_ENABLED}"]
+          }
+      },
+
+      "/sync-r1/": {
+          "handler": "sync",
+          "handlerArgs": {
+              "from": "/bs/",
+              "to": "/r1/",
+              "queue": { "type": "memory" }
           }
       },
 
@@ -83,19 +95,21 @@
           }
      },
 
-      "/bs-and-index/": {
+      "/bs-recv/": {
           "handler": "storage-replica",
           "handlerArgs": {
-              "backends": ["/bs/", ["_env", "${CAMLI_INDEXER_PATH}"]]
+              "minWritesForSuccess": 3,
+              "backends": ["/bs/", "/sync-r1/", ["_env", "${CAMLI_INDEXER_PATH}"]],
+              "readBackends": ["/bs/"]
           }
       },
 
-      "/bs-and-maybe-also-index/": {
+      "/cond-unused/": {
           "handler": "storage-cond",
           "handlerArgs": {
               "write": {
                   "if": "isSchema",
-                  "then": "/bs-and-index/",
+                  "then": "/bs-recv/",
                   "else": "/bs/"
               },
               "read": "/bs/"
@@ -172,6 +186,7 @@
               "I_AGREE": "that encryption support hasn't been peer-reviewed, isn't finished, and its format might change.",
               "meta": "/encmeta/",
               "blobs": "/encblob/",
+              "metaIndex": { "type": "memory" },
               "key": "000102030405060708090a0b0c0d0e0f"
           }
       },
@@ -255,7 +270,8 @@
          "handlerArgs": {
              "index": ["_env", "${CAMLI_INDEXER_PATH}"],
              "owner": "sha1-f2b0b7da718b97ce8c31591d8ed4645c777f3ef4",
-             "devBlockStartupOn": "/sync/"
+             "slurpToMemory": true,
+             "devBlockStartupOn": "/sync-index/"
          }
      },
 
@@ -268,12 +284,13 @@
          }
      },
 
-     "/importer-flickr/": {
-         "handler": "importer-flickr",
-         "handlerArgs": {
-             "miniToken": ""
-         }
-     },
+    "/importer-flickr/": {
+      "handler": "importer-flickr",
+      "enabled": ["_env", "${CAMLI_FLICKR_ENABLED}", false],
+      "handlerArgs": {
+        "apiKey": ["_env", "${CAMLI_FLICKR_API_KEY}", ""]
+      }
+    },
 
      "/share/": {
          "handler": "share",

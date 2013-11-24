@@ -18,24 +18,22 @@ limitations under the License.
 package flickr
 
 import (
-	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
+	"log"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 
 	"camlistore.org/pkg/importer"
 	"camlistore.org/pkg/jsonconfig"
+	"camlistore.org/pkg/schema"
+	"camlistore.org/third_party/github.com/garyburd/go-oauth/oauth"
 )
 
 const (
-	authURL   = "http://www.flickr.com/auth-72157636676651636"
-	apiURL    = "http://api.flickr.com/services/rest/"
-	apiSecret = "6ed517d5f44946c9"
-	apiKey    = "b5801cdbc870073e7b136f24fb50396f"
+	apiURL = "http://api.flickr.com/services/rest/"
 )
 
 func init() {
@@ -43,42 +41,165 @@ func init() {
 }
 
 type imp struct {
-	authToken string
-	userId    string
+	host *importer.Host
+	user *userInfo // nil if the user isn't authenticated
 }
 
-func newFromConfig(cfg jsonconfig.Obj) (importer.Importer, error) {
-	// TODO(aa): miniToken config is temporary. There should be UI to auth using oauth.
-	miniToken := cfg.RequiredString("miniToken")
+func newFromConfig(cfg jsonconfig.Obj, host *importer.Host) (importer.Importer, error) {
+	apiKey := cfg.RequiredString("apiKey")
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-
-	im := &imp{}
-	if miniToken != "" {
-		if err := im.authenticate(http.DefaultClient, miniToken); err != nil {
-			return nil, err
-		}
+	parts := strings.Split(apiKey, ":")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("Flickr importer: Invalid apiKey configuration: %q", apiKey)
 	}
-	return im, nil
+	oauthClient.Credentials = oauth.Credentials{
+		Token:  parts[0],
+		Secret: parts[1],
+	}
+	return &imp{
+		host: host,
+	}, nil
 }
 
 func (im *imp) CanHandleURL(url string) bool { return false }
 func (im *imp) ImportURL(url string) error   { panic("unused") }
 
 func (im *imp) Prefix() string {
-	return fmt.Sprintf("flickr:%s", im.userId)
+	// This should only get called when we're importing, so it's OK to
+	// assume we're authenticated.
+	return fmt.Sprintf("flickr:%s", im.user.Id)
 }
 
-type photoMeta struct {
-	Id          string
-	Title       string
-	Ispublic    int
-	Isfriend    int
-	Isfamily    int
-	Description struct {
-		Content string `json:"_content"`
+func (im *imp) String() string {
+	// We use this in logging when we're not authenticated, so it should do
+	// something reasonable in that case.
+	userId := "<unauthenticated>"
+	if im.user != nil {
+		userId = im.user.Id
 	}
+	return fmt.Sprintf("flickr:%s", userId)
+}
+
+func (im *imp) Run(intr importer.Interrupt) error {
+	if err := im.importPhotosets(); err != nil {
+		return err
+	}
+	if err := im.importPhotos(); err != nil {
+		return err
+	}
+	return nil
+}
+
+type photosetsGetList struct {
+	Photosets struct {
+		Page     int
+		Pages    int
+		Perpage  int
+		Total    int
+		Photoset []*photosetsGetListItem
+	}
+}
+
+type photosetsGetListItem struct {
+	Id             string
+	PrimaryPhotoId string `json:"primary"`
+	Title          contentString
+	Description    contentString
+}
+
+type photosetsGetPhotos struct {
+	Photoset struct {
+		Id    string
+		Photo []struct {
+			Id             string
+			Originalformat string
+		}
+	}
+}
+
+func (im *imp) importPhotosets() error {
+	resp := photosetsGetList{}
+	if err := im.flickrAPIRequest(&resp, "flickr.photosets.getList"); err != nil {
+		return err
+	}
+
+	setsNode, err := im.getTopLevelNode("sets", "Sets")
+	if err != nil {
+		return err
+	}
+	log.Printf("Importing %d sets", len(resp.Photosets.Photoset))
+
+	for _, item := range resp.Photosets.Photoset {
+		if err := im.importPhotoset(setsNode, item); err != nil {
+			log.Printf("Flickr importer: error importing photoset %s: %s", item.Id, err)
+			continue
+		}
+	}
+	return nil
+}
+
+func (im *imp) importPhotoset(parent *importer.Object, photoset *photosetsGetListItem) error {
+	photosetNode, err := parent.ChildPathObject(photoset.Id)
+	if err != nil {
+		return err
+	}
+
+	if err := photosetNode.SetAttrs(
+		"flickrId", photoset.Title.Content,
+		"title", photoset.Title.Content,
+		"description", photoset.Description.Content,
+		"primaryPhotoId", photoset.PrimaryPhotoId); err != nil {
+		return err
+	}
+
+	resp := photosetsGetPhotos{}
+	if err := im.flickrAPIRequest(&resp, "flickr.photosets.getPhotos",
+		"photoset_id", photoset.Id, "extras", "original_format"); err != nil {
+		return err
+	}
+
+	photosNode, err := im.getPhotosNode()
+	if err != nil {
+		return err
+	}
+
+	for _, item := range resp.Photoset.Photo {
+		filename := fmt.Sprintf("%s.%s", item.Id, item.Originalformat)
+		photoNode, err := photosNode.ChildPathObject(filename)
+		if err != nil {
+			log.Printf("Flickr importer: error finding photo node %s for addition to photoset %s: %s",
+				item.Id, photoset.Id, err)
+			continue
+		}
+		if err := photosetNode.SetAttr("camliPath:"+filename, photoNode.PermanodeRef().String()); err != nil {
+			log.Printf("Flickr importer: error adding photo %s to photoset %s: %s",
+				item.Id, photoset.Id, err)
+		}
+	}
+	return nil
+}
+
+type photosSearch struct {
+	Photos struct {
+		Page    int
+		Pages   int
+		Perpage int
+		Total   int `json:",string"`
+		Photo   []*photosSearchItem
+	}
+
+	Stat string
+}
+
+type photosSearchItem struct {
+	Id             string
+	Title          string
+	Ispublic       int
+	Isfriend       int
+	Isfamily       int
+	Description    contentString
 	Dateupload     string
 	Datetaken      string
 	Originalformat string
@@ -92,103 +213,152 @@ type photoMeta struct {
 	URL            string `json:"url_o"`
 }
 
-type searchPhotosResult struct {
-	Photos struct {
-		Page    int
-		Pages   int
-		Perpage int
-		Total   int `json:",string"`
-		Photo   []photoMeta
-	}
-
-	Stat string
-}
-
-func (im *imp) Run(h *importer.Host, intr importer.Interrupt) error {
-	if im.authToken == "" {
-		return fmt.Errorf("miniToken config key required. Go to %s to get one.", authURL)
-	}
-
-	resp := searchPhotosResult{}
-	if err := im.flickrRequest(h.HTTPClient(), map[string]string{
-		"method":  "flickr.photos.search",
-		"user_id": "me",
-		"extras":  "description, date_upload, date_taken, original_format, last_update, geo, tags, machine_tags, views, media, url_o"},
-		&resp); err != nil {
+func (im *imp) importPhotos() error {
+	resp := photosSearch{}
+	if err := im.flickrAPIRequest(&resp, "flickr.photos.search",
+		"extras", "description, date_upload, date_taken, original_format, last_update, geo, tags, machine_tags, views, media, url_o"); err != nil {
 		return err
 	}
+
+	photosNode, err := im.getPhotosNode()
+	if err != nil {
+		return err
+	}
+	log.Printf("Importing %d photos", len(resp.Photos.Photo))
 
 	for _, item := range resp.Photos.Photo {
-		camliIdFramgment := fmt.Sprintf("photo-%s", item.Id)
-		photoContentHint := item.Lastupdate
-		fmt.Println(camliIdFramgment, photoContentHint)
-		// TODO(aa): Stuff
+		if err := im.importPhoto(photosNode, item); err != nil {
+			log.Printf("Flickr importer: error importing %s: %s", item.Id, err)
+			continue
+		}
 	}
-
 	return nil
 }
 
-type getFullAuthTokenResp struct {
-	Auth struct {
-		Token struct {
-			Content string `json:"_content"`
-		}
-		User struct {
-			Nsid string
-		}
-	}
-	Stat string
-}
-
-func (im *imp) authenticate(httpClient *http.Client, miniToken string) error {
-	resp := getFullAuthTokenResp{}
-	if err := im.flickrRequest(httpClient, map[string]string{
-		"method":     "flickr.auth.getFullToken",
-		"mini_token": miniToken}, &resp); err != nil {
-		return err
-	}
-	im.userId = resp.Auth.User.Nsid
-	im.authToken = resp.Auth.Token.Content
-	return nil
-}
-
-func (im *imp) flickrRequest(httpClient *http.Client, params map[string]string, result interface{}) error {
-	params["api_key"] = apiKey
-	params["format"] = "json"
-	params["nojsoncallback"] = "1"
-
-	if im.authToken != "" {
-		params["auth_token"] = im.authToken
-	}
-
-	paramList := make([]string, 0, len(params))
-	for key, val := range params {
-		paramList = append(paramList, key+val)
-	}
-	sort.Strings(paramList)
-
-	hash := md5.New()
-	body := apiSecret + strings.Join(paramList, "")
-	io.WriteString(hash, body)
-	digest := hash.Sum(nil)
-
-	reqURL, _ := url.Parse(apiURL)
-	q := reqURL.Query()
-	for key, val := range params {
-		q.Set(key, val)
-	}
-	q.Set("api_sig", fmt.Sprintf("%x", digest))
-	reqURL.RawQuery = q.Encode()
-
-	res, err := httpClient.Get(reqURL.String())
+// TODO(aa):
+// * Parallelize: http://golang.org/doc/effective_go.html#concurrency
+// * Do more than one "page" worth of results
+// * Report progress and errors back through host interface
+// * All the rest of the metadata (see photoMeta)
+// * Conflicts: For all metadata changes, prefer any non-imported claims
+// * Test!
+func (im *imp) importPhoto(parent *importer.Object, photo *photosSearchItem) error {
+	filename := fmt.Sprintf("%s.%s", photo.Id, photo.Originalformat)
+	photoNode, err := parent.ChildPathObject(filename)
 	if err != nil {
 		return err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("Auth request failed with: %s", res.Status)
+	// Import all the metadata. SetAttrs() is a no-op if the value hasn't changed, so there's no cost to doing these on every run.
+	// And this way if we add more things to import, they will get picked up.
+	if err := photoNode.SetAttrs(
+		"flickrId", photo.Id,
+		"title", photo.Title,
+		"description", photo.Description.Content); err != nil {
+		return err
 	}
 
+	// Import the photo itself. Since it is expensive to fetch the image, we store its lastupdate and only refetch if it might have changed.
+	if photoNode.Attr("flickrLastupdate") == photo.Lastupdate {
+		return nil
+	}
+	res, err := im.flickrRequest(photo.URL, url.Values{})
+	if err != nil {
+		log.Printf("Flickr importer: Could not fetch %s: %s", photo.URL, err)
+		return err
+	}
+	defer res.Body.Close()
+
+	fileRef, err := schema.WriteFileFromReader(im.host.Target(), filename, res.Body)
+	if err != nil {
+		return err
+	}
+	if err := photoNode.SetAttr("camliContent", fileRef.String()); err != nil {
+		return err
+	}
+	// Write lastupdate last, so that if any of the preceding fails, we will try again next time.
+	if err := photoNode.SetAttr("flickrLastupdate", photo.Lastupdate); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (im *imp) getPhotosNode() (*importer.Object, error) {
+	return im.getTopLevelNode("photos", "Photos")
+}
+
+func (im *imp) getTopLevelNode(path string, title string) (*importer.Object, error) {
+	root, err := im.getRootNode()
+	if err != nil {
+		return nil, err
+	}
+
+	photos, err := root.ChildPathObject(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := photos.SetAttr("title", title); err != nil {
+		return nil, err
+	}
+	return photos, nil
+}
+
+func (im *imp) getRootNode() (*importer.Object, error) {
+	root, err := im.host.RootObject()
+	if err != nil {
+		return nil, err
+	}
+
+	if root.Attr("title") == "" {
+		title := fmt.Sprintf("Flickr (%s)", im.user.Username)
+		if err := root.SetAttr("title", title); err != nil {
+			return nil, err
+		}
+	}
+	return root, nil
+}
+
+func (im *imp) flickrAPIRequest(result interface{}, method string, keyval ...string) error {
+	if len(keyval)%2 == 1 {
+		panic("Incorrect number of keyval arguments")
+	}
+
+	form := url.Values{}
+	form.Set("method", method)
+	form.Set("format", "json")
+	form.Set("nojsoncallback", "1")
+	form.Set("user_id", im.user.Id)
+	for i := 0; i < len(keyval); i += 2 {
+		form.Set(keyval[i], keyval[i+1])
+	}
+
+	res, err := im.flickrRequest(apiURL, form)
+	if err != nil {
+		return err
+	}
 	defer res.Body.Close()
 	return json.NewDecoder(res.Body).Decode(result)
+}
+
+func (im *imp) flickrRequest(url string, form url.Values) (*http.Response, error) {
+	if im.user == nil {
+		return nil, errors.New("Not logged in. Go to /importer-flickr/login.")
+	}
+
+	res, err := oauthClient.Get(im.host.HTTPClient(), im.user.Cred, url, form)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Auth request failed with: %s", res.Status)
+	}
+
+	return res, nil
+}
+
+type contentString struct {
+	Content string `json:"_content"`
 }

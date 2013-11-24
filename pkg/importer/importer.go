@@ -28,17 +28,20 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/jsonsign/signhandler"
 	"camlistore.org/pkg/schema"
 	"camlistore.org/pkg/search"
 	"camlistore.org/pkg/server"
+	"camlistore.org/pkg/syncutil"
 )
 
 // A Host is the environment hosting an importer.
 type Host struct {
-	imp Importer
+	BaseURL string
 
+	imp    Importer
 	target blobserver.StatReceiver
 	search *search.Handler
 	signer *schema.Signer
@@ -55,7 +58,7 @@ type Host struct {
 }
 
 func (h *Host) String() string {
-	return fmt.Sprintf("%s (a %T)", h.imp.Prefix(), h.imp)
+	return fmt.Sprintf("%T(%s)", h, h.imp)
 }
 
 func (h *Host) Target() blobserver.StatReceiver {
@@ -67,19 +70,24 @@ func (h *Host) Search() *search.Handler {
 }
 
 func (h *Host) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.FormValue("mode") {
-	case "":
-	case "start":
-		h.start()
-	case "stop":
-		h.stop()
-	default:
-		fmt.Fprintf(w, "Unknown mode")
+	if httputil.PathSuffix(r) == "" {
+		switch r.FormValue("mode") {
+		case "":
+		case "start":
+			h.start()
+		case "stop":
+			h.stop()
+		default:
+			fmt.Fprintf(w, "Unknown mode")
+		}
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		fmt.Fprintf(w, "I am an importer of type %T; running=%v; last progress=%#v",
+			h.imp, h.running, h.lastProgress)
+	} else {
+		// TODO(aa): Remove this temporary hack once the UI has a way to configure importers.
+		h.imp.ServeHTTP(w, r)
 	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	fmt.Fprintf(w, "I am an importer of type %T; running=%v; last progress=%#v",
-		h.imp, h.running, h.lastProgress)
 }
 
 func (h *Host) start() {
@@ -93,7 +101,7 @@ func (h *Host) start() {
 	h.stopreq = stopCh
 	go func() {
 		log.Printf("Starting importer %s", h)
-		err := h.imp.Run(h, stopCh)
+		err := h.imp.Run(stopCh)
 		if err != nil {
 			log.Printf("Importer %s error: %v", h, err)
 		} else {
@@ -186,7 +194,11 @@ func (o *Object) Attrs(attr string) []string {
 	return o.attr[attr]
 }
 
+// SetAttr sets the attribute key to value.
 func (o *Object) SetAttr(key, value string) error {
+	if o.Attr(key) == value {
+		return nil
+	}
 	_, err := o.h.upload(schema.NewSetAttributeClaim(o.pn, key, value))
 	if err != nil {
 		return err
@@ -200,12 +212,49 @@ func (o *Object) SetAttr(key, value string) error {
 	return nil
 }
 
+// SetAttrs sets multiple attributes. The provided keyval should be an even number of alternating key/value pairs to set.
+func (o *Object) SetAttrs(keyval ...string) error {
+	if len(keyval)%2 == 1 {
+		panic("importer.SetAttrs: odd argument count")
+	}
+
+	g := syncutil.Group{}
+	for i := 0; i < len(keyval); i += 2 {
+		key, val := keyval[i], keyval[i+1]
+		if val != o.Attr(key) {
+			g.Go(func() error {
+				return o.SetAttr(key, val)
+			})
+		}
+	}
+	return g.Err()
+}
+
 // ChildPathObject returns (creating if necessary) the child object
 // from the permanode o, given by the "camliPath:xxxx" attribute,
 // where xxx is the provided path.
 func (o *Object) ChildPathObject(path string) (*Object, error) {
-	log.Printf("TODO: ChildPathObject not implemented")
-	return nil, errors.New("TODO: ChildPathObject not implemented")
+	attrName := "camliPath:" + path
+	if v := o.Attr(attrName); v != "" {
+		br, ok := blob.Parse(v)
+		if ok {
+			return o.h.ObjectFromRef(br)
+		}
+	}
+
+	childBlobRef, err := o.h.upload(schema.NewUnsignedPermanode())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := o.SetAttr(attrName, childBlobRef.String()); err != nil {
+		return nil, err
+	}
+
+	return &Object{
+		h:  o.h,
+		pn: childBlobRef,
+	}, nil
 }
 
 // RootObject returns the root permanode for this importer account.
@@ -234,7 +283,6 @@ func (h *Host) RootObject() (*Object, error) {
 		return nil, fmt.Errorf("Found %d import roots for %q; want 1", len(res.WithAttr), h.imp.Prefix())
 	}
 	pn := res.WithAttr[0].Permanode
-	log.Printf("Root permanode of %s is %v", h, pn)
 	return h.ObjectFromRef(pn)
 }
 
@@ -284,7 +332,7 @@ func (i Interrupt) ShouldStop() bool {
 // An Importer imports from a third-party site.
 type Importer interface {
 	// Run runs a full or increment import.
-	Run(*Host, Interrupt) error
+	Run(Interrupt) error
 
 	// Prefix returns the unique prefix for this importer.
 	// It should be of the form "serviceType:username".
@@ -302,10 +350,12 @@ type Importer interface {
 	// stub these and return false/errors. They're unused.
 	CanHandleURL(url string) bool
 	ImportURL(url string) error
+
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 // Constructor is the function type that importers must register at init time.
-type Constructor func(jsonconfig.Obj) (Importer, error)
+type Constructor func(jsonconfig.Obj, *Host) (Importer, error)
 
 var (
 	mu    sync.Mutex
@@ -321,20 +371,21 @@ func Register(name string, fn Constructor) {
 	ctors[name] = fn
 }
 
-func Create(name string, hl blobserver.Loader, cfg jsonconfig.Obj) (*Host, error) {
+func Create(name string, hl blobserver.Loader, baseURL string, cfg jsonconfig.Obj) (*Host, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	fn := ctors[name]
 	if fn == nil {
 		return nil, fmt.Errorf("Unknown importer type %q", name)
 	}
-	imp, err := fn(cfg)
+	h := &Host{
+		BaseURL: baseURL,
+	}
+	imp, err := fn(cfg, h)
 	if err != nil {
 		return nil, err
 	}
-	h := &Host{
-		imp: imp,
-	}
+	h.imp = imp
 	return h, nil
 }
 
@@ -361,10 +412,6 @@ func (h *Host) InitHandler(hl blobserver.FindHandlerByTyper) error {
 	if h.signer == nil {
 		return errors.New("importer requires a 'jsonsign' handler")
 	}
-
-	ro, err := h.RootObject()
-	log.Printf("Got a %#v, %v", ro, err)
-	log.Printf("Signer = %s", h.signer)
 
 	return nil
 }

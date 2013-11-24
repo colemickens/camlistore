@@ -44,6 +44,7 @@ type configPrefixesParams struct {
 	blobPath         string
 	searchOwner      blob.Ref
 	shareHandlerPath string
+	flickr           string
 }
 
 var (
@@ -61,7 +62,7 @@ func addPublishedConfig(prefixes jsonconfig.Obj,
 			return nil, fmt.Errorf("Wrong type for %s; was expecting map[string]interface{}, got %T", k, v)
 		}
 		rootName := strings.Replace(k, "/", "", -1) + "Root"
-		rootPermanode, template, style := "", "", ""
+		rootPermanode, goTemplate, style, js := "", "", "", ""
 		for pk, pv := range p {
 			val, ok := pv.(string)
 			if !ok {
@@ -70,16 +71,18 @@ func addPublishedConfig(prefixes jsonconfig.Obj,
 			switch pk {
 			case "rootPermanode":
 				rootPermanode = val
-			case "template":
-				template = val
+			case "goTemplate":
+				goTemplate = val
 			case "style":
 				style = val
+			case "js":
+				js = val
 			default:
 				return nil, fmt.Errorf("Unexpected key %q in config for %s", pk, k)
 			}
 		}
-		if rootPermanode == "" || template == "" {
-			return nil, fmt.Errorf("Missing key in configuration for %s, need \"rootPermanode\" and \"template\"", k)
+		if rootPermanode == "" || goTemplate == "" {
+			return nil, fmt.Errorf("Missing key in configuration for %s, need \"rootPermanode\" and \"goTemplate\"", k)
 		}
 		ob := map[string]interface{}{}
 		ob["handler"] = "publish"
@@ -93,19 +96,14 @@ func addPublishedConfig(prefixes jsonconfig.Obj,
 		if sourceRoot != "" {
 			handlerArgs["sourceRoot"] = sourceRoot
 		}
-		switch template {
-		case "gallery":
-			if style == "" {
-				style = "pics.css"
-			}
+		handlerArgs["goTemplate"] = goTemplate
+		if style != "" {
 			handlerArgs["css"] = []interface{}{style}
-			handlerArgs["js"] = []interface{}{"pics.js"}
-			handlerArgs["scaledImage"] = "lrucache"
-		case "blog":
-			if style != "" {
-				handlerArgs["css"] = []interface{}{style}
-			}
 		}
+		if js != "" {
+			handlerArgs["js"] = []interface{}{js}
+		}
+		handlerArgs["scaledImage"] = "lrucache"
 		ob["handlerArgs"] = handlerArgs
 		prefixes[k] = ob
 		pubPrefixes = append(pubPrefixes, k)
@@ -444,6 +442,12 @@ func genLowLevelPrefixes(params *configPrefixesParams, ownerName string) (m json
 		}
 	}
 
+	if params.flickr != "" {
+		m["/importer-flickr/"] = map[string]interface{}{
+			"apiKey": params.flickr,
+		}
+	}
+
 	if haveIndex {
 		syncArgs := map[string]interface{}{
 			"from": "/bs/",
@@ -529,6 +533,9 @@ func genLowLevelConfig(conf *Config) (lowLevelConf *Config, err error) {
 		mongo      = conf.OptionalString("mongo", "")
 		sqliteFile = conf.OptionalString("sqlite", "")
 		kvFile     = conf.OptionalString("kvIndexFile", "")
+
+		// Importer options
+		flickr = conf.OptionalString("flickr", "")
 
 		_       = conf.OptionalList("replicateTo")
 		publish = conf.OptionalObject("publish")
@@ -638,6 +645,7 @@ func genLowLevelConfig(conf *Config) (lowLevelConf *Config, err error) {
 		blobPath:         blobPath,
 		searchOwner:      blob.SHA1FromString(armoredPublicKey),
 		shareHandlerPath: shareHandlerPath,
+		flickr:           flickr,
 	}
 
 	prefixes := genLowLevelPrefixes(prefixesParams, ownerName)

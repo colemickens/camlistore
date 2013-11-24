@@ -42,10 +42,10 @@ import (
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
 	"camlistore.org/pkg/blobserver/local"
-	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/index/kvfile"
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/readerutil"
+	"camlistore.org/pkg/sorted"
 	"camlistore.org/pkg/syncutil"
 	"camlistore.org/pkg/types"
 	"camlistore.org/third_party/github.com/camlistore/lock"
@@ -55,7 +55,7 @@ const defaultMaxFileSize = 512 << 20 // 512MB
 
 type storage struct {
 	root        string
-	index       index.Storage
+	index       sorted.KeyValue
 	maxFileSize int64
 
 	mu       sync.Mutex
@@ -71,7 +71,7 @@ type storage struct {
 
 // newStorage returns a new storage in path root with the given maxFileSize,
 // or defaultMaxFileSize (512MB) if <= 0
-func newStorage(root string, maxFileSize int64) (*storage, error) {
+func newStorage(root string, maxFileSize int64) (s *storage, err error) {
 	fi, err := os.Stat(root)
 	if os.IsNotExist(err) {
 		return nil, fmt.Errorf("storage root %q doesn't exist", root)
@@ -82,11 +82,22 @@ func newStorage(root string, maxFileSize int64) (*storage, error) {
 	if !fi.IsDir() {
 		return nil, fmt.Errorf("storage root %q exists but is not a directory.", root)
 	}
-	index, _, err := kvfile.NewStorage(filepath.Join(root, "index.kv"))
+	index, err := kvfile.NewStorage(filepath.Join(root, "index.kv"))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			index.Close()
+		}
+	}()
 	if maxFileSize <= 0 {
 		maxFileSize = defaultMaxFileSize
 	}
-	s := &storage{root: root, index: index, maxFileSize: maxFileSize,
+	s = &storage{
+		root:         root,
+		index:        index,
+		maxFileSize:  maxFileSize,
 		Generationer: local.NewGenerationer(root),
 	}
 	if err := s.openCurrent(); err != nil {
@@ -333,7 +344,7 @@ func (s *storage) append(br blob.SizedRef, r io.Reader) error {
 func (s *storage) meta(br blob.Ref) (m blobMeta, err error) {
 	ms, err := s.index.Get(br.String())
 	if err != nil {
-		if err == index.ErrNotFound {
+		if err == sorted.ErrNotFound {
 			err = os.ErrNotExist
 		}
 		return
