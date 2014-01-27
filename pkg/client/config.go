@@ -1,5 +1,5 @@
 /*
-Copyright 2011 Google Inc.
+Copyright 2011 The Camlistore Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ limitations under the License.
 package client
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -32,10 +32,12 @@ import (
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/jsonsign"
 	"camlistore.org/pkg/osutil"
+	"camlistore.org/pkg/types/clientconfig"
 )
 
-// These, if set, override the JSON config file ~/.camlistore/config
-// "server" and "password" keys.
+// These, if set, override the JSON config file
+// ~/.config/camlistore/client-config.json
+// (i.e. osutil.UserClientConfigPath()) "server" and "password" keys.
 //
 // A main binary must call AddFlags to expose these.
 var (
@@ -55,9 +57,140 @@ func ExplicitServer() string {
 }
 
 var configOnce sync.Once
-var config = make(map[string]interface{})
+var config *clientconfig.Config
 
-// serverGPGKey returns the public gpg key id ("identity" field)
+func parseConfig() {
+	if android.OnAndroid() {
+		panic("parseConfig should never have been called on Android")
+	}
+	configPath := osutil.UserClientConfigPath()
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		errMsg := fmt.Sprintf("Client configuration file %v does not exist. See 'camput init' to generate it.", configPath)
+		if keyId := serverKeyId(); keyId != "" {
+			hint := fmt.Sprintf("\nThe key id %v was found in the server config %v, so you might want:\n'camput init -gpgkey %v'", keyId, osutil.UserServerConfigPath(), keyId)
+			errMsg += hint
+		}
+		log.Fatal(errMsg)
+	}
+	// TODO: instead of using jsonconfig, we could read the file, and unmarshall into the structs that we now have in pkg/types/clientconfig. But we'll have to add the old fields (before the name changes, and before the multi-servers change) to the structs as well for our gracefull conversion/error messages to work.
+	conf, err := jsonconfig.ReadFile(configPath)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	cfg := jsonconfig.Obj(conf)
+
+	if singleServerAuth := cfg.OptionalString("auth", ""); singleServerAuth != "" {
+		newConf, err := convertToMultiServers(cfg)
+		if err != nil {
+			log.Print(err)
+		} else {
+			cfg = newConf
+		}
+	}
+
+	config = &clientconfig.Config{
+		Identity:           cfg.OptionalString("identity", ""),
+		IdentitySecretRing: cfg.OptionalString("identitySecretRing", osutil.IdentitySecretRing()),
+		IgnoredFiles:       cfg.OptionalList("ignoredFiles"),
+	}
+	serversList := make(map[string]*clientconfig.Server)
+	servers := cfg.OptionalObject("servers")
+	for alias, vei := range servers {
+		// An alias should never be confused with a host name,
+		// so we forbid anything looking like one.
+		if isURLOrHostPort(alias) {
+			log.Fatalf("Server alias %q looks like a hostname; \".\" or \";\" are not allowed.", alias)
+		}
+		serverMap, ok := vei.(map[string]interface{})
+		if !ok {
+			log.Fatalf("entry %q in servers section is a %T, want an object", alias, vei)
+		}
+		serverConf := jsonconfig.Obj(serverMap)
+		server := &clientconfig.Server{
+			Server:       cleanServer(serverConf.OptionalString("server", "")),
+			Auth:         serverConf.OptionalString("auth", ""),
+			IsDefault:    serverConf.OptionalBool("default", false),
+			TrustedCerts: serverConf.OptionalList("trustedCerts"),
+		}
+		if err := serverConf.Validate(); err != nil {
+			log.Fatalf("Error in servers section of config file for server %q: %v", alias, err)
+		}
+		serversList[alias] = server
+	}
+	config.Servers = serversList
+	if err := cfg.Validate(); err != nil {
+		printConfigChangeHelp(cfg)
+		log.Fatalf("Error in config file: %v", err)
+	}
+}
+
+// isURLOrHostPort returns true if s looks like a URL, or a hostname, i.e it starts with a scheme and/or it contains a period or a colon.
+func isURLOrHostPort(s string) bool {
+	return strings.HasPrefix(s, "http://") ||
+		strings.HasPrefix(s, "https://") ||
+		strings.Contains(s, ".") || strings.Contains(s, ":")
+}
+
+// convertToMultiServers takes an old style single-server client configuration and maps it to new a multi-servers configuration that is returned.
+func convertToMultiServers(conf jsonconfig.Obj) (jsonconfig.Obj, error) {
+	server := conf.OptionalString("server", "")
+	if server == "" {
+		return nil, errors.New("Could not convert config to multi-servers style: no \"server\" key found.")
+	}
+	newConf := jsonconfig.Obj{
+		"servers": map[string]interface{}{
+			"server": map[string]interface{}{
+				"auth":    conf.OptionalString("auth", ""),
+				"default": true,
+				"server":  server,
+			},
+		},
+		"identity":           conf.OptionalString("identity", ""),
+		"identitySecretRing": conf.OptionalString("identitySecretRing", osutil.IdentitySecretRing()),
+	}
+	if ignoredFiles := conf.OptionalList("ignoredFiles"); ignoredFiles != nil {
+		var list []interface{}
+		for _, v := range ignoredFiles {
+			list = append(list, v)
+		}
+		newConf["ignoredFiles"] = list
+	}
+	return newConf, nil
+}
+
+// printConfigChangeHelp checks if conf contains obsolete keys,
+// and prints additional help in this case.
+func printConfigChangeHelp(conf jsonconfig.Obj) {
+	// rename maps from old key names to the new ones.
+	// If there is no new one, the value is the empty string.
+	rename := map[string]string{
+		"keyId":            "identity",
+		"publicKeyBlobref": "",
+		"selfPubKeyDir":    "",
+		"secretRing":       "identitySecretRing",
+	}
+	oldConfig := false
+	configChangedMsg := fmt.Sprintf("The client configuration file (%s) keys have changed.\n", osutil.UserClientConfigPath())
+	for _, unknown := range conf.UnknownKeys() {
+		for k, v := range rename {
+			if unknown == k {
+				if v != "" {
+					configChangedMsg += fmt.Sprintf("%q should be renamed %q.\n", k, v)
+				} else {
+					configChangedMsg += fmt.Sprintf("%q should be removed.\n", k)
+				}
+				oldConfig = true
+				break
+			}
+		}
+	}
+	if oldConfig {
+		configChangedMsg += "Please see http://camlistore.org/docs/client-config, or use camput init to recreate a default one."
+		log.Print(configChangedMsg)
+	}
+}
+
+// serverKeyId returns the public gpg key id ("identity" field)
 // from the user's server config , if any.
 // It returns the empty string otherwise.
 func serverKeyId() string {
@@ -79,28 +212,12 @@ func serverKeyId() string {
 	return keyId
 }
 
-func parseConfig() {
-	if android.OnAndroid() {
-		return
-	}
-	configPath := osutil.UserClientConfigPath()
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		errMsg := fmt.Sprintf("Client configuration file %v does not exist. See 'camput init' to generate it.", configPath)
-		if keyId := serverKeyId(); keyId != "" {
-			hint := fmt.Sprintf("\nThe key id %v was found in the server config %v, so you might want:\n'camput init -gpgkey %v'", keyId, osutil.UserServerConfigPath(), keyId)
-			errMsg += hint
-		}
-		log.Fatal(errMsg)
-	}
-
-	var err error
-	if config, err = jsonconfig.ReadFile(configPath); err != nil {
-		log.Fatal(err.Error())
-		return
-	}
-}
-
+// cleanServer returns the canonical URL of the provided server, which must be a URL, IP, host (with dot), or host/ip:port.
+// The returned canonical URL will have trailing slashes removed and be prepended with "https://" if no scheme is provided.
 func cleanServer(server string) string {
+	if !isURLOrHostPort(server) {
+		log.Fatalf("server %q does not look like a server address and could be confused with a server alias. It should look like [http[s]://]foo[.com][:port] with at least one of the optional parts.", server)
+	}
 	// Remove trailing slash if provided.
 	if strings.HasSuffix(server, "/") {
 		server = server[0 : len(server)-1]
@@ -112,78 +229,119 @@ func cleanServer(server string) string {
 	return server
 }
 
+// serverOrDie returns the server's URL found either as a command-line flag,
+// or as the default server in the config file.
 func serverOrDie() string {
+	if s := os.Getenv("CAMLI_SERVER"); s != "" {
+		return cleanServer(s)
+	}
 	if flagServer != "" {
-		return cleanServer(flagServer)
+		if !isURLOrHostPort(flagServer) {
+			configOnce.Do(parseConfig)
+			serverConf, ok := config.Servers[flagServer]
+			if ok {
+				return serverConf.Server
+			}
+			log.Printf("%q looks like a server alias, but no such alias found in config.", flagServer)
+		} else {
+			return cleanServer(flagServer)
+		}
 	}
+	server := defaultServer()
+	if server == "" {
+		log.Fatalf("No valid server defined with CAMLI_SERVER, or with -server, or in %q", osutil.UserClientConfigPath())
+	}
+	return cleanServer(server)
+}
+
+func defaultServer() string {
 	configOnce.Do(parseConfig)
-	value, ok := config["server"]
-	var server string
-	if ok {
-		server = value.(string)
+	wantAlias := os.Getenv("CAMLI_DEFAULT_SERVER")
+	for alias, serverConf := range config.Servers {
+		if (wantAlias != "" && wantAlias == alias) || (wantAlias == "" && serverConf.IsDefault) {
+			return cleanServer(serverConf.Server)
+		}
 	}
-	server = cleanServer(server)
-	if !ok || server == "" {
-		log.Fatalf("Missing or invalid \"server\" in %q", osutil.UserClientConfigPath())
+	return ""
+}
+
+func (c *Client) serverOrDefault() string {
+	configOnce.Do(parseConfig)
+	if c.server != "" {
+		return cleanServer(c.server)
 	}
-	return server
+	return defaultServer()
 }
 
 func (c *Client) useTLS() bool {
+	// TODO(mpl): I think this might be wrong, because sometimes c.server is not the one being used?
 	return strings.HasPrefix(c.server, "https://")
 }
 
+// SetupAuth sets the client's authMode. It tries from the environment first if we're on android or in dev mode, and then from the client configuration.
 func (c *Client) SetupAuth() error {
-	if flagServer != "" {
-		// If using an explicit blobserver, don't use auth
-		// configured from the config file, so we don't send
-		// our password to a friend's blobserver.
-		var err error
-		c.authMode, err = auth.FromEnv()
-		if err == auth.ErrNoAuth {
-			log.Printf("Using explicit --server parameter; not using config file auth, and no auth mode set in environment")
+	// env var takes precedence, but only if we're in dev mode or on android.
+	// Too risky otherwise.
+	if android.OnAndroid() || os.Getenv("CAMLI_DEV_CAMLI_ROOT") != "" {
+		authMode, err := auth.FromEnv()
+		if err == nil {
+			c.authMode = authMode
+			return nil
 		}
-		return err
+		if err != auth.ErrNoAuth {
+			return fmt.Errorf("Could not set up auth from env var CAMLI_AUTH: %v", err)
+		}
 	}
-	configOnce.Do(parseConfig)
-	return c.SetupAuthFromConfig(config)
-}
-
-func (c *Client) SetupAuthFromConfig(conf jsonconfig.Obj) error {
+	if c.server == "" {
+		return fmt.Errorf("No server defined for this client: can not set up auth.")
+	}
+	authConf := serverAuth(c.server)
+	if authConf == "" {
+		return fmt.Errorf("Could not find auth key for server %q in config", c.server)
+	}
 	var err error
-	value, ok := conf["auth"]
-	authString := ""
-	if ok {
-		authString, ok = value.(string)
-		c.authMode, err = auth.FromConfig(authString)
-	} else {
-		c.authMode, err = auth.FromEnv()
-	}
+	c.authMode, err = auth.FromConfig(authConf)
 	return err
 }
 
-// Returns blobref of signer's public key, or nil if unconfigured.
-func (c *Client) SignerPublicKeyBlobref() blob.Ref {
-	return SignerPublicKeyBlobref()
+// serverAuth returns the auth scheme for server from the config, or the empty string if the server was not found in the config.
+func serverAuth(server string) string {
+	configOnce.Do(parseConfig)
+	alias := config.Alias(server)
+	if alias == "" {
+		return ""
+	}
+	return config.Servers[alias].Auth
+}
+
+// SetupAuthFromString configures the clients authentication mode from
+// an explicit auth string.
+func (c *Client) SetupAuthFromString(a string) error {
+	// TODO(mpl): review the one using that (pkg/blobserver/remote/remote.go)
+	var err error
+	c.authMode, err = auth.FromConfig(a)
+	return err
 }
 
 // SecretRingFile returns the filename to the user's GPG secret ring.
-// The value comes from either a command-line flag,
-// the client config file's "secretRing" value, or the operating
-// system default location.
+// The value comes from either a command-line flag, the
+// CAMLI_SECRET_RING environment variable, the client config file's
+// "identitySecretRing" value, or the operating system default location.
 func (c *Client) SecretRingFile() string {
 	if flagSecretRing != "" {
 		return flagSecretRing
 	}
+	if e := os.Getenv("CAMLI_SECRET_RING"); e != "" {
+		return e
+	}
+	if android.OnAndroid() {
+		panic("CAMLI_SECRET_RING should have been defined when on android")
+	}
 	configOnce.Do(parseConfig)
-	keyRing, ok := config["secretRing"].(string)
-	if ok && keyRing != "" {
-		return keyRing
+	if config.IdentitySecretRing == "" {
+		return osutil.IdentitySecretRing()
 	}
-	if keyRing = osutil.IdentitySecretRing(); fileExists(keyRing) {
-		return keyRing
-	}
-	return jsonsign.DefaultSecRingPath()
+	return config.IdentitySecretRing
 }
 
 func fileExists(name string) bool {
@@ -191,117 +349,39 @@ func fileExists(name string) bool {
 	return err == nil
 }
 
-var (
-	signerPublicKeyRefOnce sync.Once
-	signerPublicKeyRef     blob.Ref // of publicKeyArmored
-	publicKeyArmored       string
-)
-
-// TODO: move to config package?
-func SignerPublicKeyBlobref() blob.Ref {
-	signerPublicKeyRefOnce.Do(initSignerPublicKeyBlobref)
-	return signerPublicKeyRef
+// SignerPublicKeyBlobref returns the blobref of signer's public key.
+// The blobref may not be valid (zero blob.Ref) if e.g the configuration
+// is invalid or incomplete.
+func (c *Client) SignerPublicKeyBlobref() blob.Ref {
+	c.initSignerPublicKeyBlobrefOnce.Do(c.initSignerPublicKeyBlobref)
+	return c.signerPublicKeyRef
 }
 
-func signerPublicKey() (armRef blob.Ref, armored string) {
-	signerPublicKeyRefOnce.Do(initSignerPublicKeyBlobref)
-	return signerPublicKeyRef, publicKeyArmored
-}
-
-func initSignerPublicKeyBlobref() {
-	signerPublicKeyRef, publicKeyArmored, _ = getSignerPublicKeyBlobref()
-}
-
-func getSignerPublicKeyBlobref() (signerRef blob.Ref, armored string, ok bool) {
-	configOnce.Do(parseConfig)
-	key := "keyId"
-	keyId, ok := config[key].(string)
-	if !ok {
-		log.Printf("No key %q in JSON configuration file %q; have you run \"camput init\"?", key, osutil.UserClientConfigPath())
-		return
-	}
-	keyRing, hasKeyRing := config["secretRing"].(string)
-	if !hasKeyRing {
-		if fn := osutil.IdentitySecretRing(); fileExists(fn) {
-			keyRing = fn
-		} else if fn := jsonsign.DefaultSecRingPath(); fileExists(fn) {
-			keyRing = fn
-		} else {
-			log.Printf("Couldn't find keyId %q; no 'secretRing' specified in config file, and no standard secret ring files exist.")
-			return
+func (c *Client) initSignerPublicKeyBlobref() {
+	keyId := os.Getenv("CAMLI_CLIENT_IDENTITY")
+	if keyId == "" {
+		configOnce.Do(parseConfig)
+		keyId = config.Identity
+		if keyId == "" {
+			log.Fatalf("No 'identity' key in JSON configuration file %q; have you run \"camput init\"?", osutil.UserClientConfigPath())
 		}
+	}
+	keyRing := c.SecretRingFile()
+	if !fileExists(keyRing) {
+		log.Fatalf("Could not find keyId %q, because secret ring file %q does not exist.", keyId, keyRing)
 	}
 	entity, err := jsonsign.EntityFromSecring(keyId, keyRing)
 	if err != nil {
-		log.Printf("Couldn't find keyId %q in secret ring: %v", keyId, err)
-		return
+		log.Fatalf("Couldn't find keyId %q in secret ring %v: %v", keyId, keyRing, err)
 	}
-	armored, err = jsonsign.ArmoredPublicKey(entity)
+	armored, err := jsonsign.ArmoredPublicKey(entity)
 	if err != nil {
-		log.Printf("Error serializing public key: %v", err)
-		return
+		log.Fatalf("Error serializing public key: %v", err)
 	}
 
-	// TODO(mpl): integrate with getSelfPubKeyDir if possible.
-	selfPubKeyDir, ok := config["selfPubKeyDir"].(string)
-	if !ok {
-		selfPubKeyDir = osutil.KeyBlobsDir()
-		log.Printf("No 'selfPubKeyDir' defined in %q, defaulting to %v", osutil.UserClientConfigPath(), selfPubKeyDir)
-	}
-	fi, err := os.Stat(selfPubKeyDir)
-	if err != nil || !fi.IsDir() {
-		log.Printf("selfPubKeyDir of %q doesn't exist or not a directory", selfPubKeyDir)
-		return
-	}
-
-	br := blob.SHA1FromString(armored)
-
-	pubFile := filepath.Join(selfPubKeyDir, br.String()+".camli")
-	fi, err = os.Stat(pubFile)
-	if err != nil {
-		err = ioutil.WriteFile(pubFile, []byte(armored), 0644)
-		if err != nil {
-			log.Printf("Error writing public key to %q: %v", pubFile, err)
-			return
-		}
-	}
-
-	return br, armored, true
+	c.signerPublicKeyRef = blob.SHA1FromString(armored)
+	c.publicKeyArmored = armored
 }
-
-func (c *Client) GetBlobFetcher() blob.SeekFetcher {
-	// Use blobref.NewSeriesFetcher(...all configured fetch paths...)
-	return blob.NewSimpleDirectoryFetcher(c.getSelfPubKeyDir())
-}
-
-// config[selfPubKeyDir] is the dir containing the public key(s) blob(s)
-const selfPubKeyDir = "selfPubKeyDir"
-
-func (c *Client) initSelfPubKeyDir() {
-	if e := os.Getenv("CAMLI_DEV_KEYBLOBS"); e != "" {
-		c.selfPubKeyDir = e
-		return
-	}
-	configOnce.Do(parseConfig)
-	v, ok := config[selfPubKeyDir].(string)
-	if !ok {
-		c.selfPubKeyDir = osutil.KeyBlobsDir()
-		log.Printf("selfPubKeyDir: was expecting a string, got %T. Defaulting to %v", v, c.selfPubKeyDir)
-		return
-	}
-	c.selfPubKeyDir = v
-}
-
-// TODO(mpl): integrate with getSignerPublicKeyBlobref above.
-func (c *Client) getSelfPubKeyDir() string {
-	c.initSelfPubKeyDirOnce.Do(c.initSelfPubKeyDir)
-	return c.selfPubKeyDir
-}
-
-// config[trustedCerts] is the list of trusted certificates fingerprints.
-// Case insensitive.
-// See Client.trustedCerts in client.go
-const trustedCerts = "trustedCerts"
 
 func (c *Client) initTrustedCerts() {
 	if e := os.Getenv("CAMLI_TRUSTED_CERT"); e != "" {
@@ -309,53 +389,140 @@ func (c *Client) initTrustedCerts() {
 		return
 	}
 	c.trustedCerts = []string{}
-	configOnce.Do(parseConfig)
-	val, ok := config[trustedCerts].([]interface{})
-	if !ok {
+	if android.OnAndroid() {
 		return
 	}
-	for _, v := range val {
-		trustedCert, ok := v.(string)
-		if !ok {
-			log.Printf("trustedCert: was expecting a string, got %T", v)
-			return
-		}
+	if c.server == "" {
+		log.Printf("No server defined: can not define trustedCerts for this client.")
+		return
+	}
+	trustedCerts := serverTrustedCerts(c.server)
+	if trustedCerts == nil {
+		return
+	}
+	for _, trustedCert := range trustedCerts {
 		c.trustedCerts = append(c.trustedCerts, strings.ToLower(trustedCert))
 	}
 }
 
-func (c *Client) GetTrustedCerts() []string {
+// serverTrustedCerts returns the trusted certs for server from the config.
+func serverTrustedCerts(server string) []string {
+	configOnce.Do(parseConfig)
+	alias := config.Alias(server)
+	if alias == "" {
+		return nil
+	}
+	return config.Servers[alias].TrustedCerts
+}
+
+func (c *Client) getTrustedCerts() []string {
 	c.initTrustedCertsOnce.Do(c.initTrustedCerts)
 	return c.trustedCerts
 }
 
-// config[ignoredFiles] is the list of files that camput should ignore
-// and not try to upload when using -filenodes.
-// See Client.ignoredFiles in client.go
-const ignoredFiles = "ignoredFiles"
-
 func (c *Client) initIgnoredFiles() {
+	defer func() {
+		c.ignoreChecker = newIgnoreChecker(c.ignoredFiles)
+	}()
 	if e := os.Getenv("CAMLI_IGNORED_FILES"); e != "" {
 		c.ignoredFiles = strings.Split(e, ",")
 		return
 	}
 	c.ignoredFiles = []string{}
-	configOnce.Do(parseConfig)
-	val, ok := config[ignoredFiles].([]interface{})
-	if !ok {
+	if android.OnAndroid() {
 		return
 	}
-	for _, v := range val {
-		ignoredFile, ok := v.(string)
-		if !ok {
-			log.Printf("ignoredFile: was expecting a string, got %T", v)
-			return
+	configOnce.Do(parseConfig)
+	c.ignoredFiles = config.IgnoredFiles
+}
+
+// newIgnoreChecker uses ignoredFiles to build and return a func that returns whether the file path argument should be ignored. See IsIgnoredFile for the ignore rules.
+func newIgnoreChecker(ignoredFiles []string) func(path string) (shouldIgnore bool) {
+	var fns []func(string) bool
+
+	home := osutil.HomeDir()
+	// copy of ignoredFiles for us to mutate
+	ignFiles := append([]string(nil), ignoredFiles...)
+	for k, v := range ignFiles {
+		if strings.HasPrefix(v, filepath.FromSlash("~/")) {
+			ignFiles[k] = filepath.Join(home, v[2:])
 		}
-		c.ignoredFiles = append(c.ignoredFiles, ignoredFile)
+	}
+	// We cache the ignoredFiles patterns in 3 categories (not necessarily exclusive):
+	// 1) shell patterns
+	// 3) absolute paths
+	// 4) paths components
+	for _, pattern := range ignFiles {
+		_, err := filepath.Match(pattern, "whatever")
+		if err == nil {
+			fns = append(fns, func(v string) bool { return isShellPatternMatch(pattern, v) })
+		}
+	}
+	for _, pattern := range ignFiles {
+		if filepath.IsAbs(pattern) {
+			fns = append(fns, func(v string) bool { return hasDirPrefix(filepath.Clean(pattern), v) })
+		} else {
+			fns = append(fns, func(v string) bool { return hasComponent(filepath.Clean(pattern), v) })
+		}
+	}
+
+	return func(path string) bool {
+		for _, fn := range fns {
+			if fn(path) {
+				return true
+			}
+		}
+		return false
 	}
 }
 
-func (c *Client) getIgnoredFiles() []string {
-	c.initIgnoredFilesOnce.Do(func() { c.initIgnoredFiles() })
-	return c.ignoredFiles
+var filepathSeparatorString = string(filepath.Separator)
+
+// isShellPatternMatch returns whether fullpath matches the shell pattern, as defined by http://golang.org/pkg/path/filepath/#Match. As an additional special case, when the pattern looks like a basename, the last path element of fullpath is also checked against it.
+func isShellPatternMatch(shellPattern, fullpath string) bool {
+	match, _ := filepath.Match(shellPattern, fullpath)
+	if match {
+		return true
+	}
+	if !strings.Contains(shellPattern, filepathSeparatorString) {
+		match, _ := filepath.Match(shellPattern, filepath.Base(fullpath))
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+// hasDirPrefix reports whether the path has the provided directory prefix.
+// Both should be absolute paths.
+func hasDirPrefix(dirPrefix, fullpath string) bool {
+	if !strings.HasPrefix(fullpath, dirPrefix) {
+		return false
+	}
+	if len(fullpath) == len(dirPrefix) {
+		return true
+	}
+	if fullpath[len(dirPrefix)] == filepath.Separator {
+		return true
+	}
+	return false
+}
+
+// hasComponent returns whether the pathComponent is a path component of fullpath. i.e it is a part of fullpath that fits exactly between two path separators.
+func hasComponent(component, fullpath string) bool {
+	idx := strings.Index(fullpath, component)
+	if idx == -1 {
+		return false
+	}
+	if fullpath[idx-1] != filepath.Separator {
+		return false
+	}
+	componentEnd := idx + len(component)
+	if componentEnd == len(fullpath) {
+		return true
+	}
+	if fullpath[componentEnd] == filepath.Separator {
+		return true
+	}
+	return false
 }

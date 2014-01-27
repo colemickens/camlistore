@@ -19,3 +19,11 @@ package search
 func SetTestHookBug121(hook func()) {
 	testHookBug121 = hook
 }
+
+func ExportSetCandidateSourceHook(fn func(string)) { candSourceHook = fn }
+
+func ExportBufferedConst() int { return buffered }
+
+func (s *SearchQuery) ExportPlannedQuery() *SearchQuery {
+	return s.plannedQuery(nil)
+}

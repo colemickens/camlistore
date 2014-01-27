@@ -21,6 +21,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -35,16 +36,19 @@ import (
 	"camlistore.org/pkg/cacher"
 	"camlistore.org/pkg/client"
 	"camlistore.org/pkg/fs"
-	"camlistore.org/third_party/code.google.com/p/rsc/fuse"
+	"camlistore.org/pkg/search"
+	"camlistore.org/third_party/bazil.org/fuse"
+	fusefs "camlistore.org/third_party/bazil.org/fuse/fs"
 )
 
 var (
 	debug = flag.Bool("debug", false, "print debugging messages.")
 	xterm = flag.Bool("xterm", false, "Run an xterm in the mounted directory. Shut down when xterm ends.")
+	open  = flag.Bool("open", false, "Open a GUI window")
 )
 
 func usage() {
-	fmt.Fprint(os.Stderr, "usage: cammount [opts] <mountpoint> [<root-blobref>|<share URL>]\n")
+	fmt.Fprint(os.Stderr, "usage: cammount [opts] [<mountpoint> [<root-blobref>|<share URL>|<root-name>]]\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }
@@ -54,14 +58,26 @@ func main() {
 
 	// Scans the arg list and sets up flags
 	client.AddFlags()
+	flag.Usage = usage
 	flag.Parse()
 
 	narg := flag.NArg()
-	if narg < 1 || narg > 2 {
+	if narg > 2 {
 		usage()
 	}
 
-	mountPoint := flag.Arg(0)
+	var mountPoint string
+	var err error
+	if narg > 0 {
+		mountPoint = flag.Arg(0)
+	} else {
+		mountPoint, err = ioutil.TempDir("", "cammount")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("No mount point given. Using: %s", mountPoint)
+		defer os.Remove(mountPoint)
+	}
 
 	errorf := func(msg string, args ...interface{}) {
 		fmt.Fprintf(os.Stderr, msg, args...)
@@ -89,12 +105,26 @@ func main() {
 			}
 		} else {
 			cl = client.NewOrFail() // automatic from flags
+			cl.SetHTTPClient(&http.Client{Transport: cl.TransportForConfig(nil)})
+
 			var ok bool
 			root, ok = blob.Parse(rootArg)
+
 			if !ok {
-				log.Fatalf("Error parsing root blobref: %q\n", rootArg)
+				// not a blobref, check for root name instead
+				req := &search.WithAttrRequest{N: 1, Attr: "camliRoot", Value: rootArg}
+				wres, err := cl.GetPermanodesWithAttr(req)
+
+				if err != nil {
+					log.Fatal("could not query search")
+				}
+
+				if wres.WithAttr != nil {
+					root = wres.WithAttr[0].Permanode
+				} else {
+					log.Fatalf("root specified is not a blobref or name of a root: %q\n", rootArg)
+				}
 			}
-			cl.SetHTTPClient(&http.Client{Transport: cl.TransportForConfig(nil)})
 		}
 	} else {
 		cl = client.NewOrFail() // automatic from flags
@@ -108,16 +138,16 @@ func main() {
 	defer diskCacheFetcher.Clean()
 	if root.Valid() {
 		var err error
-		camfs, err = fs.NewRootedCamliFileSystem(diskCacheFetcher, root)
+		camfs, err = fs.NewRootedCamliFileSystem(cl, diskCacheFetcher, root)
 		if err != nil {
 			log.Fatalf("Error creating root with %v: %v", root, err)
 		}
 	} else {
-		camfs = fs.NewCamliFileSystem(cl, diskCacheFetcher)
+		camfs = fs.NewDefaultCamliFileSystem(cl, diskCacheFetcher)
 	}
 
 	if *debug {
-		fuse.Debugf = log.Printf
+		fuse.Debug = func(msg interface{}) { log.Print(msg) }
 		// TODO: set fs's logger
 	}
 
@@ -146,12 +176,18 @@ func main() {
 			defer cmd.Process.Kill()
 		}
 	}
+	if *open {
+		if runtime.GOOS == "darwin" {
+			cmd := exec.Command("open", mountPoint)
+			go cmd.Run()
+		}
+	}
 
 	signal.Notify(sigc, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 
 	doneServe := make(chan error, 1)
 	go func() {
-		doneServe <- conn.Serve(camfs)
+		doneServe <- fusefs.Serve(conn, camfs)
 	}()
 
 	quitKey := make(chan bool, 1)

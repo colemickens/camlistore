@@ -24,7 +24,9 @@ import (
 
 	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/index/indextest"
-	"camlistore.org/pkg/index/mongo"
+	"camlistore.org/pkg/sorted"
+	"camlistore.org/pkg/sorted/kvtest"
+	"camlistore.org/pkg/sorted/mongo"
 	"camlistore.org/pkg/test"
 )
 
@@ -34,52 +36,70 @@ var (
 )
 
 func checkMongoUp() {
-	mgw := &mongo.MongoWrapper{
-		Servers: "localhost",
-	}
-	mongoNotAvailable = !mgw.TestConnection(500 * time.Millisecond)
+	mongoNotAvailable = !mongo.Ping("localhost", 500*time.Millisecond)
 }
 
-func initMongoIndex() *index.Index {
-	// connect without credentials and wipe the database
-	mgw := &mongo.MongoWrapper{
-		Servers:    "localhost",
-		Database:   "camlitest",
-		Collection: "keys",
-	}
-	idx, err := mongo.NewMongoIndex(mgw)
-	if err != nil {
-		panic(err)
-	}
-	err = idx.Storage().Delete("")
-	if err != nil {
-		panic(err)
-	}
-	// create user and connect with credentials
-	err = mongo.AddUser(mgw, "root", "root")
-	if err != nil {
-		panic(err)
-	}
-	mgw = &mongo.MongoWrapper{
-		Servers:    "localhost",
-		Database:   "camlitest",
-		Collection: "keys",
-		User:       "root",
-		Password:   "root",
-	}
-	return idx
-}
-
-type mongoTester struct{}
-
-func (mongoTester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)) {
+func skipOrFailIfNoMongo(t *testing.T) {
 	once.Do(checkMongoUp)
 	if mongoNotAvailable {
 		err := errors.New("Not running; start a mongoDB daemon on the standard port (27017). The \"keys\" collection in the \"camlitest\" database will be used.")
 		test.DependencyErrorOrSkip(t)
 		t.Fatalf("Mongo not available locally for testing: %v", err)
 	}
-	tfn(t, initMongoIndex)
+}
+
+func newSorted(t *testing.T) (kv sorted.KeyValue, cleanup func()) {
+	skipOrFailIfNoMongo(t)
+
+	// connect without credentials and wipe the database
+	cfg := mongo.Config{
+		Server:   "localhost",
+		Database: "camlitest",
+	}
+	var err error
+	kv, err = mongo.NewKeyValue(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wiper, ok := kv.(sorted.Wiper)
+	if !ok {
+		panic("mongo KeyValue not a Wiper")
+	}
+	err = wiper.Wipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return kv, func() {
+		kv.Close()
+	}
+}
+
+func TestSortedKV(t *testing.T) {
+	kv, cleanup := newSorted(t)
+	defer cleanup()
+	kvtest.TestSorted(t, kv)
+}
+
+type mongoTester struct{}
+
+func (mongoTester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)) {
+	defer test.TLog(t)()
+	var mu sync.Mutex // guards cleanups
+	var cleanups []func()
+	defer func() {
+		mu.Lock() // never unlocked
+		for _, fn := range cleanups {
+			fn()
+		}
+	}()
+	initIndex := func() *index.Index {
+		kv, cleanup := newSorted(t)
+		mu.Lock()
+		cleanups = append(cleanups, cleanup)
+		mu.Unlock()
+		return index.New(kv)
+	}
+	tfn(t, initIndex)
 }
 
 func TestIndex_Mongo(t *testing.T) {
@@ -98,10 +118,6 @@ func TestEdgesTo_Mongo(t *testing.T) {
 	mongoTester{}.test(t, indextest.EdgesTo)
 }
 
-func TestIsDeleted_Mongo(t *testing.T) {
-	mongoTester{}.test(t, indextest.IsDeleted)
-}
-
-func TestDeletedAt_Mongo(t *testing.T) {
-	mongoTester{}.test(t, indextest.DeletedAt)
+func TestDelete_Mongo(t *testing.T) {
+	mongoTester{}.test(t, indextest.Delete)
 }

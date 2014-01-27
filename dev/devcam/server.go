@@ -33,13 +33,6 @@ import (
 	"camlistore.org/pkg/osutil"
 )
 
-const (
-	// default secret ring used in tests and in devcam commands
-	defaultSecring = "pkg/jsonsign/testdata/test-secring.gpg"
-	// public ID of the GPG key in defaultSecring
-	defaultKeyID = "26F5ABDA"
-)
-
 type serverCmd struct {
 	// start of flag vars
 	all      bool
@@ -53,21 +46,24 @@ type serverCmd struct {
 	mysql    bool
 	postgres bool
 	sqlite   bool
-	memindex bool // memory index; default is kvfile
 
 	slow     bool
 	throttle int
 	latency  int
 
 	fullClosure bool
+	mini        bool
+	publish     bool
 
-	openBrowser  bool
-	flickrAPIKey string
+	openBrowser      bool
+	flickrAPIKey     string
+	foursquareAPIKey string
+	extraArgs        string // passed to camlistored
 	// end of flag vars
 
-	listen    string // address + port to listen on
-	camliRoot string // the temp dir where blobs are stored
-	env       *Env
+	listen string // address + port to listen on
+	root   string // the temp dir where blobs are stored
+	env    *Env
 }
 
 func init() {
@@ -81,12 +77,13 @@ func init() {
 		flags.BoolVar(&cmd.tls, "tls", false, "Use TLS.")
 		flags.BoolVar(&cmd.wipe, "wipe", false, "Wipe the blobs on disk and the indexer.")
 		flags.BoolVar(&cmd.debug, "debug", false, "Enable http debugging.")
+		flags.BoolVar(&cmd.publish, "publish", true, "Enable publish handlers")
+		flags.BoolVar(&cmd.mini, "mini", false, "Enable minimal mode, where all optional features are disabled. (Currently just publishing)")
 
-		flags.BoolVar(&cmd.mongo, "mongo", false, "Use mongodb as the indexer. Excludes -mysql, -postgres, -sqlite, -memindex.")
-		flags.BoolVar(&cmd.mysql, "mysql", false, "Use mysql as the indexer. Excludes -mongo, -postgres, -sqlite, -memindex.")
-		flags.BoolVar(&cmd.postgres, "postgres", false, "Use postgres as the indexer. Excludes -mongo, -mysql, -sqlite, -memindex.")
-		flags.BoolVar(&cmd.sqlite, "sqlite", false, "Use sqlite as the indexer. Excludes -mongo, -mysql, -postgres, -memindex.")
-		flags.BoolVar(&cmd.memindex, "memindex", false, "Use memory as the indexer. Excludes -mongo, -mysql, -sqlite, -postgres.")
+		flags.BoolVar(&cmd.mongo, "mongo", false, "Use mongodb as the indexer. Excludes -mysql, -postgres, -sqlite.")
+		flags.BoolVar(&cmd.mysql, "mysql", false, "Use mysql as the indexer. Excludes -mongo, -postgres, -sqlite.")
+		flags.BoolVar(&cmd.postgres, "postgres", false, "Use postgres as the indexer. Excludes -mongo, -mysql, -sqlite.")
+		flags.BoolVar(&cmd.sqlite, "sqlite", false, "Use sqlite as the indexer. Excludes -mongo, -mysql, -postgres.")
 
 		flags.BoolVar(&cmd.slow, "slow", false, "Add artificial latency.")
 		flags.IntVar(&cmd.throttle, "throttle", 150, "If -slow, this is the rate in kBps, to which we should throttle.")
@@ -96,6 +93,10 @@ func init() {
 
 		flags.BoolVar(&cmd.openBrowser, "openbrowser", false, "Open the start page on startup.")
 		flags.StringVar(&cmd.flickrAPIKey, "flickrapikey", "", "The key and secret to use with the Flickr importer. Formatted as '<key>:<secret>'.")
+		flags.StringVar(&cmd.foursquareAPIKey, "foursquareapikey", "", "The key and secret to use with the Foursquare importer. Formatted as '<clientID>:<clientSecret>'.")
+		flags.StringVar(&cmd.root, "root", "", "A directory to store data in. Defaults to a location in the OS temp directory.")
+		flags.StringVar(&cmd.extraArgs, "extraargs", "",
+			"List of comma separated options that will be passed to camlistored")
 		return cmd
 	})
 }
@@ -119,7 +120,7 @@ func (c *serverCmd) checkFlags(args []string) error {
 		c.Usage()
 	}
 	nindex := 0
-	for _, v := range []bool{c.mongo, c.mysql, c.postgres, c.sqlite, c.memindex} {
+	for _, v := range []bool{c.mongo, c.mysql, c.postgres, c.sqlite} {
 		if v {
 			nindex++
 		}
@@ -134,16 +135,19 @@ func (c *serverCmd) checkFlags(args []string) error {
 	return nil
 }
 
-func (c *serverCmd) setCamliRoot() error {
-	user := osutil.Username()
-	if user == "" {
-		return errors.New("Could not get username from environment")
+func (c *serverCmd) setRoot() error {
+	if c.root == "" {
+		user := osutil.Username()
+		if user == "" {
+			return errors.New("Could not get username from environment")
+		}
+		c.root = filepath.Join(os.TempDir(), "camliroot-"+user, "port"+c.port)
 	}
-	c.camliRoot = filepath.Join(os.TempDir(), "camliroot-"+user, "port"+c.port)
+	log.Printf("Temp dir root is %v", c.root)
 	if c.wipe {
-		log.Printf("Wiping %v", c.camliRoot)
-		if err := os.RemoveAll(c.camliRoot); err != nil {
-			return fmt.Errorf("Could not wipe %v: %v", c.camliRoot, err)
+		log.Printf("Wiping %v", c.root)
+		if err := os.RemoveAll(c.root); err != nil {
+			return fmt.Errorf("Could not wipe %v: %v", c.root, err)
 		}
 	}
 	return nil
@@ -156,6 +160,7 @@ func (c *serverCmd) makeSuffixdir(fullpath string) {
 }
 
 func (c *serverCmd) setEnvVars() error {
+	c.env.SetCamdevVars(false)
 	setenv := func(k, v string) {
 		c.env.Set(k, v)
 	}
@@ -170,13 +175,15 @@ func (c *serverCmd) setEnvVars() error {
 	if user == "" {
 		return errors.New("Could not get username from environment")
 	}
+	setenv("CAMLI_FULL_INDEX_SYNC_ON_START", "false") // TODO: option to make this true
 	setenv("CAMLI_DBNAME", "devcamli"+user)
 	setenv("CAMLI_MYSQL_ENABLED", "false")
 	setenv("CAMLI_MONGO_ENABLED", "false")
 	setenv("CAMLI_POSTGRES_ENABLED", "false")
 	setenv("CAMLI_SQLITE_ENABLED", "false")
 	setenv("CAMLI_KVINDEX_ENABLED", "false")
-	setenv("CAMLI_MEMINDEX_ENABLED", "false")
+
+	setenv("CAMLI_PUBLISH_ENABLED", strconv.FormatBool(c.publish))
 	switch {
 	case c.mongo:
 		setenv("CAMLI_MONGO_ENABLED", "true")
@@ -190,20 +197,17 @@ func (c *serverCmd) setEnvVars() error {
 	case c.sqlite:
 		setenv("CAMLI_SQLITE_ENABLED", "true")
 		setenv("CAMLI_INDEXER_PATH", "/index-sqlite/")
-		if c.camliRoot == "" {
-			panic("no camliRoot set")
+		if c.root == "" {
+			panic("no root set")
 		}
-		setenv("CAMLI_DBNAME", filepath.Join(c.camliRoot, "sqliteindex.db"))
-	case c.memindex:
-		setenv("CAMLI_MEMINDEX_ENABLED", "true")
-		setenv("CAMLI_INDEXER_PATH", "/index-mem/")
+		setenv("CAMLI_DBNAME", filepath.Join(c.root, "sqliteindex.db"))
 	default:
 		setenv("CAMLI_KVINDEX_ENABLED", "true")
 		setenv("CAMLI_INDEXER_PATH", "/index-kv/")
-		if c.camliRoot == "" {
-			panic("no camliRoot set")
+		if c.root == "" {
+			panic("no root set")
 		}
-		setenv("CAMLI_DBNAME", filepath.Join(c.camliRoot, "kvindex.db"))
+		setenv("CAMLI_DBNAME", filepath.Join(c.root, "kvindex.db"))
 	}
 
 	base := "http://localhost:" + c.port
@@ -230,7 +234,7 @@ func (c *serverCmd) setEnvVars() error {
 	setenv("CAMLI_DEV_CAMLI_ROOT", camliSrcRoot)
 	setenv("CAMLI_AUTH", "devauth:pass3179")
 	fullSuffix := func(name string) string {
-		return filepath.Join(c.camliRoot, name)
+		return filepath.Join(c.root, name)
 	}
 	suffixes := map[string]string{
 		"CAMLI_ROOT":          fullSuffix("bs"),
@@ -248,12 +252,13 @@ func (c *serverCmd) setEnvVars() error {
 		setenv(k, v)
 	}
 	setenv("CAMLI_PORT", c.port)
-	setenv("CAMLI_SECRET_RING", filepath.Join(camliSrcRoot,
-		filepath.FromSlash(defaultSecring)))
-	setenv("CAMLI_KEYID", defaultKeyID)
 	if c.flickrAPIKey != "" {
 		setenv("CAMLI_FLICKR_ENABLED", "true")
 		setenv("CAMLI_FLICKR_API_KEY", c.flickrAPIKey)
+	}
+	if c.foursquareAPIKey != "" {
+		setenv("CAMLI_FOURSQUARE_ENABLED", "true")
+		setenv("CAMLI_FOURSQUARE_API_KEY", c.foursquareAPIKey)
 	}
 	setenv("CAMLI_CONFIG_DIR", "config")
 	return nil
@@ -279,10 +284,14 @@ func (c *serverCmd) setupIndexer() error {
 		args = append(args,
 			"-dbtype=sqlite",
 			"-dbname="+c.env.m["CAMLI_DBNAME"])
+	case c.mongo:
+		args = append(args,
+			"-dbtype=mongo",
+			"-host=localhost",
+			"-dbname="+c.env.m["CAMLI_DBNAME"])
 	default:
 		return nil
 	}
-	// TODO(mpl): I think we're forgetting to wipe mongo here.
 	if c.wipe {
 		args = append(args, "-wipe")
 	} else {
@@ -307,7 +316,7 @@ func (c *serverCmd) syncTemplateBlobs() error {
 			}
 			return err
 		}
-		blobsDir := filepath.Join(c.camliRoot, "sha1")
+		blobsDir := filepath.Join(c.root, "sha1")
 		if err := cpDir(templateDir, blobsDir, nil); err != nil {
 			return fmt.Errorf("Could not cp template blobs: %v", err)
 		}
@@ -317,7 +326,7 @@ func (c *serverCmd) syncTemplateBlobs() error {
 
 func (c *serverCmd) setFullClosure() error {
 	if c.fullClosure {
-		oldsvn := filepath.Join(c.camliRoot, filepath.FromSlash("tmp/closure-lib/.svn"))
+		oldsvn := filepath.Join(c.root, filepath.FromSlash("tmp/closure-lib/.svn"))
 		if err := os.RemoveAll(oldsvn); err != nil {
 			return fmt.Errorf("Could not remove svn checkout of closure-lib %v: %v",
 				oldsvn, err)
@@ -336,6 +345,9 @@ func (c *serverCmd) setFullClosure() error {
 }
 
 func (c *serverCmd) RunCommand(args []string) error {
+	if c.mini {
+		c.publish = false
+	}
 	err := c.checkFlags(args)
 	if err != nil {
 		return cmdmain.UsageError(fmt.Sprint(err))
@@ -352,7 +364,7 @@ func (c *serverCmd) RunCommand(args []string) error {
 			}
 		}
 	}
-	if err := c.setCamliRoot(); err != nil {
+	if err := c.setRoot(); err != nil {
 		return fmt.Errorf("Could not setup the camli root: %v", err)
 	}
 	if err := c.setEnvVars(); err != nil {
@@ -376,6 +388,9 @@ func (c *serverCmd) RunCommand(args []string) error {
 		"-configfile=" + filepath.Join(camliSrcRoot, "config", "dev-server-config.json"),
 		"-listen=" + c.listen,
 		"-openbrowser=" + strconv.FormatBool(c.openBrowser),
+	}
+	if c.extraArgs != "" {
+		cmdArgs = append(cmdArgs, strings.Split(c.extraArgs, ",")...)
 	}
 	return runExec(camliBin, cmdArgs, c.env)
 }

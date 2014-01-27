@@ -17,7 +17,11 @@ limitations under the License.
 // Package strutil contains string and byte processing functions.
 package strutil
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
 
 // Fork of Go's implementation in pkg/strings/strings.go:
 // Generic split: splits after each instance of sep,
@@ -55,4 +59,48 @@ func genSplit(dst []string, s, sep string, sepSave, n int) []string {
 //   n < 0: all substrings
 func AppendSplitN(dst []string, s, sep string, n int) []string {
 	return genSplit(dst, s, sep, 0, n)
+}
+
+// HasPrefixFold is like strings.HasPrefix but uses Unicode case-folding.
+func HasPrefixFold(s, prefix string) bool {
+	// TODO: Remove assumption that both strings have the same byte length.
+	if len(s) < len(prefix) {
+		return false
+	}
+	return strings.EqualFold(s[:len(prefix)], prefix)
+}
+
+// HasSuffixFold is like strings.HasPrefix but uses Unicode case-folding.
+func HasSuffixFold(s, suffix string) bool {
+	// TODO: Remove assumption that both strings have the same byte length.
+	if len(s) < len(suffix) {
+		return false
+	}
+	return strings.EqualFold(s[len(s)-len(suffix):], suffix)
+}
+
+// ContainsFold is like strings.Contains but uses Unicode case-folding.
+func ContainsFold(s, substr string) bool {
+	if substr == "" {
+		return true
+	}
+	if s == "" {
+		return false
+	}
+	firstRune := rune(substr[0])
+	if firstRune >= utf8.RuneSelf {
+		firstRune, _ = utf8.DecodeRuneInString(substr)
+	}
+	firstLowerRune := unicode.SimpleFold(firstRune)
+	for i, rune := range s {
+		if len(s)-i < len(substr) {
+			return false
+		}
+		if rune == firstLowerRune || unicode.SimpleFold(rune) == firstLowerRune {
+			if HasPrefixFold(s[i:], substr) {
+				return true
+			}
+		}
+	}
+	return false
 }

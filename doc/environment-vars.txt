@@ -45,6 +45,11 @@ CAMLI_DEBUG_CONFIG (bool):
 CAMLI_DEBUG_UPLOADS (bool):
   Used by pkg/client to enable additional logging.
 
+CAMLI_DEFAULT_SERVER (string):
+  The server alias to use by default. The string is the server's alias key
+  in the client-config.json "servers" object. If set, the CAMLI_DEFAULT_SERVER
+  takes precedence over the "default" bool in client-config.json.
+
 CAMLI_DEV_CAMLI_ROOT (string):
   If set, the base directory of Camlistore when in dev mode.
   Used by pkg/server for finding static assests (js, css, html).
@@ -54,10 +59,6 @@ CAMLI_DEV_CAMLI_ROOT (string):
 CAMLI_DEV_CLOSURE_DIR (string):
   Path override for pkg/server. If specified, this path will be used to serve
   the closure handler.
-
-CAMLI_DEV_KEYBLOBS (string):
-  Path to keyblobs directory.
-  Used by pkg/client to override 'selfPubKeyDir' value in configuration files.
 
 CAMLI_HTTP_DEBUG (bool):
   Enable per-request logging in pkg/webserver.
@@ -70,8 +71,7 @@ CAMLI_HTTP_PPROF (bool):
 
 CAMLI_IGNORED_FILES (string):
   Override client configuration option 'ignoredFiles'.
-  Comma-seperated list of files to be ignored by pkg/client when uploading
-  with -filenodes.
+  Comma-seperated list of files to be ignored by pkg/client when uploading.
 
 CAMLI_INCLUDE_PATH (string):
   Path to search for files.
@@ -93,12 +93,27 @@ CAMLI_NO_FILE_DUP_SEARCH (bool):
   This will cause the search-for-exists-before-upload step to be skipped when
   camput is uploading files.
 
+CAMLI_PPROF_START (string):
+  Filename base to write a "<base>.cpu" and "<base>.mem" profile out
+  to during server start-up.  Used to profile index corpus scanning,
+  mostly.
+
 CAMLI_QUIET (bool):
   Used by devcam to enable -verbose flag for camput/camget.
+
+CAMLI_FAST_DEV (bool):
+  Used by dev/demo.sh for giving presentations with devcam server/put/etc
+  for faster pre-built builds, without calling make.go.
+
+CAMLI_CLIENT_IDENTITY (string):
+  Optional GPG identity to use, taking precedence over config files.
 
 CAMLI_SECRET_RING (string):
   Path to the GPG secret keyring, which is otherwise set by identitySecretRing
   in the server config, and secretRing in the client config.
+
+CAMLI_DISABLE_CLIENT_CONFIG_FILE (bool):
+  If set, the pkg/client code will never use the on-disk config file.
 
 CAMLI_TRACK_FS_STATS (bool):
   Enable operation counts for fuse filesystem.
@@ -110,10 +125,17 @@ CAMLI_TRUSTED_CERT (string):
 CAMPUT_ANDROID_OUTPUT (bool):
   Enable pkg/client status messages to print to stdout. Used in android client.
 
-CAM_DEBUG_IMAGES (bool):
+CAMLI_DEBUG_IMAGES (bool):
   Enable extra debugging in pkg/images when decoding images.  Used by indexers.
+
+CAMLI_DISABLE_THUMB_CACHE (bool):
+  If true, no thumbnail caching is done, and URLs even have cache
+  buster components, to force browsers to reload a lot.
 
 DEV_THROTTLE_KBPS (integer):
 DEV_THROTTLE_LATENCY_MS (integer):
   Rate limit and/or inject latency in pkg/webserver responses. A value of 0
   disables traffic-shaping.
+
+RUN_BROKEN_TESTS (bool:
+  Run known-broken tests.

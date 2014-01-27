@@ -5,13 +5,8 @@
 	<script src="closure/goog/base.js"></script>
 	<script src="./deps.js"></script>
 	<script src="?camli.mode=config&var=CAMLISTORE_CONFIG"></script>
-	<!-- Begin non-Closure cheating; but depended on by server_connection.js -->
-	<script type="text/javascript" src="base64.js"></script>
-	<script type="text/javascript" src="Crypto.js"></script>
-	<script type="text/javascript" src="SHA1.js"></script>
-	<!-- End non-Closure cheating -->
 	<script>
-		goog.require('camlistore.DebugPage');
+		goog.require('cam.DebugPage');
 	</script>
 
 </head>
@@ -45,7 +40,7 @@
 	</form>
 
 	<script>
-		var page = new camlistore.DebugPage(CAMLISTORE_CONFIG);
+		var page = new cam.DebugPage(CAMLISTORE_CONFIG);
 		page.decorate(document.body);
 	</script>
 </body>

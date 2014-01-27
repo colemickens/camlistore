@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,7 +38,7 @@ import (
 //
 // It's used to run the actual Camlistore binaries (camlistored,
 // camput, camget, camtool, etc) together in large tests, including
-// building them, finding them, and wiring the up in an isolated way.
+// building them, finding them, and wiring them up in an isolated way.
 type World struct {
 	camRoot  string // typically $GOPATH[0]/src/camlistore.org
 	tempDir  string
@@ -124,25 +125,28 @@ func (w *World) Start() error {
 		go func() {
 			waitc <- w.server.Wait()
 		}()
-
-		reachable, tries := false, 0
-		for !reachable && tries < 100 {
-			c, err := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(w.port))
-			if err == nil {
-				reachable = true
-				c.Close()
-				break
+		upc := make(chan bool)
+		timeoutc := make(chan bool)
+		go func() {
+			for i := 0; i < 100; i++ {
+				res, err := http.Get("http://127.0.0.1:" + strconv.Itoa(w.port))
+				if err == nil {
+					res.Body.Close()
+					upc <- true
+					return
+				}
+				time.Sleep(50 * time.Millisecond)
 			}
+			timeoutc <- true
+		}()
 
-			tries++
-			select {
-			case <-time.After(50 * time.Millisecond):
-			case err := <-waitc:
-				return fmt.Errorf("server exited: %v: %s", err, buf.String())
-			}
-		}
-		if !reachable {
+		select {
+		case err := <-waitc:
+			return fmt.Errorf("server exited: %v: %s", err, buf.String())
+		case <-timeoutc:
 			return errors.New("server never became reachable")
+		case <-upc:
+			// Success.
 		}
 	}
 	return nil
@@ -160,6 +164,10 @@ func (w *World) Stop() {
 }
 
 func (w *World) Cmd(binary string, args ...string) *exec.Cmd {
+	return w.CmdWithEnv(binary, os.Environ(), args...)
+}
+
+func (w *World) CmdWithEnv(binary string, env []string, args ...string) *exec.Cmd {
 	cmd := exec.Command(filepath.Join(w.camRoot, "bin", binary), args...)
 	switch binary {
 	case "camget", "camput", "camtool", "cammount":
@@ -168,11 +176,10 @@ func (w *World) Cmd(binary string, args ...string) *exec.Cmd {
 			"CAMLI_CONFIG_DIR=" + clientConfigDir,
 			// Respected by env expansions in config/dev-client-dir/client-config.json:
 			"CAMLI_SERVER=" + w.ServerBaseURL(),
-			"CAMLI_SECRET_RING=" + filepath.Join(w.camRoot, "pkg", "jsonsign", "testdata", "test-secring.gpg"),
-			"CAMLI_KEYID=26F5ABDA",
-			"CAMLI_DEV_KEYBLOBS=" + filepath.Join(clientConfigDir, "keyblobs"),
+			"CAMLI_SECRET_RING=" + w.SecretRingFile(),
+			"CAMLI_KEYID=" + w.ClientIdentity(),
 			"CAMLI_AUTH=userpass:testuser:passTestWorld",
-		}, os.Environ()...)
+		}, env...)
 	default:
 		panic("Unknown binary " + binary)
 	}
@@ -232,4 +239,16 @@ func MustRunCmd(t *testing.T, c *exec.Cmd) string {
 		t.Fatal(err)
 	}
 	return out
+}
+
+// ClientIdentity returns the GPG identity to use in World tests, suitable
+// for setting in CAMLI_CLIENT_IDENTITY.
+func (w *World) ClientIdentity() string {
+	return "26F5ABDA"
+}
+
+// SecretRingFile returns the GnuPG secret ring, suitable for setting
+// in CAMLI_SECRET_RING.
+func (w *World) SecretRingFile() string {
+	return filepath.Join(w.camRoot, "pkg", "jsonsign", "testdata", "test-secring.gpg")
 }

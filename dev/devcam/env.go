@@ -17,9 +17,25 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/jsonsign"
+)
+
+const (
+	// default secret ring used in tests and in devcam commands
+	defaultSecring = "pkg/jsonsign/testdata/test-secring.gpg"
+	// public ID of the GPG key in defaultSecring
+	defaultIdentity = "26F5ABDA"
+)
+
+var (
+	flagSecretRing = flag.String("secretring", "", "the secret ring file to run with")
+	flagIdentity   = flag.String("identity", "", "the key id of the identity to run with")
 )
 
 type Env struct {
@@ -72,13 +88,35 @@ func NewCopyEnv() *Env {
 
 func (e *Env) SetCamdevVars(altkey bool) {
 	e.Set("CAMLI_CONFIG_DIR", filepath.Join("config", "dev-client-dir"))
-	e.Set("CAMLI_SECRET_RING", filepath.FromSlash(defaultSecring))
-	e.Set("CAMLI_KEYID", defaultKeyID)
 	e.Set("CAMLI_AUTH", "userpass:camlistore:pass3179")
-	e.Set("CAMLI_DEV_KEYBLOBS", filepath.FromSlash("config/dev-client-dir/keyblobs"))
+
+	secring := defaultSecring
+	identity := defaultIdentity
+
 	if altkey {
-		e.Set("CAMLI_SECRET_RING", filepath.FromSlash("pkg/jsonsign/testdata/password-foo-secring.gpg"))
-		e.Set("CAMLI_KEYID", "C7C3E176")
+		secring = filepath.FromSlash("pkg/jsonsign/testdata/password-foo-secring.gpg")
+		identity = "C7C3E176"
 		println("**\n** Note: password is \"foo\"\n**\n")
+	} else {
+		if *flagSecretRing != "" {
+			secring = *flagSecretRing
+		}
+		if *flagIdentity != "" {
+			identity = *flagIdentity
+		}
 	}
+
+	entity, err := jsonsign.EntityFromSecring(identity, secring)
+	if err != nil {
+		panic(err)
+	}
+	armoredPublicKey, err := jsonsign.ArmoredPublicKey(entity)
+	if err != nil {
+		panic(err)
+	}
+	pubKeyRef := blob.SHA1FromString(armoredPublicKey)
+
+	e.Set("CAMLI_SECRET_RING", secring)
+	e.Set("CAMLI_KEYID", identity)
+	e.Set("CAMLI_PUBKEY_BLOBREF", pubKeyRef.String())
 }

@@ -28,13 +28,15 @@ import (
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/search"
 
-	"camlistore.org/third_party/code.google.com/p/rsc/fuse"
+	"camlistore.org/third_party/bazil.org/fuse"
+	"camlistore.org/third_party/bazil.org/fuse/fs"
 )
 
 // recentDir implements fuse.Node and is a directory of recent
 // permanodes' files, for permanodes with a camliContent pointing to a
 // "file".
 type recentDir struct {
+	noXattr
 	fs *CamliFileSystem
 
 	mu      sync.Mutex
@@ -44,13 +46,13 @@ type recentDir struct {
 
 func (n *recentDir) Attr() fuse.Attr {
 	return fuse.Attr{
-		Mode: os.ModeDir | 0700,
+		Mode: os.ModeDir | 0500,
 		Uid:  uint32(os.Getuid()),
 		Gid:  uint32(os.Getgid()),
 	}
 }
 
-func (n *recentDir) ReadDir(intr fuse.Intr) ([]fuse.Dirent, fuse.Error) {
+func (n *recentDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 	log.Printf("fs.recent: ReadDir / searching")
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -109,7 +111,7 @@ func (n *recentDir) ReadDir(intr fuse.Intr) ([]fuse.Dirent, fuse.Error) {
 	return ents, nil
 }
 
-func (n *recentDir) Lookup(name string, intr fuse.Intr) (fuse.Node, fuse.Error) {
+func (n *recentDir) Lookup(name string, intr fs.Intr) (fs.Node, fuse.Error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	if n.ents == nil {

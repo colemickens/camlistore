@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
+	"regexp"
 	"sync"
 
 	"camlistore.org/pkg/leak"
@@ -158,43 +158,75 @@ func (s *Storage) Delete(key string) error {
 
 func (s *Storage) Close() error { return s.DB.Close() }
 
-func (s *Storage) Find(key string) sorted.Iterator {
+func (s *Storage) Find(start, end string) sorted.Iterator {
+	if s.Serial {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+	}
+	var rows *sql.Rows
+	var err error
+	if end == "" {
+		rows, err = s.DB.Query(s.sql("SELECT k, v FROM rows WHERE k >= ? ORDER BY k "), start)
+	} else {
+		rows, err = s.DB.Query(s.sql("SELECT k, v FROM rows WHERE k >= ? AND k < ? ORDER BY k "), start, end)
+	}
+	if err != nil {
+		log.Printf("unexpected query error: %v", err)
+		return &iter{err: err}
+	}
+
 	it := &iter{
 		s:          s,
-		low:        key,
-		op:         ">=",
+		rows:       rows,
 		closeCheck: leak.NewChecker(),
 	}
 	return it
 }
 
+var wordThenPunct = regexp.MustCompile(`^\w+\W$`)
+
 // iter is a iterator over sorted key/value pairs in rows.
 type iter struct {
 	s   *Storage
-	low string
-	op  string // ">=" initially, then ">"
+	end string // optional end bound
 	err error  // accumulated error, returned at Close
 
 	closeCheck *leak.Checker
 
 	rows *sql.Rows // if non-nil, the rows we're reading from
 
-	batchSize int // how big our LIMIT query was
-	seen      int // how many rows we've seen this query
-
-	key   string
-	value string
+	key        sql.RawBytes
+	val        sql.RawBytes
+	skey, sval *string // if non-nil, it's been stringified
 }
 
-var errClosed = errors.New("mysqlindexer: Iterator already closed")
+var errClosed = errors.New("sqlkv: Iterator already closed")
 
-func (t *iter) Key() string   { return t.key }
-func (t *iter) Value() string { return t.value }
+func (t *iter) KeyBytes() []byte { return t.key }
+func (t *iter) Key() string {
+	if t.skey != nil {
+		return *t.skey
+	}
+	str := string(t.key)
+	t.skey = &str
+	return str
+}
+
+func (t *iter) ValueBytes() []byte { return t.val }
+func (t *iter) Value() string {
+	if t.sval != nil {
+		return *t.sval
+	}
+	str := string(t.val)
+	t.sval = &str
+	return str
+}
 
 func (t *iter) Close() error {
 	t.closeCheck.Close()
 	if t.rows != nil {
 		t.rows.Close()
+		t.rows = nil
 	}
 	err := t.err
 	t.err = errClosed
@@ -205,39 +237,14 @@ func (t *iter) Next() bool {
 	if t.err != nil {
 		return false
 	}
-	if t.rows == nil {
-		const batchSize = 50
-		t.batchSize = batchSize
-		if t.s.Serial {
-			t.s.mu.Lock()
-		}
-		t.rows, t.err = t.s.DB.Query(t.s.sql(
-			"SELECT k, v FROM rows WHERE k "+t.op+" ? ORDER BY k LIMIT "+strconv.Itoa(batchSize)),
-			t.low)
-		if t.s.Serial {
-			t.s.mu.Unlock()
-		}
-		if t.err != nil {
-			log.Printf("unexpected query error: %v", t.err)
-			return false
-		}
-		t.seen = 0
-		t.op = ">"
-	}
+	t.skey, t.sval = nil, nil
 	if !t.rows.Next() {
-		if t.seen == t.batchSize {
-			t.rows.Close() // required for <= Go 1.1, but not Go 1.2, iirc.
-			t.rows = nil
-			return t.Next()
-		}
 		return false
 	}
-	t.err = t.rows.Scan(&t.key, &t.value)
+	t.err = t.rows.Scan(&t.key, &t.val)
 	if t.err != nil {
 		log.Printf("unexpected Scan error: %v", t.err)
 		return false
 	}
-	t.low = t.key
-	t.seen++
 	return true
 }

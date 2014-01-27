@@ -25,13 +25,32 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	_ "image/gif"
 	_ "image/png"
 
-	"camlistore.org/pkg/misc/resize"
+	"camlistore.org/pkg/images/resize"
 	"camlistore.org/third_party/github.com/camlistore/goexif/exif"
 )
+
+var disableThumbCache, _ = strconv.ParseBool(os.Getenv("CAMLI_DISABLE_THUMB_CACHE"))
+
+// thumbnailVersion should be incremented whenever we want to
+// invalidate the cache of previous thumbnails on the server's
+// cache and in browsers.
+const thumbnailVersion = "2"
+
+// ThumbnailVersion returns a string safe for URL query components
+// which is a generation number. Whenever the thumbnailing code is
+// updated, so will this string. It should be placed in some URL
+// component (typically "tv").
+func ThumbnailVersion() string {
+	if disableThumbCache {
+		return fmt.Sprintf("nocache%d", time.Now().UnixNano())
+	}
+	return thumbnailVersion
+}
 
 // Exif Orientation Tag values
 // http://sylvana.net/jpegcrop/exif_orientation.html
@@ -205,14 +224,19 @@ func ScaledDimensions(w, h, mw, mh int) (newWidth int, newHeight int) {
 	return
 }
 
-func rescale(im image.Image, opts *DecodeOpts) image.Image {
+func rescale(im image.Image, opts *DecodeOpts, swapDimensions bool) image.Image {
 	mw, mh := opts.MaxWidth, opts.MaxHeight
 	mwf, mhf := opts.ScaleWidth, opts.ScaleHeight
 	b := im.Bounds()
 	// only do downscaling, otherwise just serve the original image
-	if !opts.wantRescale(b) {
+	if !opts.wantRescale(b, swapDimensions) {
 		return im
 	}
+
+	if swapDimensions {
+		mw, mh = mh, mw
+	}
+
 	// ScaleWidth and ScaleHeight overrule MaxWidth and MaxHeight
 	if mwf > 0.0 && mwf <= 1 {
 		mw = int(mwf * float32(b.Dx()))
@@ -220,31 +244,48 @@ func rescale(im image.Image, opts *DecodeOpts) image.Image {
 	if mhf > 0.0 && mhf <= 1 {
 		mh = int(mhf * float32(b.Dy()))
 	}
-
-	const huge = 2400
 	// If it's gigantic, it's more efficient to downsample first
 	// and then resize; resizing will smooth out the roughness.
 	// (trusting the moustachio guys on that one).
-	if b.Dx() > huge || b.Dy() > huge {
-		w, h := mw*2, mh*2
-		if b.Dx() > b.Dy() {
-			w = b.Dx() * h / b.Dy()
-		} else {
-			h = b.Dy() * w / b.Dx()
-		}
-		im = resize.Resample(im, b, w, h)
-		b = im.Bounds()
+	if b.Dx() > mw*2 || b.Dy() > mh*2 {
+		w, h := ScaledDimensions(b.Dx(), b.Dy(), mw*2, mh*2)
+		im = resize.ResampleInplace(im, b, w, h)
+		return resize.HalveInplace(im)
 	}
 	mw, mh = ScaledDimensions(b.Dx(), b.Dy(), mw, mh)
 	return resize.Resize(im, b, mw, mh)
 }
 
-func (opts *DecodeOpts) wantRescale(b image.Rectangle) bool {
-	return opts != nil &&
-		(opts.MaxWidth > 0 && opts.MaxWidth < b.Dx() ||
-			opts.MaxHeight > 0 && opts.MaxHeight < b.Dy() ||
-			opts.ScaleWidth > 0.0 && opts.ScaleWidth < float32(b.Dx()) ||
-			opts.ScaleHeight > 0.0 && opts.ScaleHeight < float32(b.Dy()))
+func (opts *DecodeOpts) wantRescale(b image.Rectangle, swapDimensions bool) bool {
+	if opts == nil {
+		return false
+	}
+
+	// In rescale Scale* trumps Max* so we assume the same relationship here.
+
+	// Floating point compares probably only allow this to work if the values
+	// were specified as the literal 1 or 1.0, computed values will likely be
+	// off.  If Scale{Width,Height} end up being 1.0-epsilon we'll rescale
+	// when it probably wouldn't even be noticible but that's okay.
+	if opts.ScaleWidth == 1.0 && opts.ScaleHeight == 1.0 {
+		return false
+	}
+	if opts.ScaleWidth > 0 && opts.ScaleWidth < 1.0 ||
+		opts.ScaleHeight > 0 && opts.ScaleHeight < 1.0 {
+		return true
+	}
+
+	w, h := b.Dx(), b.Dy()
+	if swapDimensions {
+		w, h = h, w
+	}
+
+	// Same size, don't rescale.
+	if opts.MaxWidth == w && opts.MaxHeight == h {
+		return false
+	}
+	return opts.MaxWidth > 0 && opts.MaxWidth < w ||
+		opts.MaxHeight > 0 && opts.MaxHeight < h
 }
 
 func (opts *DecodeOpts) forcedRotate() bool {
@@ -259,7 +300,7 @@ func (opts *DecodeOpts) useEXIF() bool {
 	return !(opts.forcedRotate() || opts.forcedFlip())
 }
 
-var debug, _ = strconv.ParseBool(os.Getenv("CAM_DEBUG_IMAGES"))
+var debug, _ = strconv.ParseBool(os.Getenv("CAMLI_DEBUG_IMAGES"))
 
 func imageDebug(msg string) {
 	if debug {
@@ -312,7 +353,7 @@ func DecodeConfig(r io.Reader) (Config, error) {
 // Decode decodes an image from r using the provided decoding options.
 // The Config returned is similar to the one from the image package,
 // with the addition of the Modified field which indicates if the
-// image was actually flipped or rotated.
+// image was actually flipped, rotated, or scaled.
 // If opts is nil, the defaults are used.
 func Decode(r io.Reader, opts *DecodeOpts) (image.Image, Config, error) {
 	var c Config
@@ -324,8 +365,8 @@ func Decode(r io.Reader, opts *DecodeOpts) (image.Image, Config, error) {
 		ex, err := exif.Decode(tr)
 		maybeRescale := func() (image.Image, Config, error) {
 			im, format, err := image.Decode(io.MultiReader(&buf, r))
-			if err == nil && opts.wantRescale(im.Bounds()) {
-				im = rescale(im, opts)
+			if err == nil && opts.wantRescale(im.Bounds(), false) {
+				im = rescale(im, opts, false)
 				c.Modified = true
 			}
 			c.Format = format
@@ -385,8 +426,15 @@ func Decode(r io.Reader, opts *DecodeOpts) (image.Image, Config, error) {
 		return nil, c, err
 	}
 	rescaled := false
-	if opts.wantRescale(im.Bounds()) {
-		im = rescale(im, opts)
+	// Orientation changing rotations should have their dimensions swapped
+	// when scaling.
+	var swapDimensions bool
+	switch angle {
+	case 90, -90:
+		swapDimensions = true
+	}
+	if opts.wantRescale(im.Bounds(), swapDimensions) {
+		im = rescale(im, opts, swapDimensions)
 		rescaled = true
 	}
 	im = flip(rotate(im, angle), flipMode)

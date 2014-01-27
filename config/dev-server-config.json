@@ -18,6 +18,7 @@
      },
 
       "/blog/": {
+          "enabled": ["_env", "${CAMLI_PUBLISH_ENABLED}"],
           "handler": "publish",
           "handlerArgs": {
               "rootName": "dev-blog-root",
@@ -30,13 +31,13 @@
       },
 
       "/pics/": {
+          "enabled": ["_env", "${CAMLI_PUBLISH_ENABLED}"],
           "handler": "publish",
           "handlerArgs": {
               "rootName": "dev-pics-root",
               "blobRoot": "/bs/",
               "searchRoot": "/my-search/",
               "cache": "/cache/",
-              "scaledImage": "lrucache",
               "css": ["pics.css"],
               "js": ["pics.js"],
               "goTemplate": "gallery.html",
@@ -57,7 +58,10 @@
              "sourceRoot": ["_env", "${CAMLI_DEV_CAMLI_ROOT}", ""],
              "jsonSignRoot": "/sighelper/",
              "cache": "/cache/",
-             "scaledImage": "lrucache",
+             "scaledImage": {
+                "type": "kv",
+                "file": ["_env", "${CAMLI_ROOT_CACHE}/thumbnails.kv", ""]
+             },
              "publishRoots": ["/blog/", "/pics/"]
          }
      },
@@ -72,8 +76,8 @@
               "from": "/bs/",
               "to": ["_env", "${CAMLI_INDEXER_PATH}"],
               "queue": { "type": "memory" },
-              "fullSyncOnStart": ["_env", "${CAMLI_MEMINDEX_ENABLED}"],
-              "blockingFullSyncOnStart": ["_env", "${CAMLI_MEMINDEX_ENABLED}"]
+              "fullSyncOnStart": ["_env", "${CAMLI_FULL_INDEX_SYNC_ON_START}"],
+              "blockingFullSyncOnStart": ["_env", "${CAMLI_FULL_INDEX_SYNC_ON_START}"]
           }
       },
 
@@ -98,8 +102,8 @@
       "/bs-recv/": {
           "handler": "storage-replica",
           "handlerArgs": {
-              "minWritesForSuccess": 3,
-              "backends": ["/bs/", "/sync-r1/", ["_env", "${CAMLI_INDEXER_PATH}"]],
+              "minWritesForSuccess": 2,
+              "backends": ["/bs/", ["_env", "${CAMLI_INDEXER_PATH}"]],
               "readBackends": ["/bs/"]
           }
       },
@@ -160,7 +164,7 @@
       },
 
      "/r1/": {
-         "handler": "storage-filesystem",
+         "handler": "storage-diskpacked",
          "handlerArgs": {
             "path": ["_env", "${CAMLI_ROOT_REPLICA1}"]
           }
@@ -203,14 +207,6 @@
          "handlerArgs": {
             "path": ["_env", "${CAMLI_ROOT_ENCBLOB}"]
           }
-     },
-
-     "/index-mem/": {
-         "enabled": ["_env", "${CAMLI_MEMINDEX_ENABLED}"],
-         "handler": "storage-memory-only-dev-indexer",
-         "handlerArgs": {
-             "blobSource": "/bs/"
-         }
      },
 
      "/index-kv/": {
@@ -269,7 +265,7 @@
          "handler": "search",
          "handlerArgs": {
              "index": ["_env", "${CAMLI_INDEXER_PATH}"],
-             "owner": "sha1-f2b0b7da718b97ce8c31591d8ed4645c777f3ef4",
+             "owner": ["_env", "${CAMLI_PUBKEY_BLOBREF}"],
              "slurpToMemory": true,
              "devBlockStartupOn": "/sync-index/"
          }
@@ -289,6 +285,14 @@
       "enabled": ["_env", "${CAMLI_FLICKR_ENABLED}", false],
       "handlerArgs": {
         "apiKey": ["_env", "${CAMLI_FLICKR_API_KEY}", ""]
+      }
+    },
+
+    "/importer-foursquare/": {
+      "handler": "importer-foursquare",
+      "enabled": ["_env", "${CAMLI_FOURSQUARE_ENABLED}", false],
+      "handlerArgs": {
+        "apiKey": ["_env", "${CAMLI_FOURSQUARE_API_KEY}", ""]
       }
     },
 

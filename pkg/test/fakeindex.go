@@ -19,12 +19,14 @@ package test
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/context"
 	"camlistore.org/pkg/types/camtypes"
 )
 
@@ -79,11 +81,14 @@ func camliTypeFromMime(mime string) string {
 }
 
 func (fi *FakeIndex) AddMeta(br blob.Ref, camliType string, size int64) {
+	if size < 0 || size > math.MaxUint32 {
+		panic("bad size")
+	}
 	fi.lk.Lock()
 	defer fi.lk.Unlock()
 	fi.meta[br] = camtypes.BlobMeta{
 		Ref:       br,
-		Size:      int(size),
+		Size:      uint32(size),
 		CamliType: camliType,
 	}
 }
@@ -128,7 +133,7 @@ func (fi *FakeIndex) KeyId(blob.Ref) (string, error) {
 	panic("NOIMPL")
 }
 
-func (fi *FakeIndex) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner blob.Ref, limit int) error {
+func (fi *FakeIndex) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner blob.Ref, limit int, before time.Time) error {
 	panic("NOIMPL")
 }
 
@@ -215,6 +220,6 @@ func (fi *FakeIndex) EdgesTo(ref blob.Ref, opts *camtypes.EdgesToOpts) ([]*camty
 	panic("NOIMPL")
 }
 
-func (fi *FakeIndex) EnumerateBlobMeta(ch chan<- camtypes.BlobMeta) error {
+func (fi *FakeIndex) EnumerateBlobMeta(ctx *context.Context, ch chan<- camtypes.BlobMeta) error {
 	panic("NOIMPL")
 }

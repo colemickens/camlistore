@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -76,7 +77,7 @@ func (id *IndexDeps) Set(key, value string) error {
 
 func (id *IndexDeps) DumpIndex(t *testing.T) {
 	t.Logf("Begin index dump:")
-	it := id.Index.Storage().Find("")
+	it := id.Index.Storage().Find("", "")
 	for it.Next() {
 		t.Logf("  %q = %q", it.Key(), it.Value())
 	}
@@ -136,6 +137,12 @@ func (id *IndexDeps) lastTime() time.Time {
 func (id *IndexDeps) SetAttribute(permaNode blob.Ref, attr, value string) blob.Ref {
 	m := schema.NewSetAttributeClaim(permaNode, attr, value)
 	m.SetClaimDate(id.advanceTime())
+	return id.uploadAndSign(m)
+}
+
+func (id *IndexDeps) SetAttribute_NoTimeMove(permaNode blob.Ref, attr, value string) blob.Ref {
+	m := schema.NewSetAttributeClaim(permaNode, attr, value)
+	m.SetClaimDate(id.lastTime())
 	return id.uploadAndSign(m)
 }
 
@@ -275,6 +282,7 @@ Enpn/oOOfYFa5h0AFndZd1blMvruXfdAobjVABEBAAE=
 func Index(t *testing.T, initIdx func() *index.Index) {
 	id := NewIndexDeps(initIdx())
 	id.Fataler = t
+	defer id.DumpIndex(t)
 	pn := id.NewPermanode()
 	t.Logf("uploaded permanode %q", pn)
 	br1 := id.SetAttribute(pn, "tag", "foo1")
@@ -312,36 +320,35 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		}
 	}
 
-	// Upload a basic image.
-	var jpegFileRef blob.Ref
-	var exifFileRef blob.Ref
+	// Upload some files.
+	var jpegFileRef, exifFileRef, mediaFileRef, mediaWholeRef blob.Ref
 	{
 		camliRootPath, err := osutil.GoPackagePath("camlistore.org")
 		if err != nil {
 			t.Fatal("Package camlistore.org no found in $GOPATH or $GOPATH not defined")
 		}
-		uploadFile := func(file string, modTime time.Time) blob.Ref {
+		uploadFile := func(file string, modTime time.Time) (fileRef, wholeRef blob.Ref) {
 			fileName := filepath.Join(camliRootPath, "pkg", "index", "indextest", "testdata", file)
 			contents, err := ioutil.ReadFile(fileName)
 			if err != nil {
 				t.Fatal(err)
 			}
-			br, _ := id.UploadFile(file, string(contents), modTime)
-			return br
+			fileRef, wholeRef = id.UploadFile(file, string(contents), modTime)
+			return
 		}
-		jpegFileRef = uploadFile("dude.jpg", noTime)
-		exifFileRef = uploadFile("dude-exif.jpg", time.Unix(1361248796, 0))
+		jpegFileRef, _ = uploadFile("dude.jpg", noTime)
+		exifFileRef, _ = uploadFile("dude-exif.jpg", time.Unix(1361248796, 0))
+		mediaFileRef, mediaWholeRef = uploadFile("0s.mp3", noTime)
 	}
 
-	// Upload the dir containing the two previous images
+	// Upload the dir containing the previous files.
 	imagesDirRef := id.UploadDir(
 		"testdata",
-		[]blob.Ref{jpegFileRef, exifFileRef},
+		[]blob.Ref{jpegFileRef, exifFileRef, mediaFileRef},
 		time.Now(),
 	)
 
 	lastPermanodeMutation := id.lastTime()
-	id.DumpIndex(t)
 
 	key := "signerkeyid:sha1-ad87ca5c78bd0ce1195c46f7c98e6025abbaf007"
 	if g, e := id.Get(key), "2931A67C26F5ABDA"; g != e {
@@ -388,6 +395,26 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		t.Fatalf("edgeback row %q = %q, want %q", key, g, e)
 	}
 
+	mediaTests := []struct {
+		prop, exp string
+	}{
+		{"title", "Zero Seconds"},
+		{"artist", "Test Artist"},
+		{"album", "Test Album"},
+		{"genre", "(20)Alternative"},
+		{"year", "1992"},
+		{"track", "1"},
+		{"disc", "2"},
+		{"mediaref", "sha1-fefac74a1d5928316d7131747107c8a61b71ffe4"},
+		{"durationms", "26"},
+	}
+	for _, tt := range mediaTests {
+		key = fmt.Sprintf("mediatag|%s|%s", mediaWholeRef.String(), tt.prop)
+		if g, _ := url.QueryUnescape(id.Get(key)); g != tt.exp {
+			t.Errorf("0s.mp3 key %q = %q; want %q", key, g, tt.exp)
+		}
+	}
+
 	// PermanodeOfSignerAttrValue
 	{
 		gotPN, err := id.Index.PermanodeOfSignerAttrValue(id.SignerBlobRef, "camliRoot", "rootval")
@@ -409,7 +436,8 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		req := &camtypes.PermanodeByAttrRequest{
 			Signer:    id.SignerBlobRef,
 			Attribute: "tag",
-			Query:     "foo1"}
+			Query:     "foo1",
+		}
 		err := id.Index.SearchPermanodesWithAttr(ch, req)
 		if err != nil {
 			t.Fatalf("SearchPermanodesWithAttr = %v", err)
@@ -429,7 +457,8 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		ch := make(chan blob.Ref, 10)
 		req := &camtypes.PermanodeByAttrRequest{
 			Signer:    id.SignerBlobRef,
-			Attribute: "tag"}
+			Attribute: "tag",
+		}
 		err := id.Index.SearchPermanodesWithAttr(ch, req)
 		if err != nil {
 			t.Fatalf("SearchPermanodesWithAttr = %v", err)
@@ -457,22 +486,68 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		}
 	}
 
-	// GetRecentPermanodes
+	// Delete value "pony" of type "title" (which does not actually exist) for pn
+	br4 := id.DelAttribute(pn, "title", "pony")
+	br4Time := id.lastTime()
+	// and verify it is not found when searching by attr
 	{
-		ch := make(chan camtypes.RecentPermanode, 10) // expect 2 results, but maybe more if buggy.
-		err := id.Index.GetRecentPermanodes(ch, id.SignerBlobRef, 50)
-		if err != nil {
-			t.Fatalf("GetRecentPermanodes = %v", err)
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "title",
+			Query:     "pony",
 		}
-		got := []camtypes.RecentPermanode{}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
+		}
+		var got []blob.Ref
 		for r := range ch {
 			got = append(got, r)
 		}
+		want := []blob.Ref{}
+		if len(got) != len(want) {
+			t.Errorf("SearchPermanodesWithAttr results differ.\n got: %q\nwant: %q",
+				got, want)
+		}
+	}
+
+	// GetRecentPermanodes
+	{
+		verify := func(prefix string, want []camtypes.RecentPermanode, before time.Time) {
+			ch := make(chan camtypes.RecentPermanode, 10) // expect 2 results, but maybe more if buggy.
+			err := id.Index.GetRecentPermanodes(ch, id.SignerBlobRef, 50, before)
+			if err != nil {
+				t.Fatalf("[%s] GetRecentPermanodes = %v", prefix, err)
+			}
+			got := []camtypes.RecentPermanode{}
+			for r := range ch {
+				got = append(got, r)
+			}
+			if len(got) != len(want) {
+				t.Errorf("[%s] GetRecentPermanode results differ.\n got: %v\nwant: %v",
+					prefix, searchResults(got), searchResults(want))
+			}
+			for _, w := range want {
+				found := false
+				for _, g := range got {
+					if g.Equal(w) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("[%s] GetRecentPermanode: %v was not found.\n got: %v\nwant: %v",
+						prefix, w, searchResults(got), searchResults(want))
+				}
+			}
+		}
+
 		want := []camtypes.RecentPermanode{
 			{
 				Permanode:   pn,
 				Signer:      id.SignerBlobRef,
-				LastModTime: lastPermanodeMutation,
+				LastModTime: br4Time,
 			},
 			{
 				Permanode:   pnChild,
@@ -480,25 +555,15 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 				LastModTime: br3Time,
 			},
 		}
-		if len(got) != len(want) {
-			t.Errorf("GetRecentPermanode results differ.\n got: %v\nwant: %v",
-				searchResults(got), searchResults(want))
-		}
-		for _, w := range want {
-			found := false
-			for _, g := range got {
-				if g.Equal(w) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("GetRecentPermanode: %v was not found.\n got: %v\nwant: %v",
-					w, searchResults(got), searchResults(want))
-			}
-		}
-	}
 
+		before := time.Time{}
+		verify("Zero before", want, before)
+
+		before = lastPermanodeMutation
+		t.Log("lastPermanodeMutation", lastPermanodeMutation,
+			lastPermanodeMutation.Unix())
+		verify("Non-zero before", want[1:], before)
+	}
 	// GetDirMembers
 	{
 		ch := make(chan blob.Ref, 10) // expect 2 results
@@ -510,7 +575,7 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 		for r := range ch {
 			got = append(got, r)
 		}
-		want := []blob.Ref{jpegFileRef, exifFileRef}
+		want := []blob.Ref{jpegFileRef, exifFileRef, mediaFileRef}
 		if len(got) != len(want) {
 			t.Errorf("GetDirMembers results differ.\n got: %v\nwant: %v",
 				got, want)
@@ -591,6 +656,15 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 					Attr:      "camliMember",
 					Value:     pnChild.String(),
 				},
+				{
+					BlobRef:   br4,
+					Permanode: pn,
+					Signer:    id.SignerBlobRef,
+					Date:      br4Time.UTC(),
+					Type:      "del-attribute",
+					Attr:      "title",
+					Value:     "pony",
+				},
 			}
 			if !reflect.DeepEqual(claims, want) {
 				t.Errorf("AppendClaims results differ.\n got: %v\nwant: %v",
@@ -603,20 +677,111 @@ func Index(t *testing.T, initIdx func() *index.Index) {
 func PathsOfSignerTarget(t *testing.T, initIdx func() *index.Index) {
 	id := NewIndexDeps(initIdx())
 	id.Fataler = t
+	defer id.DumpIndex(t)
+	signer := id.SignerBlobRef
 	pn := id.NewPermanode()
 	t.Logf("uploaded permanode %q", pn)
 
 	claim1 := id.SetAttribute(pn, "camliPath:somedir", "targ-123")
+	claim1Time := id.lastTime().UTC()
 	claim2 := id.SetAttribute(pn, "camliPath:with|pipe", "targ-124")
+	claim2Time := id.lastTime().UTC()
 	t.Logf("made path claims %q and %q", claim1, claim2)
-
-	id.DumpIndex(t)
 
 	type test struct {
 		blobref string
 		want    int
 	}
 	tests := []test{
+		{"targ-123", 1},
+		{"targ-124", 1},
+		{"targ-125", 0},
+	}
+	for _, tt := range tests {
+		paths, err := id.Index.PathsOfSignerTarget(signer, blob.ParseOrZero(tt.blobref))
+		if err != nil {
+			t.Fatalf("PathsOfSignerTarget(%q): %v", tt.blobref, err)
+		}
+		if len(paths) != tt.want {
+			t.Fatalf("PathsOfSignerTarget(%q) got %d results; want %d",
+				tt.blobref, len(paths), tt.want)
+		}
+		if tt.blobref == "targ-123" {
+			p := paths[0]
+			want := fmt.Sprintf(
+				"Path{Claim: %s, %v; Base: %s + Suffix \"somedir\" => Target targ-123}",
+				claim1, claim1Time, pn)
+			if g := p.String(); g != want {
+				t.Errorf("claim wrong.\n got: %s\nwant: %s", g, want)
+			}
+		}
+	}
+	tests = []test{
+		{"somedir", 1},
+		{"with|pipe", 1},
+		{"void", 0},
+	}
+	for _, tt := range tests {
+		paths, err := id.Index.PathsLookup(id.SignerBlobRef, pn, tt.blobref)
+		if err != nil {
+			t.Fatalf("PathsLookup(%q): %v", tt.blobref, err)
+		}
+		if len(paths) != tt.want {
+			t.Fatalf("PathsLookup(%q) got %d results; want %d",
+				tt.blobref, len(paths), tt.want)
+		}
+		if tt.blobref == "with|pipe" {
+			p := paths[0]
+			want := fmt.Sprintf(
+				"Path{Claim: %s, %s; Base: %s + Suffix \"with|pipe\" => Target targ-124}",
+				claim2, claim2Time, pn)
+			if g := p.String(); g != want {
+				t.Errorf("claim wrong.\n got: %s\nwant: %s", g, want)
+			}
+		}
+	}
+
+	// now test deletions
+	// Delete an existing value
+	claim3 := id.Delete(claim2)
+	t.Logf("claim %q deletes path claim %q", claim3, claim2)
+	tests = []test{
+		{"targ-123", 1},
+		{"targ-124", 0},
+		{"targ-125", 0},
+	}
+	for _, tt := range tests {
+		signer := id.SignerBlobRef
+		paths, err := id.Index.PathsOfSignerTarget(signer, blob.ParseOrZero(tt.blobref))
+		if err != nil {
+			t.Fatalf("PathsOfSignerTarget(%q): %v", tt.blobref, err)
+		}
+		if len(paths) != tt.want {
+			t.Fatalf("PathsOfSignerTarget(%q) got %d results; want %d",
+				tt.blobref, len(paths), tt.want)
+		}
+	}
+	tests = []test{
+		{"somedir", 1},
+		{"with|pipe", 0},
+		{"void", 0},
+	}
+	for _, tt := range tests {
+		paths, err := id.Index.PathsLookup(id.SignerBlobRef, pn, tt.blobref)
+		if err != nil {
+			t.Fatalf("PathsLookup(%q): %v", tt.blobref, err)
+		}
+		if len(paths) != tt.want {
+			t.Fatalf("PathsLookup(%q) got %d results; want %d",
+				tt.blobref, len(paths), tt.want)
+		}
+	}
+
+	// recreate second path, and test if the previous deletion of it
+	// is indeed ignored.
+	claim4 := id.Delete(claim3)
+	t.Logf("delete claim %q deletes claim %q, which should undelete %q", claim4, claim3, claim2)
+	tests = []test{
 		{"targ-123", 1},
 		{"targ-124", 1},
 		{"targ-125", 0},
@@ -631,23 +796,41 @@ func PathsOfSignerTarget(t *testing.T, initIdx func() *index.Index) {
 			t.Fatalf("PathsOfSignerTarget(%q) got %d results; want %d",
 				tt.blobref, len(paths), tt.want)
 		}
-		if tt.blobref == "targ-123" {
+		// and check the modtime too
+		if tt.blobref == "targ-124" {
 			p := paths[0]
 			want := fmt.Sprintf(
-				"Path{Claim: %s, 2011-11-28T01:32:37.000123456Z; Base: %s + Suffix \"somedir\" => Target targ-123}",
-				claim1, pn)
+				"Path{Claim: %s, %v; Base: %s + Suffix \"with|pipe\" => Target targ-124}",
+				claim2, claim2Time, pn)
 			if g := p.String(); g != want {
 				t.Errorf("claim wrong.\n got: %s\nwant: %s", g, want)
 			}
 		}
 	}
-
-	path, err := id.Index.PathLookup(id.SignerBlobRef, pn, "with|pipe", time.Now())
-	if err != nil {
-		t.Fatalf("PathLookup = %v", err)
+	tests = []test{
+		{"somedir", 1},
+		{"with|pipe", 1},
+		{"void", 0},
 	}
-	if g, e := path.Target.String(), "targ-124"; g != e {
-		t.Errorf("PathLookup = %q; want %q", g, e)
+	for _, tt := range tests {
+		paths, err := id.Index.PathsLookup(id.SignerBlobRef, pn, tt.blobref)
+		if err != nil {
+			t.Fatalf("PathsLookup(%q): %v", tt.blobref, err)
+		}
+		if len(paths) != tt.want {
+			t.Fatalf("PathsLookup(%q) got %d results; want %d",
+				tt.blobref, len(paths), tt.want)
+		}
+		// and check that modtime is now claim4Time
+		if tt.blobref == "with|pipe" {
+			p := paths[0]
+			want := fmt.Sprintf(
+				"Path{Claim: %s, %s; Base: %s + Suffix \"with|pipe\" => Target targ-124}",
+				claim2, claim2Time, pn)
+			if g := p.String(); g != want {
+				t.Errorf("claim wrong.\n got: %s\nwant: %s", g, want)
+			}
+		}
 	}
 }
 
@@ -706,15 +889,14 @@ func EdgesTo(t *testing.T, initIdx func() *index.Index) {
 	idx := initIdx()
 	id := NewIndexDeps(idx)
 	id.Fataler = t
+	defer id.DumpIndex(t)
 
 	// pn1 ---member---> pn2
 	pn1 := id.NewPermanode()
 	pn2 := id.NewPermanode()
-	id.AddAttribute(pn1, "camliMember", pn2.String())
+	claim1 := id.AddAttribute(pn1, "camliMember", pn2.String())
 
 	t.Logf("edge %s --> %s", pn1, pn2)
-
-	id.DumpIndex(t)
 
 	// Look for pn1
 	{
@@ -734,155 +916,233 @@ func EdgesTo(t *testing.T, initIdx func() *index.Index) {
 			t.Errorf("Wrong edge.\n GOT: %v\nWANT: %v", got, want)
 		}
 	}
+
+	// Delete claim -> break edge relationship.
+	del1 := id.Delete(claim1)
+	t.Logf("del claim %q deletes claim %q, breaks link between p1 and p2", del1, claim1)
+	// test that we can't find anymore pn1 from pn2
+	{
+		edges, err := idx.EdgesTo(pn2, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(edges) != 0 {
+			t.Fatalf("num edges = %d; want 0", len(edges))
+		}
+	}
+
+	// Undelete, should restore the link.
+	del2 := id.Delete(del1)
+	t.Logf("del claim %q deletes del claim %q, restores link between p1 and p2", del2, del1)
+	{
+		edges, err := idx.EdgesTo(pn2, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(edges) != 1 {
+			t.Fatalf("num edges = %d; want 1", len(edges))
+		}
+		wantEdge := &camtypes.Edge{
+			From:     pn1,
+			To:       pn2,
+			FromType: "permanode",
+		}
+		if got, want := edges[0].String(), wantEdge.String(); got != want {
+			t.Errorf("Wrong edge.\n GOT: %v\nWANT: %v", got, want)
+		}
+	}
 }
 
-func IsDeleted(t *testing.T, initIdx func() *index.Index) {
+func Delete(t *testing.T, initIdx func() *index.Index) {
 	idx := initIdx()
 	id := NewIndexDeps(idx)
 	id.Fataler = t
 	defer id.DumpIndex(t)
 	pn1 := id.NewPermanode()
+	t.Logf("uploaded permanode %q", pn1)
+	cl1 := id.SetAttribute(pn1, "tag", "foo1")
+	cl1Time := id.lastTime()
+	t.Logf("set attribute %q", cl1)
 
 	// delete pn1
-	// TODO(mpl): For now receive.go does not deal with deletions,
-	// so we just write deleted entries by hand in the index. That
-	// test will evolve in the next CLs.
 	delpn1 := id.Delete(pn1)
-	delTime := reverseTimeString(schema.RFC3339FromTime(id.lastTime()))
-	delKey := pipes("deleted", pn1.String(), delTime, delpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	delKey = pipes("deletes", delpn1.String(), pn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	// keep the deletes cache in sync manually for now
-	if err := idx.UpdateDeletesCache(pn1, id.lastTime()); err != nil {
-		t.Fatal(err)
-	}
+	t.Logf("del claim %q deletes %q", delpn1, pn1)
 	deleted := idx.IsDeleted(pn1)
 	if !deleted {
 		t.Fatal("pn1 should be deleted")
 	}
 
-	// undelete pn1
-	deldelpn1 := id.Delete(delpn1)
-	delTime = reverseTimeString(schema.RFC3339FromTime(id.lastTime()))
-	delKey = pipes("deleted", delpn1.String(), delTime, deldelpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
+	// and try to find it with SearchPermanodesWithAttr (which should not work)
+	{
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "tag",
+			Query:     "foo1"}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
+		}
+		var got []blob.Ref
+		for r := range ch {
+			got = append(got, r)
+		}
+		want := []blob.Ref{}
+		if len(got) != len(want) {
+			t.Errorf("id.Index.SearchPermanodesWithAttr gives %q, want %q", got, want)
+		}
 	}
-	delKey = pipes("deletes", deldelpn1.String(), delpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
+
+	// delete pn1 again with another claim
+	delpn1bis := id.Delete(pn1)
+	t.Logf("del claim %q deletes %q a second time", delpn1bis, pn1)
+	deleted = idx.IsDeleted(pn1)
+	if !deleted {
+		t.Fatal("pn1 should be deleted")
 	}
-	if err := idx.UpdateDeletesCache(delpn1, id.lastTime()); err != nil {
-		t.Fatal(err)
+
+	// verify that deleting delpn1 is not enough to make pn1 undeleted
+	del2 := id.Delete(delpn1)
+	t.Logf("delete claim %q deletes %q, which should not yet revive %q", del2, delpn1, pn1)
+	deleted = idx.IsDeleted(pn1)
+	if !deleted {
+		t.Fatal("pn1 should not yet be undeleted")
 	}
+	// we should not yet be able to find it again with SearchPermanodesWithAttr
+	{
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "tag",
+			Query:     "foo1"}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
+		}
+		var got []blob.Ref
+		for r := range ch {
+			got = append(got, r)
+		}
+		want := []blob.Ref{}
+		if len(got) != len(want) {
+			t.Errorf("id.Index.SearchPermanodesWithAttr gives %q, want %q", got, want)
+		}
+	}
+
+	// delete delpn1bis as well -> should undelete pn1
+	del2bis := id.Delete(delpn1bis)
+	t.Logf("delete claim %q deletes %q, which should revive %q", del2bis, delpn1bis, pn1)
 	deleted = idx.IsDeleted(pn1)
 	if deleted {
 		t.Fatal("pn1 should be undeleted")
 	}
-}
-
-func DeletedAt(t *testing.T, initIdx func() *index.Index) {
-	idx := initIdx()
-	id := NewIndexDeps(idx)
-	id.Fataler = t
-	defer id.DumpIndex(t)
-	pn1 := id.NewPermanode()
-
-	// Test the never, ever, deleted case
-	deleted, when := idx.DeletedAt(pn1)
-	if deleted || !when.IsZero() {
-		t.Fatal("pn1 should never have been deleted")
+	// we should now be able to find it again with SearchPermanodesWithAttr
+	{
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "tag",
+			Query:     "foo1"}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
+		}
+		var got []blob.Ref
+		for r := range ch {
+			got = append(got, r)
+		}
+		want := []blob.Ref{pn1}
+		if len(got) < 1 || got[0].String() != want[0].String() {
+			t.Errorf("id.Index.SearchPermanodesWithAttr gives %q, want %q", got, want)
+		}
 	}
 
-	// delete pn1
-	// TODO(mpl): For now receive.go does not deal with deletions,
-	// so we just write deleted entries by hand in the index. That
-	// test will evolve in the next CLs.
-	delpn1 := id.Delete(pn1)
-	delTime := reverseTimeString(schema.RFC3339FromTime(id.lastTime()))
-	delKey := pipes("deleted", pn1.String(), delTime, delpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	delKey = pipes("deletes", delpn1.String(), pn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	// keep the deletes cache in sync manually for now
-	if err := idx.UpdateDeletesCache(pn1, id.lastTime()); err != nil {
-		t.Fatal(err)
-	}
-	deleted, when = idx.DeletedAt(pn1)
+	// Delete cl1
+	del3 := id.Delete(cl1)
+	t.Logf("del claim %q deletes claim %q", del3, cl1)
+	deleted = idx.IsDeleted(cl1)
 	if !deleted {
-		t.Fatal("pn1 should be deleted")
+		t.Fatal("cl1 should be deleted")
 	}
-	if reverseTimeString(schema.RFC3339FromTime(when)) != delTime {
-		t.Fatalf("pn1 should have been deleted at %v, not %v", delTime, when)
-	}
-
-	// undelete pn1
-	deldelpn1 := id.Delete(delpn1)
-	delTime = reverseTimeString(schema.RFC3339FromTime(id.lastTime()))
-	delKey = pipes("deleted", delpn1.String(), delTime, deldelpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	delKey = pipes("deletes", deldelpn1.String(), delpn1.String())
-	if err := id.Set(delKey, ""); err != nil {
-		t.Fatal(err)
-	}
-	if err := idx.UpdateDeletesCache(delpn1, id.lastTime()); err != nil {
-		t.Fatal(err)
-	}
-	deleted, when = idx.DeletedAt(pn1)
-	if deleted {
-		t.Fatal("pn1 should be undeleted")
-	}
-	if reverseTimeString(schema.RFC3339FromTime(when)) != delTime {
-		t.Fatalf("pn1 should have been undeleted at %v, not %v", delTime, when)
-	}
-}
-
-// TODO(mpl): remove all these below once we have the next CLs with higher level tests.
-// pipes returns args separated by pipes
-func pipes(args ...interface{}) string {
-	var buf bytes.Buffer
-	for n, arg := range args {
-		if n > 0 {
-			buf.WriteString("|")
+	// we should not find anything with SearchPermanodesWithAttr
+	{
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "tag",
+			Query:     "foo1"}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
 		}
-		if s, ok := arg.(string); ok {
-			buf.WriteString(s)
+		var got []blob.Ref
+		for r := range ch {
+			got = append(got, r)
+		}
+		want := []blob.Ref{}
+		if len(got) != len(want) {
+			t.Errorf("id.Index.SearchPermanodesWithAttr gives %q, want %q", got, want)
+		}
+	}
+	// and now check that AppendClaims finds nothing for pn
+	{
+		claims, err := id.Index.AppendClaims(nil, pn1, id.SignerBlobRef, "")
+		if err != nil {
+			t.Errorf("AppendClaims = %v", err)
 		} else {
-			buf.WriteString(arg.(fmt.Stringer).String())
+			want := []camtypes.Claim{}
+			if len(claims) != len(want) {
+				t.Errorf("id.Index.AppendClaims gives %q, want %q", claims, want)
+			}
 		}
 	}
-	return buf.String()
-}
 
-func reverseTimeString(s string) string {
-	b := make([]byte, 0, len(s)+2)
-	b = append(b, 'r')
-	b = append(b, 't')
-	b = appendReverseString(b, s)
-	return string(b)
-}
-
-func appendReverseString(b []byte, s string) []byte {
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= '0' && c <= '9' {
-			b = append(b, '0'+('9'-c))
+	// undelete cl1
+	del4 := id.Delete(del3)
+	t.Logf("del claim %q deletes del claim %q, which should undelete %q", del4, del3, cl1)
+	// We should now be able to find it again with both methods
+	{
+		ch := make(chan blob.Ref, 10)
+		req := &camtypes.PermanodeByAttrRequest{
+			Signer:    id.SignerBlobRef,
+			Attribute: "tag",
+			Query:     "foo1"}
+		err := id.Index.SearchPermanodesWithAttr(ch, req)
+		if err != nil {
+			t.Fatalf("SearchPermanodesWithAttr = %v", err)
+		}
+		var got []blob.Ref
+		for r := range ch {
+			got = append(got, r)
+		}
+		want := []blob.Ref{pn1}
+		if len(got) < 1 || got[0].String() != want[0].String() {
+			t.Errorf("id.Index.SearchPermanodesWithAttr gives %q, want %q", got, want)
+		}
+	}
+	// and check that AppendClaims finds cl1, with the right modtime too
+	{
+		claims, err := id.Index.AppendClaims(nil, pn1, id.SignerBlobRef, "")
+		if err != nil {
+			t.Errorf("AppendClaims = %v", err)
 		} else {
-			b = append(b, c)
+			want := []camtypes.Claim{
+				camtypes.Claim{
+					BlobRef:   cl1,
+					Permanode: pn1,
+					Signer:    id.SignerBlobRef,
+					Date:      cl1Time.UTC(),
+					Type:      "set-attribute",
+					Attr:      "tag",
+					Value:     "foo1",
+				},
+			}
+			if !reflect.DeepEqual(claims, want) {
+				t.Errorf("GetOwnerClaims results differ.\n got: %v\nwant: %v",
+					claims, want)
+			}
 		}
 	}
-	return b
 }
 
 type searchResults []camtypes.RecentPermanode

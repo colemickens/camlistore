@@ -30,6 +30,8 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/context"
+	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/readerutil"
 	"camlistore.org/pkg/sorted"
@@ -38,8 +40,7 @@ import (
 var queueSyncInterval = 5 * time.Second
 
 const (
-	maxErrors    = 20
-	maxCopyTries = 17 // ~36 hours with retryCopyLoop(time.Second ...)
+	maxErrors = 20
 )
 
 // The SyncHandler handles async replication in one direction between
@@ -58,10 +59,16 @@ type SyncHandler struct {
 	from             blobserver.Storage
 	to               blobserver.BlobReceiver
 	queue            sorted.KeyValue
+	toIndex          bool // whether this sync is from a blob storage to an index
 
 	idle bool // if true, the handler does nothing other than providing the discovery.
 
 	copierPoolSize int
+
+	// blobc receives a blob to copy. It's an optimization only to wake up
+	// the syncer from idle sleep periods and sends are non-blocking and may
+	// drop blobs. The queue is the actual source of truth.
+	blobc chan blob.SizedRef
 
 	lk             sync.Mutex // protects following
 	status         string
@@ -71,6 +78,14 @@ type SyncHandler struct {
 	totalCopies    int64
 	totalCopyBytes int64
 	totalErrors    int64
+}
+
+func (sh *SyncHandler) String() string {
+	return fmt.Sprintf("[SyncHandler %v -> %v]", sh.fromName, sh.toName)
+}
+
+func (sh *SyncHandler) logf(format string, args ...interface{}) {
+	log.Printf(sh.String()+" "+format, args...)
 }
 
 var (
@@ -109,6 +124,7 @@ func newSyncFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handler,
 		return nil, err
 	}
 
+	isToIndex := false
 	fromBs, err := ld.GetStorage(from)
 	if err != nil {
 		return nil, err
@@ -117,8 +133,13 @@ func newSyncFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handler,
 	if err != nil {
 		return nil, err
 	}
+	if _, ok := fromBs.(*index.Index); !ok {
+		if _, ok := toBs.(*index.Index); ok {
+			isToIndex = true
+		}
+	}
 
-	synch, err := createSyncHandler(from, to, fromBs, toBs, q)
+	sh, err := createSyncHandler(from, to, fromBs, toBs, q, isToIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -126,23 +147,24 @@ func newSyncFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handler,
 	if fullSync || blockFullSync {
 		didFullSync := make(chan bool, 1)
 		go func() {
-			n := synch.runSync("queue", synch.enumerateQueuedBlobs, 0)
-			log.Printf("Queue sync copied %d blobs", n)
-			n = synch.runSync("full", blobserverEnumerator(fromBs), 0)
-			log.Printf("Full sync copied %d blobs", n)
+			n := sh.runSync("queue", sh.enumerateQueuedBlobs)
+			sh.logf("Queue sync copied %d blobs", n)
+			n = sh.runSync("full", blobserverEnumerator(context.TODO(), fromBs))
+			sh.logf("Full sync copied %d blobs", n)
 			didFullSync <- true
-			synch.syncQueueLoop()
+			sh.syncQueueLoop()
 		}()
 		if blockFullSync {
-			log.Printf("Blocking startup, waiting for full sync from %q to %q", from, to)
+			sh.logf("Blocking startup, waiting for full sync from %q to %q", from, to)
 			<-didFullSync
-			log.Printf("Full sync complete.")
+			sh.logf("Full sync complete.")
 		}
 	} else {
-		go synch.syncQueueLoop()
+		go sh.syncQueueLoop()
 	}
 
-	return synch, nil
+	blobserver.GetHub(fromBs).AddReceiveHook(sh.enqueue)
+	return sh, nil
 }
 
 func (sh *SyncHandler) InitHandler(hl blobserver.FindHandlerByTyper) error {
@@ -165,7 +187,7 @@ type timestampedError struct {
 
 func createSyncHandler(fromName, toName string,
 	from blobserver.Storage, to blobserver.BlobReceiver,
-	queue sorted.KeyValue) (*SyncHandler, error) {
+	queue sorted.KeyValue, isToIndex bool) (*SyncHandler, error) {
 
 	h := &SyncHandler{
 		copierPoolSize: 3,
@@ -174,6 +196,8 @@ func createSyncHandler(fromName, toName string,
 		fromName:       fromName,
 		toName:         toName,
 		queue:          queue,
+		toIndex:        isToIndex,
+		blobc:          make(chan blob.SizedRef, 8),
 		status:         "not started",
 		blobStatus:     make(map[string]fmt.Stringer),
 	}
@@ -193,8 +217,9 @@ func createIdleSyncHandler(fromName, toName string) (*SyncHandler, error) {
 func (sh *SyncHandler) discoveryMap() map[string]interface{} {
 	// TODO(mpl): more status info
 	return map[string]interface{}{
-		"from": sh.fromName,
-		"to":   sh.toName,
+		"from":    sh.fromName,
+		"to":      sh.toName,
+		"toIndex": sh.toIndex,
 	}
 }
 
@@ -255,7 +280,7 @@ func (sh *SyncHandler) setBlobStatus(blobref string, s fmt.Stringer) {
 }
 
 func (sh *SyncHandler) addErrorToLog(err error) {
-	log.Printf(err.Error())
+	sh.logf("%v", err)
 	sh.lk.Lock()
 	defer sh.lk.Unlock()
 	sh.recentErrors = append(sh.recentErrors, timestampedError{time.Now().UTC(), err})
@@ -271,9 +296,9 @@ type copyResult struct {
 	err error
 }
 
-func blobserverEnumerator(src blobserver.BlobEnumerator) func(chan<- blob.SizedRef, <-chan struct{}) error {
+func blobserverEnumerator(ctx *context.Context, src blobserver.BlobEnumerator) func(chan<- blob.SizedRef, <-chan struct{}) error {
 	return func(dst chan<- blob.SizedRef, intr <-chan struct{}) error {
-		return blobserver.EnumerateAll(src, func(sb blob.SizedRef) error {
+		return blobserver.EnumerateAll(ctx, src, func(sb blob.SizedRef) error {
 			select {
 			case dst <- sb:
 			case <-intr:
@@ -286,12 +311,12 @@ func blobserverEnumerator(src blobserver.BlobEnumerator) func(chan<- blob.SizedR
 
 func (sh *SyncHandler) enumerateQueuedBlobs(dst chan<- blob.SizedRef, intr <-chan struct{}) error {
 	defer close(dst)
-	it := sh.queue.Find("")
+	it := sh.queue.Find("", "")
 	for it.Next() {
 		br, ok := blob.Parse(it.Key())
 		size, err := strconv.ParseInt(it.Value(), 10, 64)
 		if !ok || err != nil {
-			log.Printf("ERROR: bogus sync queue entry: %q => %q", it.Key(), it.Value())
+			sh.logf("ERROR: bogus sync queue entry: %q => %q", it.Key(), it.Value())
 			continue
 		}
 		select {
@@ -303,11 +328,22 @@ func (sh *SyncHandler) enumerateQueuedBlobs(dst chan<- blob.SizedRef, intr <-cha
 	return it.Close()
 }
 
-func (sh *SyncHandler) runSync(srcName string, enumSrc func(chan<- blob.SizedRef, <-chan struct{}) error, longPollWait time.Duration) int {
-	if longPollWait != 0 {
-		sh.setStatus("Idle; waiting for new blobs")
-		// TODO: use longPollWait somehow.
+func (sh *SyncHandler) enumerateBlobc(first blob.SizedRef) func(chan<- blob.SizedRef, <-chan struct{}) error {
+	return func(dst chan<- blob.SizedRef, intr <-chan struct{}) error {
+		defer close(dst)
+		dst <- first
+		for {
+			select {
+			case sb := <-sh.blobc:
+				dst <- sb
+			default:
+				return nil
+			}
+		}
 	}
+}
+
+func (sh *SyncHandler) runSync(srcName string, enumSrc func(chan<- blob.SizedRef, <-chan struct{}) error) int {
 	enumch := make(chan blob.SizedRef, 8)
 	errch := make(chan error, 1)
 	intr := make(chan struct{})
@@ -331,11 +367,9 @@ func (sh *SyncHandler) runSync(srcName string, enumSrc func(chan<- blob.SizedRef
 	for i := 0; i < toCopy; i++ {
 		sh.setStatus("Copied %d/%d of batch of queued blobs", nCopied, toCopy)
 		res := <-resch
-		// TODO(mpl): why is nCopied incremented while res.err hasn't been checked
-		// yet? Maybe it should be renamed to nTried?
-		nCopied++
 		sh.lk.Lock()
 		if res.err == nil {
+			nCopied++
 			sh.totalCopies++
 			sh.totalCopyBytes += res.sb.Size
 			sh.recentCopyTime = time.Now().UTC()
@@ -353,43 +387,27 @@ func (sh *SyncHandler) runSync(srcName string, enumSrc func(chan<- blob.SizedRef
 }
 
 func (sh *SyncHandler) syncQueueLoop() {
-	every(queueSyncInterval, func() {
-		for sh.runSync(sh.fromName, sh.enumerateQueuedBlobs, queueSyncInterval) > 0 {
+	for {
+		t0 := time.Now()
+
+		for sh.runSync(sh.fromName, sh.enumerateQueuedBlobs) > 0 {
 			// Loop, before sleeping.
 		}
 		sh.setStatus("Sleeping briefly before next long poll.")
-	})
+
+		d := queueSyncInterval - time.Since(t0)
+		select {
+		case <-time.After(d):
+		case sb := <-sh.blobc:
+			// Blob arrived.
+			sh.runSync(sh.fromName, sh.enumerateBlobc(sb))
+		}
+	}
 }
 
 func (sh *SyncHandler) copyWorker(res chan<- copyResult, work <-chan blob.SizedRef) {
 	for sb := range work {
 		res <- copyResult{sb, sh.copyBlob(sb, 0)}
-	}
-}
-
-func (sh *SyncHandler) retryCopyLoop(initialInterval time.Duration, sb blob.SizedRef) {
-	interval := initialInterval
-	tryCount := 1
-	for {
-		if tryCount >= maxCopyTries {
-			break
-		}
-		t1 := time.Now()
-		err := sh.copyBlob(sb, tryCount)
-		sh.lk.Lock()
-		if err == nil {
-			sh.totalCopies++
-			sh.totalCopyBytes += sb.Size
-			sh.recentCopyTime = time.Now().UTC()
-			sh.lk.Unlock()
-			break
-		} else {
-			sh.totalErrors++
-		}
-		sh.lk.Unlock()
-		time.Sleep(t1.Add(interval).Sub(time.Now()))
-		interval = interval * 2
-		tryCount++
 	}
 }
 
@@ -432,21 +450,6 @@ func (sh *SyncHandler) copyBlob(sb blob.SizedRef, tryCount int) error {
 	}))
 	newsb, err := sh.to.ReceiveBlob(sb.Ref, readerutil.CountingReader{rc, &bytesCopied})
 	if err != nil {
-		// TODO(bradfitz): I don't remember what this MissingKeyBlob (sic; should be ErrMissingKey...)
-		// is about. Disable for now.
-		/*
-			if err == camerrors.MissingKeyBlob && tryCount == 0 {
-				err := sh.fromq.RemoveBlobs([]blob.Ref{sb.Ref})
-				if err != nil {
-					return errorf("source queue delete: %v", err)
-				}
-				// TODO(mpl): instead of doing one goroutine per blob, maybe transfer
-				// the "faulty" blobs in a retry queue, and do one goroutine per queue?
-				// Also we probably will want to deal with part of this problem in the
-				// index layer anyway: http://camlistore.org/issue/102
-				go sh.retryCopyLoop(time.Second, sb)
-			}
-		*/
 		return errorf("dest write: %v", err)
 	}
 	if newsb.Size != sb.Size {
@@ -459,25 +462,30 @@ func (sh *SyncHandler) copyBlob(sb blob.SizedRef, tryCount int) error {
 	return nil
 }
 
-func every(interval time.Duration, f func()) {
-	for {
-		t1 := time.Now()
-		f()
-		time.Sleep(t1.Add(interval).Sub(time.Now()))
-	}
-}
-
 func (sh *SyncHandler) ReceiveBlob(br blob.Ref, r io.Reader) (sb blob.SizedRef, err error) {
 	n, err := io.Copy(ioutil.Discard, r)
 	if err != nil {
 		return
 	}
+	sb = blob.SizedRef{br, n}
+	return sb, sh.enqueue(sb)
+}
+
+func (sh *SyncHandler) enqueue(sb blob.SizedRef) error {
 	// TODO: include current time in encoded value, to attempt to
 	// do in-order delivery to remote side later? Possible
 	// friendly optimization later. Might help peer's indexer have
 	// less missing deps.
-	err = sh.queue.Set(br.String(), fmt.Sprint(n))
-	return blob.SizedRef{br, n}, err
+	if err := sh.queue.Set(sb.Ref.String(), fmt.Sprint(sb.Size)); err != nil {
+		return err
+	}
+	// Non-blocking send to wake up looping goroutine if it's
+	// sleeping...
+	select {
+	case sh.blobc <- sb:
+	default:
+	}
+	return nil
 }
 
 // TODO(bradfitz): implement these? what do they mean? possibilities:

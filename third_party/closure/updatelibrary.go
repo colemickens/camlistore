@@ -38,7 +38,7 @@ import (
 
 const (
 	gitRepo = "https://code.google.com/p/closure-library/"
-	gitHash = "1389e13"
+	gitHash = "ab89cf45c216"
 )
 
 var (
@@ -111,6 +111,8 @@ func fileList() ([]string, error) {
 		"LICENSE",
 		"README",
 		filepath.Join("closure", "goog", "base.js"),
+		filepath.Join("closure", "goog", "bootstrap", "nodejs.js"),
+		filepath.Join("closure", "goog", "bootstrap", "webworkers.js"),
 		filepath.Join("closure", "goog", "css", "common.css"),
 		filepath.Join("closure", "goog", "css", "toolbar.css"),
 		filepath.Join("closure", "goog", "deps.js"),

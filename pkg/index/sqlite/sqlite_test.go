@@ -1,5 +1,5 @@
 /*
-Copyright 2012 Google Inc.
+Copyright 2012 The Camlistore Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,8 +28,9 @@ import (
 
 	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/index/indextest"
-	"camlistore.org/pkg/index/sqlite"
 	"camlistore.org/pkg/sorted"
+	"camlistore.org/pkg/sorted/kvtest"
+	"camlistore.org/pkg/sorted/sqlite"
 
 	_ "camlistore.org/third_party/github.com/mattn/go-sqlite3"
 )
@@ -37,7 +38,6 @@ import (
 var (
 	once        sync.Once
 	dbAvailable bool
-	rootdb      *sql.DB
 )
 
 func do(db *sql.DB, sql string) {
@@ -48,13 +48,10 @@ func do(db *sql.DB, sql string) {
 	panic(fmt.Sprintf("Error %v running SQL: %s", err, sql))
 }
 
-func makeStorage(t *testing.T) (s sorted.KeyValue, clean func()) {
+func newSorted(t *testing.T) (kv sorted.KeyValue, clean func()) {
 	f, err := ioutil.TempFile("", "sqlite-test")
 	if err != nil {
 		t.Fatal(err)
-	}
-	clean = func() {
-		os.Remove(f.Name())
 	}
 	db, err := sql.Open("sqlite3", f.Name())
 	if err != nil {
@@ -64,16 +61,26 @@ func makeStorage(t *testing.T) (s sorted.KeyValue, clean func()) {
 		do(db, tableSql)
 	}
 	do(db, fmt.Sprintf(`REPLACE INTO meta VALUES ('version', '%d')`, sqlite.SchemaVersion()))
-	s, err = sqlite.NewStorage(f.Name())
+
+	kv, err = sqlite.NewKeyValue(f.Name())
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	return s, clean
+	return kv, func() {
+		kv.Close()
+		os.Remove(f.Name())
+	}
 }
 
-type sqliteTester struct{}
+func TestSortedKV(t *testing.T) {
+	kv, clean := newSorted(t)
+	defer clean()
+	kvtest.TestSorted(t, kv)
+}
 
-func (sqliteTester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)) {
+type tester struct{}
+
+func (tester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)) {
 	var mu sync.Mutex // guards cleanups
 	var cleanups []func()
 	defer func() {
@@ -83,7 +90,7 @@ func (sqliteTester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)
 		}
 	}()
 	makeIndex := func() *index.Index {
-		s, cleanup := makeStorage(t)
+		s, cleanup := newSorted(t)
 		mu.Lock()
 		cleanups = append(cleanups, cleanup)
 		mu.Unlock()
@@ -93,27 +100,23 @@ func (sqliteTester) test(t *testing.T, tfn func(*testing.T, func() *index.Index)
 }
 
 func TestIndex_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.Index)
+	tester{}.test(t, indextest.Index)
 }
 
 func TestPathsOfSignerTarget_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.PathsOfSignerTarget)
+	tester{}.test(t, indextest.PathsOfSignerTarget)
 }
 
 func TestFiles_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.Files)
+	tester{}.test(t, indextest.Files)
 }
 
 func TestEdgesTo_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.EdgesTo)
+	tester{}.test(t, indextest.EdgesTo)
 }
 
-func TestIsDeleted_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.IsDeleted)
-}
-
-func TestDeletedAt_SQLite(t *testing.T) {
-	sqliteTester{}.test(t, indextest.DeletedAt)
+func TestDelete_SQLite(t *testing.T) {
+	tester{}.test(t, indextest.Delete)
 }
 
 func TestConcurrency(t *testing.T) {
@@ -121,7 +124,7 @@ func TestConcurrency(t *testing.T) {
 		t.Logf("skipping for short mode")
 		return
 	}
-	s, clean := makeStorage(t)
+	s, clean := newSorted(t)
 	defer clean()
 	const n = 100
 	ch := make(chan error)
@@ -160,7 +163,7 @@ func TestFDLeak(t *testing.T) {
 	fd0 := numFDs(t)
 	t.Logf("fd0 = %d", fd0)
 
-	s, clean := makeStorage(t)
+	s, clean := newSorted(t)
 	defer clean()
 
 	bm := s.BeginBatch()
@@ -172,7 +175,7 @@ func TestFDLeak(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 5; i++ {
-		it := s.Find("key:")
+		it := s.Find("key:", "key~")
 		n := 0
 		for it.Next() {
 			n++

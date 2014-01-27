@@ -31,14 +31,19 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/constants"
 	"camlistore.org/pkg/fileembed"
 	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/jsonconfig"
 	"camlistore.org/pkg/jsonsign/signhandler"
 	"camlistore.org/pkg/misc/closure"
 	"camlistore.org/pkg/search"
+	"camlistore.org/pkg/sorted"
+	"camlistore.org/pkg/syncutil"
 	uistatic "camlistore.org/server/camlistored/ui"
 	closurestatic "camlistore.org/server/camlistored/ui/closure"
+	glitchstatic "camlistore.org/third_party/glitch"
+	reactstatic "camlistore.org/third_party/react"
 )
 
 var (
@@ -54,6 +59,10 @@ var (
 	thumbnailPattern = regexp.MustCompile(`^thumbnail/([^/]+)(/.*)?$`)
 	treePattern      = regexp.MustCompile(`^tree/([^/]+)(/.*)?$`)
 	closurePattern   = regexp.MustCompile(`^closure/(([^/]+)(/.*)?)$`)
+	reactPattern     = regexp.MustCompile(`^react/(.+)$`)
+	glitchPattern    = regexp.MustCompile(`^glitch/(.+)$`)
+
+	disableThumbCache, _ = strconv.ParseBool(os.Getenv("CAMLI_DISABLE_THUMB_CACHE"))
 )
 
 // UIHandler handles serving the UI and discovery JSON.
@@ -66,14 +75,19 @@ type UIHandler struct {
 	// but don't trust to have private signing keys?
 	JSONSignRoot string
 
-	PublishRoots map[string]*PublishHandler
+	publishRoots map[string]*PublishHandler
 
 	prefix string // of the UI handler itself
 	root   *RootHandler
 	sigh   *signhandler.Handler // or nil
 
+	// Cache optionally specifies a cache blob server, used for
+	// caching image thumbnails and other emphemeral data.
 	Cache blobserver.Storage // or nil
-	sc    ScaledImage        // cache for scaled images, optional
+
+	// Limit peak RAM used by concurrent image thumbnail calls.
+	resizeSem *syncutil.Sem
+	thumbMeta *thumbMeta // optional thumbnail key->blob.Ref cache
 
 	// sourceRoot optionally specifies the path to root of Camlistore's
 	// source. If empty, the UI files must be compiled in to the
@@ -83,12 +97,22 @@ type UIHandler struct {
 
 	uiDir string // if sourceRoot != "", this is sourceRoot+"/server/camlistored/ui"
 
-	// closureHandler serves the Closure JS files.
-	closureHandler http.Handler
+	closureHandler    http.Handler
+	fileReactHandler  http.Handler
+	fileGlitchHandler http.Handler
 }
 
 func init() {
 	blobserver.RegisterHandlerConstructor("ui", uiFromConfig)
+}
+
+// newKVOrNil wraps sorted.NewKeyValue and adds the ability
+// to pass a nil conf to get a (nil, nil) response.
+func newKVOrNil(conf jsonconfig.Obj) (sorted.KeyValue, error) {
+	if len(conf) == 0 {
+		return nil, nil
+	}
+	return sorted.NewKeyValue(conf)
 }
 
 func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, err error) {
@@ -96,10 +120,12 @@ func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, er
 		prefix:       ld.MyPrefix(),
 		JSONSignRoot: conf.OptionalString("jsonSignRoot", ""),
 		sourceRoot:   conf.OptionalString("sourceRoot", ""),
+		resizeSem: syncutil.NewSem(int64(conf.OptionalInt("maxResizeBytes",
+			constants.DefaultMaxResizeMem))),
 	}
 	pubRoots := conf.OptionalList("publishRoots")
 	cachePrefix := conf.OptionalString("cache", "")
-	scType := conf.OptionalString("scaledImage", "")
+	scaledImageConf := conf.OptionalObject("scaledImage")
 	if err = conf.Validate(); err != nil {
 		return
 	}
@@ -111,7 +137,12 @@ func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, er
 		}
 	}
 
-	ui.PublishRoots = make(map[string]*PublishHandler)
+	if os.Getenv("CAMLI_PUBLISH_ENABLED") == "false" {
+		// Hack for dev server, to simplify its config with devcam server --publish=false.
+		pubRoots = nil
+	}
+
+	ui.publishRoots = make(map[string]*PublishHandler)
 	for _, pubRoot := range pubRoots {
 		h, err := ld.GetHandler(pubRoot)
 		if err != nil {
@@ -121,7 +152,7 @@ func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, er
 		if !ok {
 			return nil, fmt.Errorf("UI handler's publishRoots references invalid %q; not a PublishHandler", pubRoot)
 		}
-		ui.PublishRoots[pubRoot] = pubh
+		ui.publishRoots[pubRoot] = pubh
 	}
 
 	checkType := func(key string, htype string) {
@@ -142,18 +173,20 @@ func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, er
 		return
 	}
 
+	scaledImageKV, err := newKVOrNil(scaledImageConf)
+	if err != nil {
+		return nil, fmt.Errorf("in UI handler's scaledImage: %v", err)
+	}
+	if scaledImageKV != nil && cachePrefix == "" {
+		return nil, fmt.Errorf("in UI handler, can't specify scaledImage without cache")
+	}
 	if cachePrefix != "" {
 		bs, err := ld.GetStorage(cachePrefix)
 		if err != nil {
 			return nil, fmt.Errorf("UI handler's cache of %q error: %v", cachePrefix, err)
 		}
 		ui.Cache = bs
-		switch scType {
-		case "lrucache":
-			ui.sc = NewScaledImageLRU()
-		default:
-			return nil, fmt.Errorf("unsupported ui handler's scType: %q ", scType)
-		}
+		ui.thumbMeta = newThumbMeta(scaledImageKV)
 	}
 
 	if ui.sourceRoot == "" {
@@ -191,6 +224,17 @@ func uiFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Handler, er
 	ui.closureHandler, err = ui.makeClosureHandler(ui.sourceRoot)
 	if err != nil {
 		return nil, fmt.Errorf(`Invalid "sourceRoot" value of %q: %v"`, ui.sourceRoot, err)
+	}
+
+	if ui.sourceRoot != "" {
+		ui.fileReactHandler, err = makeFileServer(ui.sourceRoot, filepath.Join("third_party", "react"), "react.js")
+		if err != nil {
+			return nil, fmt.Errorf("Could not make react handler: %s", err)
+		}
+		ui.fileGlitchHandler, err = makeFileServer(ui.sourceRoot, filepath.Join("third_party", "glitch"), "npc_piggy__x1_walk_png_1354829432.png")
+		if err != nil {
+			return nil, fmt.Errorf("Could not make glitch handler: %s", err)
+		}
 	}
 
 	rootPrefix, _, err := ld.FindHandlerByType("root")
@@ -240,20 +284,25 @@ func makeClosureHandler(root, handlerName string) (http.Handler, error) {
 		log.Printf("%v: serving Closure using redirects to %v", handlerName, root)
 		return closureRedirector(root), nil
 	}
-	fi, err := os.Stat(root)
+
+	path := filepath.Join("third_party", "closure", "lib", "closure")
+	return makeFileServer(root, path, filepath.Join("goog", "base.js"))
+}
+
+func makeFileServer(sourceRoot string, pathToServe string, expectedContentPath string) (http.Handler, error) {
+	fi, err := os.Stat(sourceRoot)
 	if err != nil {
 		return nil, err
 	}
 	if !fi.IsDir() {
 		return nil, errors.New("not a directory")
 	}
-	closureRoot := filepath.Join(root, "third_party", "closure", "lib", "closure")
-	_, err = os.Stat(filepath.Join(closureRoot, "goog", "base.js"))
+	dirToServe := filepath.Join(sourceRoot, pathToServe)
+	_, err = os.Stat(filepath.Join(dirToServe, expectedContentPath))
 	if err != nil {
-		return nil, fmt.Errorf("directory doesn't contain closure/goog/base.js; wrong directory?")
+		return nil, fmt.Errorf("directory doesn't contain %s; wrong directory?", expectedContentPath)
 	}
-	log.Printf("%v: serving Closure from disk: %v", handlerName, closureRoot)
-	return http.FileServer(http.Dir(closureRoot)), nil
+	return http.FileServer(http.Dir(dirToServe)), nil
 }
 
 const closureBaseURL closureRedirector = "https://closure-library.googlecode.com/git"
@@ -285,7 +334,13 @@ func wantsUploadHelper(req *http.Request) bool {
 }
 
 func wantsPermanode(req *http.Request) bool {
-	return httputil.IsGet(req) && blob.ValidRefString(req.FormValue("p"))
+	if httputil.IsGet(req) && blob.ValidRefString(req.FormValue("p")) {
+		// The new UI is handled by index.html.
+		if req.FormValue("newui") != "1" {
+			return true
+		}
+	}
+	return false
 }
 
 func wantsBlobInfo(req *http.Request) bool {
@@ -296,10 +351,10 @@ func wantsFileTreePage(req *http.Request) bool {
 	return httputil.IsGet(req) && blob.ValidRefString(req.FormValue("d"))
 }
 
-func wantsClosure(req *http.Request) bool {
+func getSuffixMatches(req *http.Request, pattern *regexp.Regexp) bool {
 	if httputil.IsGet(req) {
 		suffix := httputil.PathSuffix(req)
-		return closurePattern.MatchString(suffix)
+		return pattern.MatchString(suffix)
 	}
 	return false
 }
@@ -319,8 +374,12 @@ func (ui *UIHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		ui.serveThumbnail(rw, req)
 	case strings.HasPrefix(suffix, "tree/"):
 		ui.serveFileTree(rw, req)
-	case wantsClosure(req):
+	case getSuffixMatches(req, closurePattern):
 		ui.serveClosure(rw, req)
+	case getSuffixMatches(req, reactPattern):
+		ui.serveFromDiskOrStatic(rw, req, reactPattern, ui.fileReactHandler, reactstatic.Files)
+	case getSuffixMatches(req, glitchPattern):
+		ui.serveFromDiskOrStatic(rw, req, glitchPattern, ui.fileGlitchHandler, glitchstatic.Files)
 	default:
 		file := ""
 		if m := staticFilePattern.FindStringSubmatch(suffix); m != nil {
@@ -352,7 +411,7 @@ func serveStaticFile(rw http.ResponseWriter, req *http.Request, root http.FileSy
 	f, err := root.Open("/" + file)
 	if err != nil {
 		http.NotFound(rw, req)
-		log.Printf("Failed to open file %q from uistatic.Files: %v", file, err)
+		log.Printf("Failed to open file %q from embedded resources: %v", file, err)
 		return
 	}
 	defer f.Close()
@@ -360,12 +419,17 @@ func serveStaticFile(rw http.ResponseWriter, req *http.Request, root http.FileSy
 	if fi, err := f.Stat(); err == nil {
 		modTime = fi.ModTime()
 	}
+	// TODO(wathiede): should pkg/magic be leveraged here somehow?  It has a
+	// slightly different purpose.
+	if strings.HasSuffix(file, ".svg") {
+		rw.Header().Set("Content-Type", "image/svg+xml")
+	}
 	http.ServeContent(rw, req, file, modTime, f)
 }
 
 func (ui *UIHandler) populateDiscoveryMap(m map[string]interface{}) {
 	pubRoots := map[string]interface{}{}
-	for key, pubh := range ui.PublishRoots {
+	for key, pubh := range ui.publishRoots {
 		m := map[string]interface{}{
 			"name":   pubh.RootName,
 			"prefix": []string{key},
@@ -382,6 +446,7 @@ func (ui *UIHandler) populateDiscoveryMap(m map[string]interface{}) {
 
 	uiDisco := map[string]interface{}{
 		"jsonSignRoot":    ui.JSONSignRoot,
+		"uiRoot":          ui.prefix,
 		"uploadHelper":    ui.prefix + "?camli.mode=uploadhelper", // hack; remove with better javascript
 		"downloadHelper":  path.Join(ui.prefix, "download") + "/",
 		"directoryHelper": path.Join(ui.prefix, "tree") + "/",
@@ -458,7 +523,8 @@ func (ui *UIHandler) serveThumbnail(rw http.ResponseWriter, req *http.Request) {
 		Cache:     ui.Cache,
 		MaxWidth:  width,
 		MaxHeight: height,
-		sc:        ui.sc,
+		thumbMeta: ui.thumbMeta,
+		resizeSem: ui.resizeSem,
 	}
 	th.ServeHTTP(rw, req, blobref)
 }
@@ -503,6 +569,23 @@ func (ui *UIHandler) serveClosure(rw http.ResponseWriter, req *http.Request) {
 	}
 	req.URL.Path = "/" + m[1]
 	ui.closureHandler.ServeHTTP(rw, req)
+}
+
+// serveFromDiskOrStatic matches rx against req's path and serves the match either from disk (if non-nil) or from static (embedded in the binary).
+func (ui *UIHandler) serveFromDiskOrStatic(rw http.ResponseWriter, req *http.Request, rx *regexp.Regexp, disk http.Handler, static *fileembed.Files) {
+	suffix := httputil.PathSuffix(req)
+	m := rx.FindStringSubmatch(suffix)
+	if m == nil {
+		panic("Caller should verify that rx matches")
+	}
+	file := m[1]
+	if disk != nil {
+		req.URL.Path = "/" + file
+		disk.ServeHTTP(rw, req)
+	} else {
+		serveStaticFile(rw, req, static, file)
+	}
+
 }
 
 // serveDepsJS serves an auto-generated Closure deps.js file.

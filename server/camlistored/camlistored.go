@@ -35,6 +35,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -44,7 +45,7 @@ import (
 	"camlistore.org/pkg/jsonsign"
 	"camlistore.org/pkg/misc"
 	"camlistore.org/pkg/osutil"
-	"camlistore.org/pkg/serverconfig"
+	"camlistore.org/pkg/serverinit"
 	"camlistore.org/pkg/webserver"
 
 	// Storage options:
@@ -59,12 +60,19 @@ import (
 	_ "camlistore.org/pkg/blobserver/s3"
 	_ "camlistore.org/pkg/blobserver/shard"
 	// Indexers: (also present themselves as storage targets)
-	_ "camlistore.org/pkg/index" // base indexer + in-memory dev index
+	// sqlite is taken care of in option_sqlite.go
+	"camlistore.org/pkg/index" // base indexer + in-memory dev index
 	_ "camlistore.org/pkg/index/kvfile"
 	_ "camlistore.org/pkg/index/mongo"
 	_ "camlistore.org/pkg/index/mysql"
 	_ "camlistore.org/pkg/index/postgres"
-	"camlistore.org/pkg/index/sqlite"
+	// KeyValue implementations:
+	_ "camlistore.org/pkg/sorted"
+	_ "camlistore.org/pkg/sorted/kvfile"
+	_ "camlistore.org/pkg/sorted/mongo"
+	_ "camlistore.org/pkg/sorted/mysql"
+	_ "camlistore.org/pkg/sorted/postgres"
+	"camlistore.org/pkg/sorted/sqlite"
 
 	// Handlers:
 	_ "camlistore.org/pkg/search"
@@ -73,11 +81,7 @@ import (
 	// Importers:
 	_ "camlistore.org/pkg/importer/dummy"
 	_ "camlistore.org/pkg/importer/flickr"
-)
-
-const (
-	defCert = serverconfig.DefaultTLSCert
-	defKey  = serverconfig.DefaultTLSKey
+	_ "camlistore.org/pkg/importer/foursquare"
 )
 
 var (
@@ -86,6 +90,7 @@ var (
 		"Config file to use, relative to the Camlistore configuration directory root. If blank, the default is used or auto-generated.")
 	listenFlag      = flag.String("listen", "", "host:port to listen on, or :0 to auto-select. If blank, the value in the config will be used instead.")
 	flagOpenBrowser = flag.Bool("openbrowser", true, "Launches the UI on startup")
+	flagReindex     = flag.Bool("reindex", false, "Reindex all blobs on startup")
 	flagPollParent  bool
 )
 
@@ -100,7 +105,7 @@ func exitf(pattern string, args ...interface{}) {
 		pattern = pattern + "\n"
 	}
 	fmt.Fprintf(os.Stderr, pattern, args...)
-	os.Exit(1)
+	osExit(1)
 }
 
 // 1) We do not want to force the user to buy a cert.
@@ -159,6 +164,8 @@ func genSelfTLS(listen string) error {
 		return fmt.Errorf("Failed to create certificate: %s", err)
 	}
 
+	defCert := osutil.DefaultTLSCert()
+	defKey := osutil.DefaultTLSKey()
 	certOut, err := os.Create(defCert)
 	if err != nil {
 		return fmt.Errorf("failed to open %s for writing: %s", defCert, err)
@@ -170,7 +177,7 @@ func genSelfTLS(listen string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse certificate: %v", err)
 	}
-	sig := misc.SHA1Prefix(cert.Raw)
+	sig := misc.SHA256Prefix(cert.Raw)
 	hint := "You must add this certificate's fingerprint to your client's trusted certs list to use it. Like so:\n" +
 		`"trustedCerts": ["` + sig + `"],`
 	log.Printf(hint)
@@ -233,9 +240,11 @@ type defaultConfigFile struct {
 	Publish            struct{}      `json:"publish"`
 }
 
+var defaultListenAddr = ":3179"
+
 func newDefaultConfigFile(path string) error {
 	conf := defaultConfigFile{
-		Listen:      ":3179",
+		Listen:      defaultListenAddr,
 		HTTPS:       false,
 		Auth:        "localhost",
 		ReplicateTo: make([]interface{}, 0),
@@ -262,13 +271,19 @@ func newDefaultConfigFile(path string) error {
 	switch {
 	case err == nil:
 		keyId, err = jsonsign.KeyIdFromRing(secRing)
+		if err != nil {
+			return fmt.Errorf("Could not find any keyId in file %q: %v", secRing, err)
+		}
 		log.Printf("Re-using identity with keyId %q found in file %s", keyId, secRing)
 	case os.IsNotExist(err):
 		keyId, err = jsonsign.GenerateNewSecRing(secRing)
+		if err != nil {
+			return fmt.Errorf("Could not generate new secRing at file %q: %v", secRing, err)
+		}
 		log.Printf("Generated new identity with keyId %q in file %s", keyId, secRing)
 	}
 	if err != nil {
-		return fmt.Errorf("Secret ring: %v", err)
+		return fmt.Errorf("Could not stat secret ring %q: %v", secRing, err)
 	}
 	conf.Identity = keyId
 	conf.IdentitySecretRing = secRing
@@ -307,7 +322,7 @@ func initSQLiteDB(path string) error {
 	return err
 }
 
-func setupTLS(ws *webserver.Server, config *serverconfig.Config, listen string) {
+func setupTLS(ws *webserver.Server, config *serverinit.Config, listen string) {
 	cert, key := config.OptionalString("TLSCertFile", ""), config.OptionalString("TLSKeyFile", "")
 	if !config.OptionalBool("https", true) {
 		return
@@ -316,6 +331,8 @@ func setupTLS(ws *webserver.Server, config *serverconfig.Config, listen string) 
 		exitf("TLSCertFile and TLSKeyFile must both be either present or absent")
 	}
 
+	defCert := osutil.DefaultTLSCert()
+	defKey := osutil.DefaultTLSKey()
 	if cert == defCert && key == defKey {
 		_, err1 := os.Stat(cert)
 		_, err2 := os.Stat(key)
@@ -349,10 +366,12 @@ func setupTLS(ws *webserver.Server, config *serverconfig.Config, listen string) 
 	if err != nil {
 		exitf("Failed to parse certificate: %v", err)
 	}
-	sig := misc.SHA1Prefix(certif.Raw)
-	log.Printf("TLS enabled, with certificate fingerprint: %v", sig)
+	sig := misc.SHA256Prefix(certif.Raw)
+	log.Printf("TLS enabled, with SHA-256 certificate fingerprint: %v", sig)
 	ws.SetTLS(cert, key)
 }
+
+var osExit = os.Exit // testing hook
 
 func handleSignals(shutdownc <-chan io.Closer) {
 	c := make(chan os.Signal, 1)
@@ -372,7 +391,7 @@ func handleSignals(shutdownc <-chan io.Closer) {
 				log.Fatal("Failed to restart: " + err.Error())
 			}
 		case syscall.SIGINT:
-			log.Print("Got SIGTERM: shutting down")
+			log.Print("Got SIGINT: shutting down")
 			donec := make(chan bool)
 			go func() {
 				cl := <-shutdownc
@@ -384,7 +403,7 @@ func handleSignals(shutdownc <-chan io.Closer) {
 			select {
 			case <-donec:
 				log.Printf("Shut down.")
-				os.Exit(0)
+				osExit(0)
 			case <-time.After(2 * time.Second):
 				exitf("Timeout shutting down. Exiting uncleanly.")
 			}
@@ -396,7 +415,7 @@ func handleSignals(shutdownc <-chan io.Closer) {
 
 // listenAndBaseURL finds the configured, default, or inferred listen address
 // and base URL from the command-line flags and provided config.
-func listenAndBaseURL(config *serverconfig.Config) (listen, baseURL string) {
+func listenAndBaseURL(config *serverinit.Config) (listen, baseURL string) {
 	baseURL = config.OptionalString("baseURL", "")
 	listen = *listenFlag
 	listenConfig := config.OptionalString("listen", "")
@@ -410,13 +429,26 @@ func listenAndBaseURL(config *serverconfig.Config) (listen, baseURL string) {
 	return
 }
 
+// main wraps Main so tests (which generate their own func main) can still run Main.
 func main() {
+	Main(nil, nil)
+}
+
+// Main sends on up when it's running, and shuts down when it receives from down.
+func Main(up chan<- struct{}, down <-chan struct{}) {
 	flag.Parse()
 
 	if *flagVersion {
-		fmt.Fprintf(os.Stderr, "camlistored version: %s\n", buildinfo.Version())
+		fmt.Fprintf(os.Stderr, "camlistored version: %s\nGo version: %s (%s/%s)\n",
+			buildinfo.Version(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		return
 	}
+	if *flagReindex {
+		index.SetImpendingReindex()
+	}
+
+	log.Printf("Starting camlistored version %s; Go %s (%s/%s)", buildinfo.Version(), runtime.Version(),
+		runtime.GOOS, runtime.GOARCH)
 
 	shutdownc := make(chan io.Closer, 1) // receives io.Closer to cleanly shut down
 	go handleSignals(shutdownc)
@@ -426,7 +458,7 @@ func main() {
 		exitf("Error finding config file %q: %v", fileName, err)
 	}
 	log.Printf("Using config file %s", fileName)
-	config, err := serverconfig.Load(fileName)
+	config, err := serverinit.Load(fileName)
 	if err != nil {
 		exitf("Could not load server config: %v", err)
 	}
@@ -445,7 +477,7 @@ func main() {
 		baseURL = ws.ListenURL()
 	}
 
-	shutdownCloser, err := config.InstallHandlers(ws, baseURL, nil)
+	shutdownCloser, err := config.InstallHandlers(ws, baseURL, *flagReindex, nil)
 	if err != nil {
 		exitf("Error parsing config: %v", err)
 	}
@@ -467,5 +499,9 @@ func main() {
 	if flagPollParent {
 		osutil.DieOnParentDeath()
 	}
-	select {}
+
+	// Block forever, except during tests.
+	up <- struct{}{}
+	<-down
+	osExit(0)
 }

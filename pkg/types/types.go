@@ -18,18 +18,26 @@ limitations under the License.
 package types
 
 import (
+	"bytes"
 	"encoding/json"
+	"expvar"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"regexp"
 	"runtime"
+	"strings"
 	"time"
 )
 
 var (
 	goVersion  = runtime.Version()
 	dotNumbers = regexp.MustCompile(`\.\d+`)
+	null_b     = []byte("null")
 )
+
+// NopCloser is an io.Closer that does nothing.
+var NopCloser io.Closer = ioutil.NopCloser(nil)
 
 // Time3339 is a time.Time which encodes to and from JSON
 // as an RFC 3339 time in UTC.
@@ -45,15 +53,31 @@ func (t Time3339) String() string {
 }
 
 func (t Time3339) MarshalJSON() ([]byte, error) {
+	if t.Time().IsZero() {
+		return null_b, nil
+	}
 	return json.Marshal(t.String())
 }
 
 func (t *Time3339) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, null_b) {
+		*t = Time3339{}
+		return nil
+	}
 	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
 		return fmt.Errorf("types: failed to unmarshal non-string value %q as an RFC 3339 time")
 	}
-	tm, err := time.Parse(time.RFC3339Nano, string(b[1:len(b)-1]))
+	s := string(b[1 : len(b)-1])
+	if s == "" {
+		*t = Time3339{}
+		return nil
+	}
+	tm, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
+		if strings.HasPrefix(s, "0000-00-00T00:00:00") {
+			*t = Time3339{}
+			return nil
+		}
 		return err
 	}
 	*t = Time3339(tm)
@@ -70,7 +94,7 @@ func ParseTime3339OrZero(v string) Time3339 {
 	return Time3339(t)
 }
 
-func ParseTime3339OrZil(v string) *Time3339 {
+func ParseTime3339OrNil(v string) *Time3339 {
 	t, err := time.Parse(time.RFC3339Nano, v)
 	if err != nil {
 		return nil
@@ -107,4 +131,71 @@ type ReadSeekCloser interface {
 type ReaderAtCloser interface {
 	io.ReaderAt
 	io.Closer
+}
+
+type SizeReaderAt interface {
+	io.ReaderAt
+	Size() int64
+}
+
+// TODO(wathiede): make sure all the stat readers work with code that
+// type asserts ReadFrom/WriteTo.
+
+type varStatReader struct {
+	*expvar.Int
+	r io.Reader
+}
+
+// NewReaderStats returns an io.Reader that will have the number of bytes
+// read from r added to v.
+func NewStatsReader(v *expvar.Int, r io.Reader) io.Reader {
+	return &varStatReader{v, r}
+}
+
+func (v *varStatReader) Read(p []byte) (int, error) {
+	n, err := v.r.Read(p)
+	v.Int.Add(int64(n))
+	return n, err
+}
+
+type varStatReadSeeker struct {
+	*expvar.Int
+	rs io.ReadSeeker
+}
+
+// NewReaderStats returns an io.ReadSeeker that will have the number of bytes
+// read from rs added to v.
+func NewStatsReadSeeker(v *expvar.Int, r io.ReadSeeker) io.ReadSeeker {
+	return &varStatReadSeeker{v, r}
+}
+
+func (v *varStatReadSeeker) Read(p []byte) (int, error) {
+	n, err := v.rs.Read(p)
+	v.Int.Add(int64(n))
+	return n, err
+}
+
+func (v *varStatReadSeeker) Seek(offset int64, whence int) (int64, error) {
+	return v.rs.Seek(offset, whence)
+}
+
+// InvertedBool is a bool that marshals to and from JSON with the opposite of its in-memory value.
+type InvertedBool bool
+
+func (ib InvertedBool) MarshalJSON() ([]byte, error) {
+	return json.Marshal(!bool(ib))
+}
+
+func (ib *InvertedBool) UnmarshalJSON(b []byte) error {
+	var bo bool
+	if err := json.Unmarshal(b, &bo); err != nil {
+		return err
+	}
+	*ib = InvertedBool(!bo)
+	return nil
+}
+
+// Get returns the logical value of ib.
+func (ib InvertedBool) Get() bool {
+	return !bool(ib)
 }

@@ -18,6 +18,7 @@ package types
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -47,12 +48,35 @@ func TestTime3339(t *testing.T) {
 	}
 }
 
+func TestTime3339_Marshal(t *testing.T) {
+	tests := []struct {
+		in   time.Time
+		want string
+	}{
+		{time.Time{}, "null"},
+		{time.Unix(1, 0), `"1970-01-01T00:00:01Z"`},
+	}
+	for i, tt := range tests {
+		got, err := Time3339(tt.in).MarshalJSON()
+		if err != nil {
+			t.Errorf("%d. marshal(%v) got error: %v", i, tt.in, err)
+			continue
+		}
+		if string(got) != tt.want {
+			t.Errorf("%d. marshal(%v) = %q; want %q", i, tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestTime3339_empty(t *testing.T) {
 	tests := []struct {
 		enc string
 		z   bool
 	}{
+		{enc: "null", z: true},
+		{enc: `""`, z: true},
 		{enc: "0000-00-00T00:00:00Z", z: true},
+		{enc: "0001-01-01T00:00:00Z", z: true},
 		{enc: "1970-01-01T00:00:00Z", z: true},
 		{enc: "2001-02-03T04:05:06Z", z: false},
 		{enc: "2001-02-03T04:05:06+06:00", z: false},
@@ -63,10 +87,66 @@ func TestTime3339_empty(t *testing.T) {
 	}
 	for _, tt := range tests {
 		var tm Time3339
-		err := json.Unmarshal([]byte("\""+tt.enc+"\""), &tm)
+		enc := tt.enc
+		if strings.Contains(enc, "T") {
+			enc = "\"" + enc + "\""
+		}
+		err := json.Unmarshal([]byte(enc), &tm)
+		if err != nil {
+			t.Errorf("unmarshal %q = %v", enc, err)
+		}
 		if tm.IsZero() != tt.z {
 			t.Errorf("unmarshal %q = %v (%d), %v; zero=%v; want %v", tt.enc, tm.Time(), tm.Time().Unix(), err,
 				!tt.z, tt.z)
+		}
+	}
+}
+
+func TestInvertedBool_Unmarshal(t *testing.T) {
+	tests := []struct {
+		json string
+		want bool
+	}{
+		{json: `{}`, want: true},
+		{json: `{"key": true}`, want: true},
+		{json: `{"key": false}`, want: false},
+	}
+	type O struct {
+		Key InvertedBool
+	}
+	for _, tt := range tests {
+		obj := &O{}
+		if err := json.Unmarshal([]byte(tt.json), obj); err != nil {
+			t.Fatalf("Could not unmarshal %s: %v", tt.json, err)
+		}
+		if obj.Key.Get() != tt.want {
+			t.Errorf("Unmarshaled %s as InvertedBool; got %v, wanted %v", tt.json, obj.Key.Get(), tt.want)
+		}
+	}
+}
+
+func TestInvertedBool_Marshal(t *testing.T) {
+	tests := []struct {
+		internalVal bool
+		want        string
+	}{
+		{internalVal: true, want: `{"key":false}`},
+		{internalVal: false, want: `{"key":true}`},
+	}
+	type O struct {
+		Key InvertedBool `json:"key"`
+	}
+	for _, tt := range tests {
+
+		obj := &O{
+			Key: InvertedBool(tt.internalVal),
+		}
+		b, err := json.Marshal(obj)
+		if err != nil {
+			t.Fatalf("Could not marshal %v: %v", tt.internalVal, err)
+		}
+		if string(b) != tt.want {
+			t.Errorf("Marshaled InvertedBool %v; got %v, wanted %v", tt.internalVal, string(b), tt.want)
 		}
 	}
 }

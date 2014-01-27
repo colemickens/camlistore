@@ -1,7 +1,11 @@
 package search_test
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +14,8 @@ import (
 	"camlistore.org/pkg/index"
 	"camlistore.org/pkg/index/indextest"
 	. "camlistore.org/pkg/search"
+	"camlistore.org/pkg/test"
+	"camlistore.org/pkg/types"
 )
 
 // indexType is one of the three ways we test the query handler code.
@@ -23,14 +29,33 @@ const (
 	indexCorpusBuild                  // empty *Corpus, built iteratively as blob received.
 )
 
+var (
+	allIndexTypes  = []indexType{indexClassic, indexCorpusScan, indexCorpusBuild}
+	memIndexTypes  = []indexType{indexCorpusScan, indexCorpusBuild}
+	corpusTypeOnly = []indexType{indexCorpusScan}
+)
+
+func (i indexType) String() string {
+	switch i {
+	case indexClassic:
+		return "classic"
+	case indexCorpusScan:
+		return "scan"
+	case indexCorpusBuild:
+		return "build"
+	default:
+		return fmt.Sprintf("unknown-index-type-%d", i)
+	}
+}
+
 type queryTest struct {
-	t  *testing.T
+	t  test.TB
 	id *indextest.IndexDeps
 
 	Handler func() *Handler
 }
 
-func querySetup(t *testing.T) (*indextest.IndexDeps, *Handler) {
+func querySetup(t test.TB) (*indextest.IndexDeps, *Handler) {
 	idx := index.NewMemoryIndex() // string key-value pairs in memory, as if they were on disk
 	id := indextest.NewIndexDeps(idx)
 	id.Fataler = t
@@ -38,27 +63,29 @@ func querySetup(t *testing.T) (*indextest.IndexDeps, *Handler) {
 	return id, h
 }
 
-func testQuery(t *testing.T, fn func(*queryTest)) {
-	types := []struct {
-		name  string
-		itype indexType
-	}{
-		{"classic", indexClassic},
-		{"scan", indexCorpusScan},
-		{"build", indexCorpusBuild},
-	}
-	for _, tt := range types {
-		if *queryType == "" || *queryType == tt.name {
-			t.Logf("Testing: --querytype=%s ...", tt.name)
-			testQueryType(t, fn, tt.itype)
+func testQuery(t test.TB, fn func(*queryTest)) {
+	testQueryTypes(t, allIndexTypes, fn)
+}
+
+func testQueryTypes(t test.TB, types []indexType, fn func(*queryTest)) {
+	defer test.TLog(t)()
+	for _, it := range types {
+		if *queryType == "" || *queryType == it.String() {
+			t.Logf("Testing: --querytype=%s ...", it)
+			testQueryType(t, fn, it)
 		}
 	}
 }
 
-func testQueryType(t *testing.T, fn func(*queryTest), itype indexType) {
+func testQueryType(t test.TB, fn func(*queryTest), itype indexType) {
+	defer index.SetVerboseCorpusLogging(true)
+	index.SetVerboseCorpusLogging(false)
+
 	idx := index.NewMemoryIndex() // string key-value pairs in memory, as if they were on disk
+	var err error
+	var corpus *index.Corpus
 	if itype == indexCorpusBuild {
-		if _, err := idx.KeepInMemory(); err != nil {
+		if corpus, err = idx.KeepInMemory(); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -70,12 +97,13 @@ func testQueryType(t *testing.T, fn func(*queryTest), itype indexType) {
 	qt.Handler = func() *Handler {
 		h := NewHandler(idx, qt.id.SignerBlobRef)
 		if itype == indexCorpusScan {
-			if corpus, err := idx.KeepInMemory(); err != nil {
+			if corpus, err = idx.KeepInMemory(); err != nil {
 				t.Fatal(err)
-			} else {
-				h.SetCorpus(corpus)
 			}
-			idx.PreventStorageAccessForTesting(t)
+			idx.PreventStorageAccessForTesting()
+		}
+		if corpus != nil {
+			h.SetCorpus(corpus)
 		}
 		return h
 	}
@@ -342,41 +370,77 @@ func TestQueryPermanodeAttrExact(t *testing.T) {
 	})
 }
 
-func TestQueryPermanodeAttrAny(t *testing.T) {
+func TestQueryPermanodeAttrMatches(t *testing.T) {
 	testQuery(t, func(qt *queryTest) {
 		id := qt.id
 
 		p1 := id.NewPlannedPermanode("1")
 		p2 := id.NewPlannedPermanode("2")
+		p3 := id.NewPlannedPermanode("3")
 		id.SetAttribute(p1, "someAttr", "value1")
 		id.SetAttribute(p2, "someAttr", "value2")
+		id.SetAttribute(p3, "someAttr", "NOT starting with value")
 
 		sq := &SearchQuery{
 			Constraint: &Constraint{
 				Permanode: &PermanodeConstraint{
-					Attr:     "someAttr",
-					ValueAny: []string{"value1", "value3"},
+					Attr: "someAttr",
+					ValueMatches: &StringConstraint{
+						HasPrefix: "value",
+					},
 				},
 			},
 		}
-		qt.wantRes(sq, p1)
+		qt.wantRes(sq, p1, p2)
 	})
 }
 
-func TestQueryPermanodeAttrSet(t *testing.T) {
+func TestQueryPermanodeAttrNumValue(t *testing.T) {
 	testQuery(t, func(qt *queryTest) {
 		id := qt.id
 
+		// TODO(bradfitz): if we set an empty attribute value here and try to search
+		// by NumValue IntConstraint Min = 1, it fails only in classic (no corpus) mode.
+		// Something there must be skipping empty values.
 		p1 := id.NewPlannedPermanode("1")
-		id.SetAttribute(p1, "x", "y")
+		id.AddAttribute(p1, "x", "1")
+		id.AddAttribute(p1, "x", "2")
 		p2 := id.NewPlannedPermanode("2")
-		id.SetAttribute(p2, "someAttr", "value2")
+		id.AddAttribute(p2, "x", "1")
+		id.AddAttribute(p2, "x", "2")
+		id.AddAttribute(p2, "x", "3")
 
 		sq := &SearchQuery{
 			Constraint: &Constraint{
 				Permanode: &PermanodeConstraint{
-					Attr:     "someAttr",
-					ValueSet: true,
+					Attr: "x",
+					NumValue: &IntConstraint{
+						Min: 3,
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, p2)
+	})
+}
+
+// Tests that NumValue queries with ZeroMax return permanodes without any values.
+func TestQueryPermanodeAttrNumValueZeroMax(t *testing.T) {
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		id.AddAttribute(p1, "x", "1")
+		p2 := id.NewPlannedPermanode("2")
+		id.AddAttribute(p2, "y", "1") // Permanodes without any attributes are ignored.
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{
+					Attr: "x",
+					NumValue: &IntConstraint{
+						ZeroMax: true,
+					},
 				},
 			},
 		}
@@ -386,7 +450,7 @@ func TestQueryPermanodeAttrSet(t *testing.T) {
 
 // find a permanode (p2) that has a property being a blobref pointing
 // to a sub-query
-func TestQueryPermanodeAttrValueMatches(t *testing.T) {
+func TestQueryPermanodeAttrValueInSet(t *testing.T) {
 	testQuery(t, func(qt *queryTest) {
 		id := qt.id
 
@@ -399,7 +463,7 @@ func TestQueryPermanodeAttrValueMatches(t *testing.T) {
 			Constraint: &Constraint{
 				Permanode: &PermanodeConstraint{
 					Attr: "foo",
-					ValueMatches: &Constraint{
+					ValueInSet: &Constraint{
 						Permanode: &PermanodeConstraint{
 							Attr:  "bar",
 							Value: "baz",
@@ -409,6 +473,64 @@ func TestQueryPermanodeAttrValueMatches(t *testing.T) {
 			},
 		}
 		qt.wantRes(sq, p2)
+	})
+}
+
+// Tests PermanodeConstraint.ValueMatchesInt.
+func TestQueryPermanodeValueMatchesInt(t *testing.T) {
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		p2 := id.NewPlannedPermanode("2")
+		p3 := id.NewPlannedPermanode("3")
+		p4 := id.NewPlannedPermanode("4")
+		p5 := id.NewPlannedPermanode("5")
+		id.SetAttribute(p1, "x", "-5")
+		id.SetAttribute(p2, "x", "0")
+		id.SetAttribute(p3, "x", "2")
+		id.SetAttribute(p4, "x", "10.0")
+		id.SetAttribute(p5, "x", "abc")
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{
+					Attr: "x",
+					ValueMatchesInt: &IntConstraint{
+						Min: -2,
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, p2, p3)
+	})
+}
+
+// Tests PermanodeConstraint.ValueMatchesFloat.
+func TestQueryPermanodeValueMatchesFloat(t *testing.T) {
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		p2 := id.NewPlannedPermanode("2")
+		p3 := id.NewPlannedPermanode("3")
+		p4 := id.NewPlannedPermanode("4")
+		id.SetAttribute(p1, "x", "2.5")
+		id.SetAttribute(p2, "x", "5.7")
+		id.SetAttribute(p3, "x", "10")
+		id.SetAttribute(p4, "x", "abc")
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{
+					Attr: "x",
+					ValueMatchesFloat: &FloatConstraint{
+						Max: 6.0,
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, p1, p2)
 	})
 }
 
@@ -430,12 +552,14 @@ func TestQueryFileConstraint(t *testing.T) {
 			Constraint: &Constraint{
 				Permanode: &PermanodeConstraint{
 					Attr: "camliContent",
-					ValueMatches: &Constraint{
+					ValueInSet: &Constraint{
 						File: &FileConstraint{
 							FileName: &StringConstraint{
 								Contains: "-stuff",
 							},
-							MaxSize: 5,
+							FileSize: &IntConstraint{
+								Max: 5,
+							},
 						},
 					},
 				},
@@ -461,8 +585,8 @@ func TestQueryPermanodeModtime(t *testing.T) {
 			Constraint: &Constraint{
 				Permanode: &PermanodeConstraint{
 					ModTime: &TimeConstraint{
-						After:  time.Unix(1322443957, 456789),
-						Before: time.Unix(1322443959, 0),
+						After:  types.Time3339(time.Unix(1322443957, 456789)),
+						Before: types.Time3339(time.Unix(1322443959, 0)),
 					},
 				},
 			},
@@ -476,7 +600,6 @@ func TestQueryPermanodeModtime(t *testing.T) {
 // TODO: make all the indextest/tests.go
 // also test the three memory build modes that testQuery does.
 func TestDecodeFileInfo(t *testing.T) {
-	t.Skip("TODO: finish; panics now on imageinfo calls")
 	testQuery(t, func(qt *queryTest) {
 		id := qt.id
 		fileRef, _ := id.UploadFile("file.gif", "GIF87afoo", time.Unix(456, 0))
@@ -497,8 +620,520 @@ func TestDecodeFileInfo(t *testing.T) {
 			return
 		}
 		if db.File.MIMEType != "image/gif" {
-			qt.t.Error("DescribedBlob.File = %+v; mime type is not image/gif", db.File)
+			qt.t.Errorf("DescribedBlob.File = %+v; mime type is not image/gif", db.File)
 			return
+		}
+	})
+}
+
+func TestQueryRecentPermanodes(t *testing.T) {
+	// TODO: care about classic (allIndexTypes) too?
+	testQueryTypes(t, memIndexTypes, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		id.SetAttribute(p1, "foo", "p1")
+		p2 := id.NewPlannedPermanode("2")
+		id.SetAttribute(p2, "foo", "p2")
+		p3 := id.NewPlannedPermanode("3")
+		id.SetAttribute(p3, "foo", "p3")
+
+		var usedSource string
+		ExportSetCandidateSourceHook(func(s string) {
+			usedSource = s
+		})
+
+		req := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{},
+			},
+			Limit:    2,
+			Sort:     UnspecifiedSort,
+			Describe: &DescribeRequest{},
+		}
+		handler := qt.Handler()
+		res, err := handler.Query(req)
+		if err != nil {
+			qt.t.Fatal(err)
+		}
+		if usedSource != "corpus_permanode_lastmod" {
+			t.Errorf("used candidate source strategy %q; want corpus_permanode_desc", usedSource)
+		}
+		wantBlobs := []*SearchResultBlob{
+			{Blob: p3},
+			{Blob: p2},
+		}
+		if !reflect.DeepEqual(res.Blobs, wantBlobs) {
+			gotj, wantj := prettyJSON(res.Blobs), prettyJSON(wantBlobs)
+			t.Errorf("Got blobs:\n%s\nWant:\n%s\n", gotj, wantj)
+		}
+		if got := len(res.Describe.Meta); got != 2 {
+			t.Errorf("got %d described blobs; want 2", got)
+		}
+
+		// And test whether continue (for infinite scroll) works:
+		{
+			if got, want := res.Continue, "pn:1322443958000123456:sha1-fbb5be10fcb4c88d32cfdddb20a7b8d13e9ba284"; got != want {
+				t.Fatalf("Continue token = %q; want %q", got, want)
+			}
+			req := &SearchQuery{
+				Constraint: &Constraint{
+					Permanode: &PermanodeConstraint{},
+				},
+				Limit:    2,
+				Sort:     UnspecifiedSort,
+				Continue: res.Continue,
+			}
+			res, err := handler.Query(req)
+			if err != nil {
+				qt.t.Fatal(err)
+			}
+			wantBlobs := []*SearchResultBlob{{Blob: p1}}
+			if !reflect.DeepEqual(res.Blobs, wantBlobs) {
+				gotj, wantj := prettyJSON(res.Blobs), prettyJSON(wantBlobs)
+				t.Errorf("After scroll, got blobs:\n%s\nWant:\n%s\n", gotj, wantj)
+			}
+		}
+	})
+}
+
+// Tests the continue token on recent permanodes, notably when the
+// page limit truncates in the middle of a bunch of permanodes with the
+// same modtime.
+func TestQueryRecentPermanodes_Continue(t *testing.T) {
+	testQueryTypes(t, memIndexTypes, func(qt *queryTest) {
+		id := qt.id
+
+		var blobs []blob.Ref
+		for i := 1; i <= 4; i++ {
+			pn := id.NewPlannedPermanode(fmt.Sprint(i))
+			blobs = append(blobs, pn)
+			t.Logf("permanode %d is %v", i, pn)
+			id.SetAttribute_NoTimeMove(pn, "foo", "bar")
+		}
+		sort.Sort(blob.ByRef(blobs))
+		for i, br := range blobs {
+			t.Logf("Sorted %d = %v", i, br)
+		}
+		handler := qt.Handler()
+
+		contToken := ""
+		tests := [][]blob.Ref{
+			[]blob.Ref{blobs[3], blobs[2]},
+			[]blob.Ref{blobs[1], blobs[0]},
+			[]blob.Ref{},
+		}
+
+		for i, wantBlobs := range tests {
+			req := &SearchQuery{
+				Constraint: &Constraint{
+					Permanode: &PermanodeConstraint{},
+				},
+				Limit:    2,
+				Sort:     UnspecifiedSort,
+				Continue: contToken,
+			}
+			res, err := handler.Query(req)
+			if err != nil {
+				qt.t.Fatalf("Error on query %d: %v", i+1, err)
+			}
+			t.Logf("Query %d/%d: continue = %q", i+1, len(tests), res.Continue)
+			for i, sb := range res.Blobs {
+				t.Logf("  res[%d]: %v", i, sb.Blob)
+			}
+
+			var want []*SearchResultBlob
+			for _, br := range wantBlobs {
+				want = append(want, &SearchResultBlob{Blob: br})
+			}
+			if !reflect.DeepEqual(res.Blobs, want) {
+				gotj, wantj := prettyJSON(res.Blobs), prettyJSON(want)
+				t.Fatalf("Query %d: Got blobs:\n%s\nWant:\n%s\n", i+1, gotj, wantj)
+			}
+			contToken = res.Continue
+			haveToken := contToken != ""
+			wantHaveToken := (i + 1) < len(tests)
+			if haveToken != wantHaveToken {
+				t.Fatalf("Query %d: token = %q; want token = %v", i+1, contToken, wantHaveToken)
+			}
+		}
+	})
+}
+
+// Tests continue token hitting the end mid-page.
+func TestQueryRecentPermanodes_ContinueEndMidPage(t *testing.T) {
+	testQueryTypes(t, memIndexTypes, func(qt *queryTest) {
+		id := qt.id
+
+		var blobs []blob.Ref
+		for i := 1; i <= 3; i++ {
+			pn := id.NewPlannedPermanode(fmt.Sprint(i))
+			blobs = append(blobs, pn)
+			t.Logf("permanode %d is %v", i, pn)
+			id.SetAttribute_NoTimeMove(pn, "foo", "bar")
+		}
+		sort.Sort(blob.ByRef(blobs))
+		for i, br := range blobs {
+			t.Logf("Sorted %d = %v", i, br)
+		}
+		handler := qt.Handler()
+
+		contToken := ""
+		tests := [][]blob.Ref{
+			[]blob.Ref{blobs[2], blobs[1]},
+			[]blob.Ref{blobs[0]},
+		}
+
+		for i, wantBlobs := range tests {
+			req := &SearchQuery{
+				Constraint: &Constraint{
+					Permanode: &PermanodeConstraint{},
+				},
+				Limit:    2,
+				Sort:     UnspecifiedSort,
+				Continue: contToken,
+			}
+			res, err := handler.Query(req)
+			if err != nil {
+				qt.t.Fatalf("Error on query %d: %v", i+1, err)
+			}
+			t.Logf("Query %d/%d: continue = %q", i+1, len(tests), res.Continue)
+			for i, sb := range res.Blobs {
+				t.Logf("  res[%d]: %v", i, sb.Blob)
+			}
+
+			var want []*SearchResultBlob
+			for _, br := range wantBlobs {
+				want = append(want, &SearchResultBlob{Blob: br})
+			}
+			if !reflect.DeepEqual(res.Blobs, want) {
+				gotj, wantj := prettyJSON(res.Blobs), prettyJSON(want)
+				t.Fatalf("Query %d: Got blobs:\n%s\nWant:\n%s\n", i+1, gotj, wantj)
+			}
+			contToken = res.Continue
+			haveToken := contToken != ""
+			wantHaveToken := (i + 1) < len(tests)
+			if haveToken != wantHaveToken {
+				t.Fatalf("Query %d: token = %q; want token = %v", i+1, contToken, wantHaveToken)
+			}
+		}
+	})
+}
+
+// Tests PermanodeConstraint.ValueAll
+func TestQueryPermanodeValueAll(t *testing.T) {
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		p2 := id.NewPlannedPermanode("2")
+		id.SetAttribute(p1, "attr", "foo")
+		id.SetAttribute(p1, "attr", "barrrrr")
+		id.SetAttribute(p2, "attr", "foo")
+		id.SetAttribute(p2, "attr", "bar")
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{
+					Attr:     "attr",
+					ValueAll: true,
+					ValueMatches: &StringConstraint{
+						ByteLength: &IntConstraint{
+							Min: 3,
+							Max: 3,
+						},
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, p2)
+	})
+}
+
+// Tests PermanodeConstraint.ValueMatches.CaseInsensitive.
+func TestQueryPermanodeValueMatchesCaseInsensitive(t *testing.T) {
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		p2 := id.NewPlannedPermanode("2")
+
+		id.SetAttribute(p1, "x", "Foo")
+		id.SetAttribute(p2, "x", "start")
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Logical: &LogicalConstraint{
+					Op: "or",
+
+					A: &Constraint{
+						Permanode: &PermanodeConstraint{
+							Attr:  "x",
+							ValueMatches: &StringConstraint{
+								Equals: "foo",
+								CaseInsensitive: true,
+							},
+						},
+					},
+
+					B: &Constraint{
+						Permanode: &PermanodeConstraint{
+							Attr:  "x",
+							ValueMatches: &StringConstraint{
+								Contains: "TAR",
+								CaseInsensitive: true,
+							},
+						},
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, p1, p2)
+	})
+}
+
+// permanodes tagged "foo" or those in sets where the parent
+// permanode set itself is tagged "foo".
+func TestQueryPermanodeTaggedViaParent(t *testing.T) {
+	t.Skip("TODO: finish implementing")
+
+	testQuery(t, func(qt *queryTest) {
+		id := qt.id
+
+		ptagged := id.NewPlannedPermanode("tagged_photo")
+		pindirect := id.NewPlannedPermanode("via_parent")
+		pset := id.NewPlannedPermanode("set")
+		pboth := id.NewPlannedPermanode("both") // funny directly and via its parent
+		pnotfunny := id.NewPlannedPermanode("not_funny")
+
+		id.SetAttribute(ptagged, "tag", "funny")
+		id.SetAttribute(pset, "tag", "funny")
+		id.SetAttribute(pboth, "tag", "funny")
+		id.AddAttribute(pset, "camliMember", pindirect.String())
+		id.AddAttribute(pset, "camliMember", pboth.String())
+		id.SetAttribute(pnotfunny, "tag", "boring")
+
+		sq := &SearchQuery{
+			Constraint: &Constraint{
+				Logical: &LogicalConstraint{
+					Op: "or",
+
+					// Those tagged funny directly:
+					A: &Constraint{
+						Permanode: &PermanodeConstraint{
+							Attr:  "tag",
+							Value: "funny",
+						},
+					},
+
+					// Those tagged funny indirectly:
+					B: &Constraint{
+						Permanode: &PermanodeConstraint{
+							Relation: &RelationConstraint{
+								Relation: "ancestor",
+								Any: &Constraint{
+									Permanode: &PermanodeConstraint{
+										Attr:  "tag",
+										Value: "funny",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		qt.wantRes(sq, ptagged, pset, pboth, pindirect)
+	})
+}
+
+func TestLimitDoesntDeadlock(t *testing.T) {
+	// TODO: care about classic (allIndexTypes) too?
+	testQueryTypes(t, memIndexTypes, func(qt *queryTest) {
+		id := qt.id
+
+		const limit = 2
+		for i := 0; i < ExportBufferedConst()+limit+1; i++ {
+			pn := id.NewPlannedPermanode(fmt.Sprint(i))
+			id.SetAttribute(pn, "foo", "bar")
+		}
+
+		req := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{},
+			},
+			Limit:    limit,
+			Sort:     UnspecifiedSort,
+			Describe: &DescribeRequest{},
+		}
+		h := qt.Handler()
+		gotRes := make(chan bool, 1)
+		go func() {
+			_, err := h.Query(req)
+			if err != nil {
+				qt.t.Error(err)
+			}
+			gotRes <- true
+		}()
+		select {
+		case <-gotRes:
+		case <-time.After(5 * time.Second):
+			t.Error("timeout; deadlock?")
+		}
+	})
+}
+
+func prettyJSON(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+func TestPlannedQuery(t *testing.T) {
+	tests := []struct {
+		in, want *SearchQuery
+	}{
+		{
+			in: &SearchQuery{
+				Constraint: &Constraint{
+					Permanode: &PermanodeConstraint{},
+				},
+			},
+			want: &SearchQuery{
+				Sort: LastModifiedDesc,
+				Constraint: &Constraint{
+					Permanode: &PermanodeConstraint{},
+				},
+				Limit: 200,
+			},
+		},
+	}
+	for i, tt := range tests {
+		got := tt.in.ExportPlannedQuery()
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%d. for input:\n%s\ngot:\n%s\nwant:\n%s\n", i,
+				prettyJSON(tt.in), prettyJSON(got), prettyJSON(tt.want))
+		}
+	}
+}
+
+func TestDescribeMarshal(t *testing.T) {
+	// Empty Describe
+	q := &SearchQuery{
+		Describe: &DescribeRequest{},
+	}
+	enc, err := json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(enc), `{"describe":{"blobref":null,"at":null}}`; got != want {
+		t.Errorf("JSON: %s; want %s", got, want)
+	}
+	back := &SearchQuery{}
+	err = json.Unmarshal(enc, back)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(q, back) {
+		t.Errorf("Didn't round-trip. Got %#v; want %#v", back, q)
+	}
+
+	// DescribeRequest with multiple blobref
+	q = &SearchQuery{
+		Describe: &DescribeRequest{
+			BlobRefs: []blob.Ref{blob.MustParse("sha-1234"), blob.MustParse("sha-abcd")},
+		},
+	}
+	enc, err = json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(enc), `{"describe":{"blobrefs":["sha-1234","sha-abcd"],"blobref":null,"at":null}}`; got != want {
+		t.Errorf("JSON: %s; want %s", got, want)
+	}
+	back = &SearchQuery{}
+	err = json.Unmarshal(enc, back)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(q, back) {
+		t.Errorf("Didn't round-trip. Got %#v; want %#v", back, q)
+	}
+
+	// and the zero value
+	q = &SearchQuery{}
+	enc, err = json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(enc) != "{}" {
+		t.Errorf(`Zero value: %q; want null`, enc)
+	}
+}
+
+func TestSortMarshal(t *testing.T) {
+	q := &SearchQuery{
+		Sort: CreatedDesc,
+	}
+	enc, err := json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(enc), `{"sort":"-created"}`; got != want {
+		t.Errorf("JSON: %s; want %s", got, want)
+	}
+	back := &SearchQuery{}
+	err = json.Unmarshal(enc, back)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(q, back) {
+		t.Errorf("Didn't round-trip. Got %#v; want %#v", back, q)
+	}
+
+	// and the zero value
+	q = &SearchQuery{}
+	enc, err = json.Marshal(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(enc) != "{}" {
+		t.Errorf("Zero value: %s; want {}", enc)
+	}
+}
+
+func BenchmarkQueryRecentPermanodes(b *testing.B) {
+	b.ReportAllocs()
+	testQueryTypes(b, corpusTypeOnly, func(qt *queryTest) {
+		id := qt.id
+
+		p1 := id.NewPlannedPermanode("1")
+		id.SetAttribute(p1, "foo", "p1")
+		p2 := id.NewPlannedPermanode("2")
+		id.SetAttribute(p2, "foo", "p2")
+		p3 := id.NewPlannedPermanode("3")
+		id.SetAttribute(p3, "foo", "p3")
+
+		req := &SearchQuery{
+			Constraint: &Constraint{
+				Permanode: &PermanodeConstraint{},
+			},
+			Limit:    2,
+			Sort:     UnspecifiedSort,
+			Describe: &DescribeRequest{},
+		}
+
+		h := qt.Handler()
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			*req.Describe = DescribeRequest{}
+			_, err := h.Query(req)
+			if err != nil {
+				qt.t.Fatal(err)
+			}
 		}
 	})
 }

@@ -17,11 +17,13 @@ limitations under the License.
 package index
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,7 +31,10 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/context"
+	"camlistore.org/pkg/schema"
 	"camlistore.org/pkg/sorted"
+	"camlistore.org/pkg/strutil"
 	"camlistore.org/pkg/types"
 	"camlistore.org/pkg/types/camtypes"
 )
@@ -41,9 +46,9 @@ type Index struct {
 
 	KeyFetcher blob.StreamingFetcher // for verifying claims
 
-	// Used for fetching blobs to find the complete sha1s of file & bytes
-	// schema blobs.
-	BlobSource blob.StreamingFetcher
+	// BlobSource is used for fetching blobs when indexing files and other
+	// blobs types that reference other objects.
+	BlobSource blobserver.FetcherEnumerator
 
 	// deletes is a cache to keep track of the deletion status (deleted vs undeleted)
 	// of the blobs in the index. It makes for faster reads than the otherwise
@@ -58,61 +63,164 @@ var (
 	_ Interface          = (*Index)(nil)
 )
 
+var aboutToReindex = false
+
+// SetImpendingReindex notes that the user ran the camlistored binary with the --reindex flag.
+// Because the index is about to be wiped, schema version checks should be suppressed.
+func SetImpendingReindex() {
+	// TODO: remove this function, once we refactor how indexes are created.
+	// They'll probably not all have their own storage constructor registered.
+	aboutToReindex = true
+}
+
 // New returns a new index using the provided key/value storage implementation.
 func New(s sorted.KeyValue) *Index {
 	idx := &Index{s: s}
-	schemaVersion := idx.schemaVersion()
-	if schemaVersion != 0 {
-		if schemaVersion != requiredSchemaVersion {
-			if os.Getenv("CAMLI_DEV_CAMLI_ROOT") != "" {
-				// Good signal that we're using the devcam server, so help out
-				// the user with a more useful tip:
-				log.Fatalf("index schema version is %d; required one is %d (run \"devcam server --wipe\" to wipe both your blobs and reindex.)", schemaVersion, requiredSchemaVersion)
-			}
-			log.Fatalf("index schema version is %d; required one is %d. You need to reindex. See 'camtool dbinit' (or just delete the file for a file based index), and then 'camtool sync'.)",
-				schemaVersion, requiredSchemaVersion)
+	if aboutToReindex {
+		idx.deletes = &deletionCache{
+			m: make(map[blob.Ref][]deletion),
 		}
-	} else {
+		return idx
+	}
+
+	schemaVersion := idx.schemaVersion()
+	switch {
+	case schemaVersion == 0 && idx.isEmpty():
+		// New index.
 		err := idx.s.Set(keySchemaVersion.name, fmt.Sprintf("%d", requiredSchemaVersion))
 		if err != nil {
-			panic(fmt.Errorf("Could not write index schema version %q: %v", requiredSchemaVersion, err))
+			panic(fmt.Sprintf("Could not write index schema version %q: %v", requiredSchemaVersion, err))
 		}
+	case schemaVersion != requiredSchemaVersion:
+		tip := ""
+		if os.Getenv("CAMLI_DEV_CAMLI_ROOT") != "" {
+			// Good signal that we're using the devcam server, so help out
+			// the user with a more useful tip:
+			tip = `(For the dev server, run "devcam server --wipe" to wipe both your blobs and index)`
+		} else {
+			tip = "Run 'camlistored --reindex' (it might take awhile, but shows status). Alternative: 'camtool dbinit' (or just delete the file for a file based index), and then 'camtool sync --all'"
+		}
+		log.Fatalf("index schema version is %d; required one is %d. You need to reindex. %s",
+			schemaVersion, requiredSchemaVersion, tip)
 	}
 	if err := idx.initDeletesCache(); err != nil {
-		panic(fmt.Errorf("Could not initialize index's deletes cache: %v", err))
+		panic(fmt.Sprintf("Could not initialize index's deletes cache: %v", err))
 	}
 	return idx
 }
 
-type prefixIter struct {
-	sorted.Iterator
-	prefix string
-}
-
-func (p *prefixIter) Next() bool {
-	v := p.Iterator.Next()
-	if v && !strings.HasPrefix(p.Key(), p.prefix) {
-		return false
+func (x *Index) isEmpty() bool {
+	iter := x.s.Find("", "")
+	hasRows := iter.Next()
+	if err := iter.Close(); err != nil {
+		panic(err)
 	}
-	return v
+	return !hasRows
 }
 
-func queryPrefixString(s sorted.KeyValue, prefix string) *prefixIter {
-	return &prefixIter{
-		prefix:   prefix,
-		Iterator: s.Find(prefix),
+func (x *Index) Reindex() error {
+	ctx := context.TODO()
+
+	wiper, ok := x.s.(sorted.Wiper)
+	if !ok {
+		return fmt.Errorf("index's storage type %T doesn't support sorted.Wiper", x.s)
 	}
+	log.Printf("Wiping index storage type %T ...", x.s)
+	if err := wiper.Wipe(); err != nil {
+		return fmt.Errorf("error wiping index's sorted key/value type %T: %v", x.s, err)
+	}
+	log.Printf("Index wiped. Rebuilding...")
+
+	reindexStart, _ := blob.Parse(os.Getenv("CAMLI_REINDEX_START"))
+
+	err := x.s.Set(keySchemaVersion.name, fmt.Sprintf("%d", requiredSchemaVersion))
+	if err != nil {
+		return err
+	}
+
+	var nerrmu sync.Mutex
+	nerr := 0
+
+	blobc := make(chan blob.Ref, 32)
+
+	enumCtx := ctx.New()
+	enumErr := make(chan error, 1)
+	go func() {
+		defer close(blobc)
+		donec := enumCtx.Done()
+		var lastTick time.Time
+		enumErr <- blobserver.EnumerateAll(enumCtx, x.BlobSource, func(sb blob.SizedRef) error {
+			now := time.Now()
+			if lastTick.Before(now.Add(-1 * time.Second)) {
+				log.Printf("Reindexing at %v", sb.Ref)
+				lastTick = now
+			}
+			if reindexStart.Valid() && sb.Ref.Less(reindexStart) {
+				return nil
+			}
+			select {
+			case <-donec:
+				return context.ErrCanceled
+			case blobc <- sb.Ref:
+				return nil
+			}
+		})
+	}()
+	const j = 4 // arbitrary concurrency level
+	var wg sync.WaitGroup
+	for i := 0; i < j; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for br := range blobc {
+				if err := x.reindex(br); err != nil {
+					log.Printf("Error reindexing %v: %v", br, err)
+					nerrmu.Lock()
+					nerr++
+					nerrmu.Unlock()
+					// TODO: flag (or default?) to stop the EnumerateAll above once
+					// there's any error with reindexing?
+				}
+			}
+		}()
+	}
+	if err := <-enumErr; err != nil {
+		return err
+	}
+	wg.Wait()
+
+	log.Printf("Index rebuild complete.")
+	nerrmu.Lock() // no need to unlock
+	if nerr != 0 {
+		return fmt.Errorf("%d blobs failed to re-index", nerr)
+	}
+	if err := x.initDeletesCache(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (x *Index) queryPrefixString(prefix string) *prefixIter {
+func queryPrefixString(s sorted.KeyValue, prefix string) sorted.Iterator {
+	if prefix == "" {
+		return s.Find("", "")
+	}
+	lastByte := prefix[len(prefix)-1]
+	if lastByte == 0xff {
+		panic("unsupported query prefix ending in 0xff")
+	}
+	end := prefix[:len(prefix)-1] + string(lastByte+1)
+	return s.Find(prefix, end)
+}
+
+func (x *Index) queryPrefixString(prefix string) sorted.Iterator {
 	return queryPrefixString(x.s, prefix)
 }
 
-func queryPrefix(s sorted.KeyValue, key *keyType, args ...interface{}) *prefixIter {
+func queryPrefix(s sorted.KeyValue, key *keyType, args ...interface{}) sorted.Iterator {
 	return queryPrefixString(s, key.Prefix(args...))
 }
 
-func (x *Index) queryPrefix(key *keyType, args ...interface{}) *prefixIter {
+func (x *Index) queryPrefix(key *keyType, args ...interface{}) sorted.Iterator {
 	return x.queryPrefixString(key.Prefix(args...))
 }
 
@@ -131,170 +239,83 @@ func (x *Index) schemaVersion() int {
 		if err == sorted.ErrNotFound {
 			return 0
 		}
-		panic(fmt.Errorf("Could not get index schema version: %v", err))
+		panic(fmt.Sprintf("Could not get index schema version: %v", err))
 	}
 	schemaVersion, err := strconv.Atoi(schemaVersionStr)
 	if err != nil {
-		panic(fmt.Errorf("Bogus index schema version: %q", schemaVersionStr))
+		panic(fmt.Sprintf("Bogus index schema version: %q", schemaVersionStr))
 	}
 	return schemaVersion
 }
 
-type deletionStatus struct {
-	deleted bool      // whether the concerned blob should be considered deleted.
-	when    time.Time // time of the most recent (un)deletion
+type deletion struct {
+	deleter blob.Ref
+	when    time.Time
 }
+
+type byDeletionDate []deletion
+
+func (d byDeletionDate) Len() int           { return len(d) }
+func (d byDeletionDate) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
+func (d byDeletionDate) Less(i, j int) bool { return d[i].when.Before(d[j].when) }
 
 type deletionCache struct {
 	sync.RWMutex
-	m map[blob.Ref]deletionStatus
+	m map[blob.Ref][]deletion
 }
 
 // initDeletesCache creates and populates the deletion status cache used by the index
 // for faster calls to IsDeleted and DeletedAt. It is called by New.
 func (x *Index) initDeletesCache() error {
 	x.deletes = &deletionCache{
-		m: make(map[blob.Ref]deletionStatus),
+		m: make(map[blob.Ref][]deletion),
 	}
 	var err error
 	it := x.queryPrefix(keyDeleted)
 	defer closeIterator(it, &err)
 	for it.Next() {
-		parts := strings.SplitN(it.Key(), "|", 4)
-		if len(parts) != 4 {
+		cl, ok := kvDeleted(it.Key())
+		if !ok {
 			return fmt.Errorf("Bogus keyDeleted entry key: want |\"deleted\"|<deleted blobref>|<reverse claimdate>|<deleter claim>|, got %q", it.Key())
 		}
-		deleter := parts[3]
-		deleterRef, ok := blob.Parse(deleter)
-		if !ok {
-			return fmt.Errorf("invalid deleter blobref %q in keyDeleted entry %q", deleter, it.Key())
-		}
-		deleted := parts[1]
-		deletedRef, ok := blob.Parse(deleted)
-		if !ok {
-			return fmt.Errorf("invalid deleted blobref %q in keyDeleted entry %q", deleted, it.Key())
-		}
-		delTimeStr := parts[2]
-		delTime, err := time.Parse(time.RFC3339, unreverseTimeString(delTimeStr))
-		if err != nil {
-			return fmt.Errorf("invalid time %q in keyDeleted entry %q: %v", delTimeStr, it.Key(), err)
-		}
-		deleterIsDeleted, when := x.deletedAtNoCache(deleterRef)
-		if when.IsZero() {
-			when = delTime
-		}
-		previousStatus, ok := x.deletes.m[deletedRef]
-		if ok && when.Before(previousStatus.when) {
-			// previously noted status wins because it is the most recent
-			continue
-		}
-		x.deletes.m[deletedRef] = deletionStatus{
-			deleted: !deleterIsDeleted,
-			when:    when,
-		}
+		targetDeletions := append(x.deletes.m[cl.Target],
+			deletion{
+				deleter: cl.BlobRef,
+				when:    cl.Date,
+			})
+		sort.Sort(sort.Reverse(byDeletionDate(targetDeletions)))
+		x.deletes.m[cl.Target] = targetDeletions
 	}
 	return err
 }
 
-// UpdateDeletesCache updates the index deletes cache with the deletion
-// (and its potential consequences) of deletedRef at when.
-func (x *Index) UpdateDeletesCache(deletedRef blob.Ref, when time.Time) error {
-	// TODO(mpl): This one will go away as soon as receive.go handles delete claims and is in charge
-	// of keeping the cache updated. Or at least it won't have to be public. Now I need it public
-	// for the tests.
-	var err error
-	if x.deletes == nil {
-		return fmt.Errorf("Index has no deletes cache")
+func kvDeleted(k string) (c camtypes.Claim, ok bool) {
+	// TODO(bradfitz): garbage
+	keyPart := strings.Split(k, "|")
+	if len(keyPart) != 4 {
+		return
 	}
-	x.deletes.Lock()
-	defer x.deletes.Unlock()
-	previousStatus := x.deletes.m[deletedRef]
-	if when.Before(previousStatus.when) {
-		// ignore new value because it's older than what's in cache
-		return err
+	if keyPart[0] != "deleted" {
+		return
 	}
-	x.deletes.m[deletedRef] = deletionStatus{
-		deleted: true,
-		when:    when,
+	target, ok := blob.Parse(keyPart[1])
+	if !ok {
+		return
 	}
-	// And now deal with the consequences
-	isDeleted := true
-	for {
-		isDeleted = !isDeleted
-		deleterRef := deletedRef
-		it := x.queryPrefix(keyDeletes, deleterRef)
-		defer closeIterator(it, &err)
-		if !it.Next() {
-			break
-		}
-		parts := strings.SplitN(it.Key(), "|", 3)
-		if len(parts) != 3 {
-			return fmt.Errorf("Bogus keyDeletes entry key: want |\"deletes\"|<deleter claim>|<deleted blob>|, got %q", it.Key())
-		}
-		deleted := parts[2]
-		var ok bool
-		deletedRef, ok = blob.Parse(deleted)
-		if !ok {
-			return fmt.Errorf("invalid deleted blobref %q in keyDeletes entry %q", deleted, it.Key())
-		}
-		x.deletes.m[deletedRef] = deletionStatus{
-			deleted: isDeleted,
-			when:    when,
-		}
+	claimRef, ok := blob.Parse(keyPart[3])
+	if !ok {
+		return
 	}
-	return err
-}
-
-// DeletedAt returns whether br (a blobref or a claim) should be considered deleted,
-// and at what time the latest deletion or undeletion occured. If it was never deleted,
-// it returns false, time.Time{}.
-func (x *Index) DeletedAt(br blob.Ref) (bool, time.Time) {
-	if x.deletes == nil {
-		// We still allow the slow path, in case someone creates
-		// their own Index without a deletes cache.
-		return x.deletedAtNoCache(br)
-	}
-	x.deletes.RLock()
-	defer x.deletes.RUnlock()
-	st := x.deletes.m[br]
-	return st.deleted, st.when
-}
-
-func (x *Index) deletedAtNoCache(br blob.Ref) (bool, time.Time) {
-	var err error
-	it := x.queryPrefix(keyDeleted, br)
-	if it.Next() {
-		parts := strings.SplitN(it.Key(), "|", 4)
-		if len(parts) != 4 {
-			panic(fmt.Errorf("Bogus keyDeleted entry key: want |\"deleted\"|<deleted blobref>|<reverse claimdate>|<deleter claim>|, got %q", it.Key()))
-		}
-		deleter := parts[3]
-		deleterRef, ok := blob.Parse(deleter)
-		if !ok {
-			panic(fmt.Errorf("invalid deleter blobref %q in keyDeleted entry %q", deleter, it.Key()))
-		}
-		delTime := parts[2]
-		mTime, err := time.Parse(time.RFC3339, unreverseTimeString(delTime))
-		if err != nil {
-			panic(fmt.Errorf("invalid time %q in keyDeleted entry %q: %v", delTime, it.Key(), err))
-		}
-		closeIterator(it, &err)
-		if err != nil {
-			// TODO: Do better?
-			panic(fmt.Errorf("Could not close iterator on keyDeleted: %v", err))
-		}
-		del, when := x.deletedAtNoCache(deleterRef)
-		if when.IsZero() {
-			when = mTime
-		}
-		return !del, when
-	}
-	closeIterator(it, &err)
+	date, err := time.Parse(time.RFC3339, unreverseTimeString(keyPart[2]))
 	if err != nil {
-		// TODO: Do better?
-		panic(fmt.Errorf("Could not close iterator on keyDeleted: %v", err))
+		return
 	}
-	return false, time.Time{}
+	return camtypes.Claim{
+		BlobRef: claimRef,
+		Target:  target,
+		Date:    date,
+		Type:    string(schema.DeleteClaim),
+	}, true
 }
 
 // IsDeleted reports whether the provided blobref (of a permanode or
@@ -307,45 +328,57 @@ func (x *Index) IsDeleted(br blob.Ref) bool {
 	}
 	x.deletes.RLock()
 	defer x.deletes.RUnlock()
-	st := x.deletes.m[br]
-	return st.deleted
+	return x.isDeleted(br)
 }
 
-func (x *Index) isDeletedNoCache(br blob.Ref) bool {
-	var err error
-	it := x.queryPrefix(keyDeleted, br)
-	if it.Next() {
-		parts := strings.SplitN(it.Key(), "|", 4)
-		if len(parts) != 4 {
-			panic(fmt.Errorf("Bogus keyDeleted entry key: want |\"deleted\"|<deleted blobref>|<reverse claimdate>|<deleter claim>|, got %q", it.Key()))
-		}
-		deleter := parts[3]
-		delClaimRef, ok := blob.Parse(deleter)
-		if !ok {
-			panic(fmt.Errorf("invalid deleter blobref %q in keyDeleted entry %q", deleter, it.Key()))
-		}
-		// The recursive call on the blobref of the delete claim
-		// checks that the claim itself was not deleted, in which case
-		// br is not considered deleted anymore.
-		// TODO(mpl): Each delete and undo delete adds a level of
-		// recursion so this could recurse far. is there a way to
-		// go faster in a worst case scenario?
-		closeIterator(it, &err)
-		if err != nil {
-			// TODO: Do better?
-			panic(fmt.Errorf("Could not close iterator on keyDeleted: %v", err))
-		}
-		return !x.isDeletedNoCache(delClaimRef)
+// The caller must hold x.deletes.mu for read.
+func (x *Index) isDeleted(br blob.Ref) bool {
+	deletes, ok := x.deletes.m[br]
+	if !ok {
+		return false
 	}
-	closeIterator(it, &err)
-	if err != nil {
-		// TODO: Do better?
-		panic(fmt.Errorf("Could not close iterator on keyDeleted: %v", err))
+	for _, v := range deletes {
+		if !x.isDeleted(v.deleter) {
+			return true
+		}
 	}
 	return false
 }
 
-func (x *Index) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner blob.Ref, limit int) (err error) {
+// Used when the Index has no deletes cache (x.deletes is nil).
+func (x *Index) isDeletedNoCache(br blob.Ref) bool {
+	var err error
+	it := x.queryPrefix(keyDeleted, br)
+	for it.Next() {
+		cl, ok := kvDeleted(it.Key())
+		if !ok {
+			panic(fmt.Sprintf("Bogus keyDeleted entry key: want |\"deleted\"|<deleted blobref>|<reverse claimdate>|<deleter claim>|, got %q", it.Key()))
+		}
+		if !x.isDeletedNoCache(cl.BlobRef) {
+			closeIterator(it, &err)
+			if err != nil {
+				// TODO: Do better?
+				panic(fmt.Sprintf("Could not close iterator on keyDeleted: %v", err))
+			}
+			return true
+		}
+	}
+	closeIterator(it, &err)
+	if err != nil {
+		// TODO: Do better?
+		panic(fmt.Sprintf("Could not close iterator on keyDeleted: %v", err))
+	}
+	return false
+}
+
+// GetRecentPermanodes sends results to dest filtered by owner, limit, and
+// before.  A zero value for before will default to the current time.  The
+// results will have duplicates supressed, with most recent permanode
+// returned.
+// Note, permanodes more recent than before will still be fetched from the
+// index then skipped. This means runtime scales linearly with the number of
+// nodes more recent than before.
+func (x *Index) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner blob.Ref, limit int, before time.Time) (err error) {
 	defer close(dest)
 
 	keyId, err := x.KeyId(owner)
@@ -361,6 +394,10 @@ func (x *Index) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner 
 	sent := 0
 	var seenPermanode dupSkipper
 
+	if before.IsZero() {
+		before = time.Now()
+	}
+	// TODO(bradfitz): handle before efficiently. don't use queryPrefix.
 	it := x.queryPrefix(keyRecentPermanode, keyId)
 	defer closeIterator(it, &err)
 	for it.Next() {
@@ -378,6 +415,10 @@ func (x *Index) GetRecentPermanodes(dest chan<- camtypes.RecentPermanode, owner 
 			continue
 		}
 		if seenPermanode.Dup(permaStr) {
+			continue
+		}
+		// Skip entries with an mTime less than or equal to before.
+		if !mTime.Before(before) {
 			continue
 		}
 		dest <- camtypes.RecentPermanode{
@@ -402,7 +443,7 @@ func (x *Index) AppendClaims(dst []camtypes.Claim, permaNode blob.Ref,
 	var (
 		keyId string
 		err   error
-		it    *prefixIter
+		it    sorted.Iterator
 	)
 	if signerFilter.Valid() {
 		keyId, err = x.KeyId(signerFilter)
@@ -431,8 +472,11 @@ func (x *Index) AppendClaims(dst []camtypes.Claim, permaNode blob.Ref,
 		if mustHave != "" && !strings.Contains(val, mustHave) {
 			continue
 		}
-		cl, ok := kvClaim(it.Key(), val)
+		cl, ok := kvClaim(it.Key(), val, blob.Parse)
 		if !ok {
+			continue
+		}
+		if x.IsDeleted(cl.BlobRef) {
 			continue
 		}
 		if attrFilter != "" && cl.Attr != attrFilter {
@@ -446,22 +490,25 @@ func (x *Index) AppendClaims(dst []camtypes.Claim, permaNode blob.Ref,
 	return dst, nil
 }
 
-func kvClaim(k, v string) (c camtypes.Claim, ok bool) {
-	// TODO(bradfitz): remove the strings.Split calls to reduce allocations.
-	keyPart := strings.Split(k, "|")
-	valPart := strings.Split(v, "|")
-	if len(keyPart) < 5 || len(valPart) < 4 {
+func kvClaim(k, v string, blobParse func(string) (blob.Ref, bool)) (c camtypes.Claim, ok bool) {
+	const nKeyPart = 5
+	const nValPart = 4
+	var keya [nKeyPart]string
+	var vala [nValPart]string
+	keyPart := strutil.AppendSplitN(keya[:0], k, "|", -1)
+	valPart := strutil.AppendSplitN(vala[:0], v, "|", -1)
+	if len(keyPart) < nKeyPart || len(valPart) < nValPart {
 		return
 	}
-	signerRef, ok := blob.Parse(valPart[3])
+	signerRef, ok := blobParse(valPart[3])
 	if !ok {
 		return
 	}
-	permaNode, ok := blob.Parse(keyPart[1])
+	permaNode, ok := blobParse(keyPart[1])
 	if !ok {
 		return
 	}
-	claimRef, ok := blob.Parse(keyPart[4])
+	claimRef, ok := blobParse(keyPart[4])
 	if !ok {
 		return
 	}
@@ -496,11 +543,14 @@ func (x *Index) GetBlobMeta(br blob.Ref) (camtypes.BlobMeta, error) {
 	if pos < 0 {
 		panic(fmt.Sprintf("Bogus index row for key %q: got value %q", key, meta))
 	}
-	size, _ := strconv.ParseInt(meta[:pos], 10, 64)
+	size, err := strconv.ParseUint(meta[:pos], 10, 32)
+	if err != nil {
+		return camtypes.BlobMeta{}, err
+	}
 	mime := meta[pos+1:]
 	return camtypes.BlobMeta{
 		Ref:       br,
-		Size:      int(size),
+		Size:      uint32(size),
 		CamliType: camliTypeFromMIME(mime),
 	}, nil
 }
@@ -522,7 +572,7 @@ func (x *Index) PermanodeOfSignerAttrValue(signer blob.Ref, attr, val string) (p
 	}
 	it := x.queryPrefix(keySignerAttrValue, keyId, attr, val)
 	defer closeIterator(it, &err)
-	if it.Next() {
+	for it.Next() {
 		permaRef, ok := blob.Parse(it.Value())
 		if ok && !x.IsDeleted(permaRef) {
 			return permaRef, nil
@@ -551,7 +601,7 @@ func (x *Index) SearchPermanodesWithAttr(dest chan<- blob.Ref, request *camtypes
 		return err
 	}
 	seen := make(map[string]bool)
-	var it *prefixIter
+	var it sorted.Iterator
 	if request.Query == "" {
 		it = x.queryPrefix(keySignerAttrValue, keyId, request.Attribute)
 	} else {
@@ -559,25 +609,64 @@ func (x *Index) SearchPermanodesWithAttr(dest chan<- blob.Ref, request *camtypes
 	}
 	defer closeIterator(it, &err)
 	for it.Next() {
-		pn, ok := blob.Parse(it.Value())
+		cl, ok := kvSignerAttrValue(it.Key(), it.Value())
 		if !ok {
 			continue
 		}
-		if x.IsDeleted(pn) {
+		if x.IsDeleted(cl.BlobRef) {
 			continue
 		}
-		pnstr := pn.String()
+		if x.IsDeleted(cl.Permanode) {
+			continue
+		}
+		pnstr := cl.Permanode.String()
 		if seen[pnstr] {
 			continue
 		}
 		seen[pnstr] = true
 
-		dest <- pn
+		dest <- cl.Permanode
 		if len(seen) == request.MaxResults {
 			break
 		}
 	}
 	return nil
+}
+
+func kvSignerAttrValue(k, v string) (c camtypes.Claim, ok bool) {
+	// TODO(bradfitz): garbage
+	keyPart := strings.Split(k, "|")
+	valPart := strings.Split(v, "|")
+	if len(keyPart) != 6 || len(valPart) != 1 {
+		// TODO(mpl): use glog
+		log.Printf("bogus keySignerAttrValue index entry: %q = %q", k, v)
+		return
+	}
+	if keyPart[0] != "signerattrvalue" {
+		return
+	}
+	date, err := time.Parse(time.RFC3339, unreverseTimeString(keyPart[4]))
+	if err != nil {
+		log.Printf("bogus time in keySignerAttrValue index entry: %q", keyPart[4])
+		return
+	}
+	claimRef, ok := blob.Parse(keyPart[5])
+	if !ok {
+		log.Printf("bogus claim in keySignerAttrValue index entry: %q", keyPart[5])
+		return
+	}
+	permaNode, ok := blob.Parse(valPart[0])
+	if !ok {
+		log.Printf("bogus permanode in keySignerAttrValue index entry: %q", valPart[0])
+		return
+	}
+	return camtypes.Claim{
+		BlobRef:   claimRef,
+		Permanode: permaNode,
+		Date:      date,
+		Attr:      urld(keyPart[2]),
+		Value:     urld(keyPart[3]),
+	}, true
 }
 
 func (x *Index) PathsOfSignerTarget(signer, target blob.Ref) (paths []*camtypes.Path, err error) {
@@ -591,39 +680,27 @@ func (x *Index) PathsOfSignerTarget(signer, target blob.Ref) (paths []*camtypes.
 	}
 
 	mostRecent := make(map[string]*camtypes.Path)
-	maxClaimDates := make(map[string]string)
+	maxClaimDates := make(map[string]time.Time)
 
 	it := x.queryPrefix(keyPathBackward, keyId, target)
 	defer closeIterator(it, &err)
 	for it.Next() {
-		keyPart := strings.Split(it.Key(), "|")[1:]
-		valPart := strings.Split(it.Value(), "|")
-		if len(keyPart) < 3 || len(valPart) < 4 {
-			continue
-		}
-		claimRef, ok := blob.Parse(keyPart[2])
+		p, ok, active := kvPathBackward(it.Key(), it.Value())
 		if !ok {
 			continue
 		}
-		baseRef, ok := blob.Parse(valPart[1])
-		if !ok {
+		if x.IsDeleted(p.Claim) {
 			continue
 		}
-		claimDate := valPart[0]
-		active := valPart[2]
-		suffix := urld(valPart[3])
-		key := baseRef.String() + "/" + suffix
+		if x.IsDeleted(p.Base) {
+			continue
+		}
 
-		if claimDate > maxClaimDates[key] {
-			maxClaimDates[key] = claimDate
-			if active == "Y" {
-				mostRecent[key] = &camtypes.Path{
-					Claim:     claimRef,
-					ClaimDate: claimDate,
-					Base:      baseRef,
-					Suffix:    suffix,
-					Target:    target,
-				}
+		key := p.Base.String() + "/" + p.Suffix
+		if p.ClaimDate.After(maxClaimDates[key]) {
+			maxClaimDates[key] = p.ClaimDate
+			if active {
+				mostRecent[key] = &p
 			} else {
 				delete(mostRecent, key)
 			}
@@ -633,6 +710,50 @@ func (x *Index) PathsOfSignerTarget(signer, target blob.Ref) (paths []*camtypes.
 		paths = append(paths, v)
 	}
 	return paths, nil
+}
+
+func kvPathBackward(k, v string) (p camtypes.Path, ok bool, active bool) {
+	// TODO(bradfitz): garbage
+	keyPart := strings.Split(k, "|")
+	valPart := strings.Split(v, "|")
+	if len(keyPart) != 4 || len(valPart) != 4 {
+		// TODO(mpl): use glog
+		log.Printf("bogus keyPathBackward index entry: %q = %q", k, v)
+		return
+	}
+	if keyPart[0] != "signertargetpath" {
+		return
+	}
+	target, ok := blob.Parse(keyPart[2])
+	if !ok {
+		log.Printf("bogus target in keyPathBackward index entry: %q", keyPart[2])
+		return
+	}
+	claim, ok := blob.Parse(keyPart[3])
+	if !ok {
+		log.Printf("bogus claim in keyPathBackward index entry: %q", keyPart[3])
+		return
+	}
+	date, err := time.Parse(time.RFC3339, valPart[0])
+	if err != nil {
+		log.Printf("bogus date in keyPathBackward index entry: %q", valPart[0])
+		return
+	}
+	base, ok := blob.Parse(valPart[1])
+	if !ok {
+		log.Printf("bogus base in keyPathBackward index entry: %q", valPart[1])
+		return
+	}
+	if valPart[2] == "Y" {
+		active = true
+	}
+	return camtypes.Path{
+		Claim:     claim,
+		Base:      base,
+		Target:    target,
+		ClaimDate: date,
+		Suffix:    urld(valPart[3]),
+	}, true, active
 }
 
 func (x *Index) PathsLookup(signer, base blob.Ref, suffix string) (paths []*camtypes.Path, err error) {
@@ -648,42 +769,69 @@ func (x *Index) PathsLookup(signer, base blob.Ref, suffix string) (paths []*camt
 	it := x.queryPrefix(keyPathForward, keyId, base, suffix)
 	defer closeIterator(it, &err)
 	for it.Next() {
-		keyPart := strings.Split(it.Key(), "|")[1:]
-		valPart := strings.Split(it.Value(), "|")
-		if len(keyPart) < 5 || len(valPart) < 2 {
-			continue
-		}
-		claimRef, ok := blob.Parse(keyPart[4])
+		p, ok, active := kvPathForward(it.Key(), it.Value())
 		if !ok {
 			continue
 		}
-		baseRef, ok := blob.Parse(keyPart[1])
-		if !ok {
+		if x.IsDeleted(p.Claim) {
 			continue
 		}
-		claimDate := unreverseTimeString(keyPart[3])
-		suffix := urld(keyPart[2])
-		target, ok := blob.Parse(valPart[1])
-		if !ok {
+		if x.IsDeleted(p.Target) {
 			continue
 		}
 
 		// TODO(bradfitz): investigate what's up with deleted
 		// forward path claims here.  Needs docs with the
 		// interface too, and tests.
-		active := valPart[0]
 		_ = active
 
-		path := &camtypes.Path{
-			Claim:     claimRef,
-			ClaimDate: claimDate,
-			Base:      baseRef,
-			Suffix:    suffix,
-			Target:    target,
-		}
-		paths = append(paths, path)
+		paths = append(paths, &p)
 	}
 	return
+}
+
+func kvPathForward(k, v string) (p camtypes.Path, ok bool, active bool) {
+	// TODO(bradfitz): garbage
+	keyPart := strings.Split(k, "|")
+	valPart := strings.Split(v, "|")
+	if len(keyPart) != 6 || len(valPart) != 2 {
+		// TODO(mpl): use glog
+		log.Printf("bogus keyPathForward index entry: %q = %q", k, v)
+		return
+	}
+	if keyPart[0] != "path" {
+		return
+	}
+	base, ok := blob.Parse(keyPart[2])
+	if !ok {
+		log.Printf("bogus base in keyPathForward index entry: %q", keyPart[2])
+		return
+	}
+	date, err := time.Parse(time.RFC3339, unreverseTimeString(keyPart[4]))
+	if err != nil {
+		log.Printf("bogus date in keyPathForward index entry: %q", keyPart[4])
+		return
+	}
+	claim, ok := blob.Parse(keyPart[5])
+	if !ok {
+		log.Printf("bogus claim in keyPathForward index entry: %q", keyPart[5])
+		return
+	}
+	if valPart[0] == "Y" {
+		active = true
+	}
+	target, ok := blob.Parse(valPart[1])
+	if !ok {
+		log.Printf("bogus target in keyPathForward index entry: %q", valPart[1])
+		return
+	}
+	return camtypes.Path{
+		Claim:     claim,
+		Base:      base,
+		Target:    target,
+		ClaimDate: date,
+		Suffix:    urld(keyPart[3]),
+	}, true, active
 }
 
 func (x *Index) PathLookup(signer, base blob.Ref, suffix string, at time.Time) (*camtypes.Path, error) {
@@ -702,10 +850,7 @@ func (x *Index) PathLookup(signer, base blob.Ref, suffix string, at time.Time) (
 	}
 
 	for _, path := range paths {
-		t, err := time.Parse(time.RFC3339, path.ClaimDate)
-		if err != nil {
-			continue
-		}
+		t := path.ClaimDate
 		secs := t.Unix()
 		if atSeconds != 0 && secs > atSeconds {
 			// Too new
@@ -760,16 +905,10 @@ func (x *Index) GetFileInfo(fileRef blob.Ref) (camtypes.FileInfo, error) {
 	wg.Wait()
 
 	if ierr == sorted.ErrNotFound {
-		go x.reindex(fileRef) // kinda a hack. Issue 103.
 		return camtypes.FileInfo{}, os.ErrNotExist
 	}
 	if ierr != nil {
 		return camtypes.FileInfo{}, ierr
-	}
-	if terr == sorted.ErrNotFound {
-		// Old index; retry. TODO: index versioning system.
-		x.reindex(fileRef)
-		tv, terr = x.s.Get(tkey)
 	}
 	valPart := strings.Split(iv, "|")
 	if len(valPart) < 3 {
@@ -800,80 +939,108 @@ func updateFileInfoTimes(fi *camtypes.FileInfo, times []string) {
 	if len(times) == 0 {
 		return
 	}
-	fi.Time = types.ParseTime3339OrZil(times[0])
+	fi.Time = types.ParseTime3339OrNil(times[0])
 	if len(times) == 2 {
-		fi.ModTime = types.ParseTime3339OrZil(times[1])
+		fi.ModTime = types.ParseTime3339OrNil(times[1])
 	}
 }
 
+// v is "width|height"
+func kvImageInfo(v []byte) (ii camtypes.ImageInfo, ok bool) {
+	pipei := bytes.IndexByte(v, '|')
+	if pipei < 0 {
+		return
+	}
+	w, err := strutil.ParseUintBytes(v[:pipei], 10, 16)
+	if err != nil {
+		return
+	}
+	h, err := strutil.ParseUintBytes(v[pipei+1:], 10, 16)
+	if err != nil {
+		return
+	}
+	ii.Width = uint16(w)
+	ii.Height = uint16(h)
+	return ii, true
+}
+
 func (x *Index) GetImageInfo(fileRef blob.Ref) (camtypes.ImageInfo, error) {
+	if x.corpus != nil {
+		return x.corpus.GetImageInfo(fileRef)
+	}
 	// it might be that the key does not exist because image.DecodeConfig failed earlier
 	// (because of unsupported JPEG features like progressive mode).
 	key := keyImageSize.Key(fileRef.String())
-	dim, err := x.s.Get(key)
+	v, err := x.s.Get(key)
 	if err == sorted.ErrNotFound {
 		err = os.ErrNotExist
 	}
 	if err != nil {
 		return camtypes.ImageInfo{}, err
 	}
-	valPart := strings.Split(dim, "|")
-	if len(valPart) != 2 {
-		return camtypes.ImageInfo{}, fmt.Errorf("index: bogus key %q = %q", key, dim)
+	ii, ok := kvImageInfo([]byte(v))
+	if !ok {
+		return camtypes.ImageInfo{}, fmt.Errorf("index: bogus key %q = %q", key, v)
 	}
-	width, err := strconv.Atoi(valPart[0])
-	if err != nil {
-		return camtypes.ImageInfo{}, fmt.Errorf("index: bogus integer at position 0 in key %q: %q", key, valPart[0])
-	}
-	height, err := strconv.Atoi(valPart[1])
-	if err != nil {
-		return camtypes.ImageInfo{}, fmt.Errorf("index: bogus integer at position 1 in key %q: %q", key, valPart[1])
-	}
-
-	return camtypes.ImageInfo{
-		Width:  width,
-		Height: height,
-	}, nil
+	return ii, nil
 }
 
 func (x *Index) EdgesTo(ref blob.Ref, opts *camtypes.EdgesToOpts) (edges []*camtypes.Edge, err error) {
 	it := x.queryPrefix(keyEdgeBackward, ref)
 	defer closeIterator(it, &err)
-	permanodeParents := map[string]blob.Ref{} // blobref key => blobref set
+	permanodeParents := make(map[string]*camtypes.Edge)
 	for it.Next() {
-		keyPart := strings.Split(it.Key(), "|")[1:]
-		if len(keyPart) < 2 {
-			continue
-		}
-		parent := keyPart[1]
-		parentRef, ok := blob.Parse(parent)
+		edge, ok := kvEdgeBackward(it.Key(), it.Value())
 		if !ok {
 			continue
 		}
-		valPart := strings.Split(it.Value(), "|")
-		if len(valPart) < 2 {
+		if x.IsDeleted(edge.From) {
 			continue
 		}
-		parentType, parentName := valPart[0], valPart[1]
-		if parentType == "permanode" {
-			permanodeParents[parent] = parentRef
+		if x.IsDeleted(edge.BlobRef) {
+			continue
+		}
+		edge.To = ref
+		if edge.FromType == "permanode" {
+			permanodeParents[edge.From.String()] = edge
 		} else {
-			edges = append(edges, &camtypes.Edge{
-				From:      parentRef,
-				FromType:  parentType,
-				FromTitle: parentName,
-				To:        ref,
-			})
+			edges = append(edges, edge)
 		}
 	}
-	for _, parentRef := range permanodeParents {
-		edges = append(edges, &camtypes.Edge{
-			From:     parentRef,
-			FromType: "permanode",
-			To:       ref,
-		})
+	for _, e := range permanodeParents {
+		edges = append(edges, e)
 	}
 	return edges, nil
+}
+
+func kvEdgeBackward(k, v string) (edge *camtypes.Edge, ok bool) {
+	// TODO(bradfitz): garbage
+	keyPart := strings.Split(k, "|")
+	valPart := strings.Split(v, "|")
+	if len(keyPart) != 4 || len(valPart) != 2 {
+		// TODO(mpl): use glog
+		log.Printf("bogus keyEdgeBackward index entry: %q = %q", k, v)
+		return
+	}
+	if keyPart[0] != "edgeback" {
+		return
+	}
+	parentRef, ok := blob.Parse(keyPart[2])
+	if !ok {
+		log.Printf("bogus parent in keyEdgeBackward index entry: %q", keyPart[2])
+		return
+	}
+	blobRef, ok := blob.Parse(keyPart[3])
+	if !ok {
+		log.Printf("bogus blobref in keyEdgeBackward index entry: %q", keyPart[3])
+		return
+	}
+	return &camtypes.Edge{
+		From:      parentRef,
+		FromType:  valPart[0],
+		FromTitle: valPart[1],
+		BlobRef:   blobRef,
+	}, true
 }
 
 // GetDirMembers sends on dest the children of the static directory dir.
@@ -903,10 +1070,7 @@ func (x *Index) GetDirMembers(dir blob.Ref, dest chan<- blob.Ref, limit int) (er
 }
 
 func kvBlobMeta(k, v string) (bm camtypes.BlobMeta, ok bool) {
-	refStr := strings.TrimPrefix(k, "meta:")
-	if refStr == k {
-		return // didn't trim
-	}
+	refStr := k[len("meta:"):]
 	br, ok := blob.Parse(refStr)
 	if !ok {
 		return
@@ -915,14 +1079,35 @@ func kvBlobMeta(k, v string) (bm camtypes.BlobMeta, ok bool) {
 	if pipe < 0 {
 		return
 	}
-	size, err := strconv.Atoi(v[:pipe])
+	size, err := strconv.ParseUint(v[:pipe], 10, 32)
 	if err != nil {
 		return
 	}
 	return camtypes.BlobMeta{
 		Ref:       br,
-		Size:      size,
+		Size:      uint32(size),
 		CamliType: camliTypeFromMIME(v[pipe+1:]),
+	}, true
+}
+
+func kvBlobMeta_bytes(k, v []byte) (bm camtypes.BlobMeta, ok bool) {
+	ref := k[len("meta:"):]
+	br, ok := blob.ParseBytes(ref)
+	if !ok {
+		return
+	}
+	pipe := bytes.IndexByte(v, '|')
+	if pipe < 0 {
+		return
+	}
+	size, err := strutil.ParseUintBytes(v[:pipe], 10, 32)
+	if err != nil {
+		return
+	}
+	return camtypes.BlobMeta{
+		Ref:       br,
+		Size:      uint32(size),
+		CamliType: camliTypeFromMIME_bytes(v[pipe+1:]),
 	}, true
 }
 
@@ -954,13 +1139,19 @@ func enumerateSignerKeyId(s sorted.KeyValue, cb func(blob.Ref, string)) (err err
 }
 
 // EnumerateBlobMeta sends all metadata about all known blobs to ch and then closes ch.
-func (x *Index) EnumerateBlobMeta(ch chan<- camtypes.BlobMeta) (err error) {
+func (x *Index) EnumerateBlobMeta(ctx *context.Context, ch chan<- camtypes.BlobMeta) (err error) {
 	if x.corpus != nil {
-		return x.corpus.EnumerateBlobMeta(ch)
+		x.corpus.RLock()
+		defer x.corpus.RUnlock()
+		return x.corpus.EnumerateBlobMetaLocked(ctx, ch)
 	}
 	defer close(ch)
 	return enumerateBlobMeta(x.s, func(bm camtypes.BlobMeta) error {
-		ch <- bm
+		select {
+		case ch <- bm:
+		case <-ctx.Done():
+			return context.ErrCanceled
+		}
 		return nil
 	})
 }
@@ -978,11 +1169,22 @@ func (x *Index) Close() error {
 	return nil
 }
 
+const camliTypeMIMEPrefix = "application/json; camliType="
+
+var camliTypeMIMEPrefixBytes = []byte(camliTypeMIMEPrefix)
+
 // "application/json; camliType=file" => "file"
 // "image/gif" => ""
 func camliTypeFromMIME(mime string) string {
-	if v := strings.TrimPrefix(mime, "application/json; camliType="); v != mime {
+	if v := strings.TrimPrefix(mime, camliTypeMIMEPrefix); v != mime {
 		return v
+	}
+	return ""
+}
+
+func camliTypeFromMIME_bytes(mime []byte) string {
+	if v := bytes.TrimPrefix(mime, camliTypeMIMEPrefixBytes); len(v) != len(mime) {
+		return strutil.StringFromBytes(v)
 	}
 	return ""
 }

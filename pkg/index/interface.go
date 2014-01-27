@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/context"
 	"camlistore.org/pkg/types/camtypes"
 )
 
@@ -28,6 +29,12 @@ type Interface interface {
 	// or claims about the given attribute, respectively.
 	// Deleted claims are never returned.
 	// The items may be appended in any order.
+	//
+	// TODO: this should take a context and a callback func
+	// instead of a dst, then it can append to a channel instead,
+	// and the context lets it be interrupted. The callback should
+	// take the context too, so the channel send's select can read
+	// from the Done channel.
 	AppendClaims(dst []camtypes.Claim, permaNode blob.Ref,
 		signerFilter blob.Ref,
 		attrFilter string) ([]camtypes.Claim, error)
@@ -39,7 +46,8 @@ type Interface interface {
 	// limit <= 0 means unlimited.
 	GetRecentPermanodes(dest chan<- camtypes.RecentPermanode,
 		owner blob.Ref,
-		limit int) error
+		limit int,
+		before time.Time) error
 
 	// SearchPermanodes finds permanodes matching the provided
 	// request and sends unique permanode blobrefs to dest.
@@ -127,7 +135,6 @@ type Interface interface {
 	// blobs, since the indexer is typically configured to not see
 	// non-metadata blobs) and then closes ch.  When it returns an
 	// error, it also closes ch. The blobs may be sent in any order.
-	// TODO: add a context here with a Done() channel so the caller
-	// can abort early without blocking the sender.
-	EnumerateBlobMeta(ch chan<- camtypes.BlobMeta) error
+	// If the context finishes, the return error is context.ErrCanceled.
+	EnumerateBlobMeta(*context.Context, chan<- camtypes.BlobMeta) error
 }

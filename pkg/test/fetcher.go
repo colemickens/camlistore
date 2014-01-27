@@ -27,6 +27,7 @@ import (
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/context"
 	"camlistore.org/pkg/types"
 )
 
@@ -37,6 +38,9 @@ type Fetcher struct {
 	l      sync.Mutex
 	m      map[string]*Blob // keyed by blobref string
 	sorted []string         // blobrefs sorted
+
+	// ReceiveErr optionally returns the error to return on receive.
+	ReceiveErr error
 
 	// FetchErr, if non-nil, specifies the error to return on the next fetch call.
 	// If it returns nil, fetches proceed as normal.
@@ -52,9 +56,12 @@ func (tf *Fetcher) AddBlob(b *Blob) {
 		tf.m = make(map[string]*Blob)
 	}
 	key := b.BlobRef().String()
+	_, had := tf.m[key]
 	tf.m[key] = b
-	tf.sorted = append(tf.sorted, key)
-	sort.Strings(tf.sorted)
+	if !had {
+		tf.sorted = append(tf.sorted, key)
+		sort.Strings(tf.sorted)
+	}
 }
 
 func (tf *Fetcher) FetchStreaming(ref blob.Ref) (file io.ReadCloser, size int64, err error) {
@@ -116,6 +123,9 @@ func (tf *Fetcher) ReceiveBlob(br blob.Ref, source io.Reader) (blob.SizedRef, er
 		// it's worth the cost.
 		return sb, fmt.Errorf("Hash mismatch receiving blob %s", br)
 	}
+	if err := tf.ReceiveErr; err != nil {
+		return sb, err
+	}
 	b := &Blob{Contents: string(all)}
 	tf.AddBlob(b)
 	return blob.SizedRef{br, int64(len(all))}, nil
@@ -142,7 +152,7 @@ func (tf *Fetcher) BlobrefStrings() []string {
 	return s
 }
 
-func (tf *Fetcher) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit int) error {
+func (tf *Fetcher) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRef, after string, limit int) error {
 	defer close(dest)
 	tf.l.Lock()
 	defer tf.l.Unlock()
@@ -152,7 +162,11 @@ func (tf *Fetcher) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit
 			continue
 		}
 		b := tf.m[k]
-		dest <- blob.SizedRef{b.BlobRef(), b.Size()}
+		select {
+		case dest <- blob.SizedRef{b.BlobRef(), b.Size()}:
+		case <-ctx.Done():
+			return context.ErrCanceled
+		}
 		n++
 		if limit > 0 && n == limit {
 			break

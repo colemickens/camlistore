@@ -48,9 +48,10 @@ import (
 var haveSQLite = checkHaveSQLite()
 
 var (
-	embedResources = flag.Bool("embed_static", true, "Whether to embed the closure library.")
+	embedResources = flag.Bool("embed_static", true, "Whether to embed resources needed by the UI such as images, css, and javascript.")
 	sqlFlag        = flag.String("sqlite", "auto", "Whether you want SQLite in your build: yes, no, or auto.")
 	all            = flag.Bool("all", false, "Force rebuild of everything (go install -a)")
+	race           = flag.Bool("race", false, "Build race-detector version of binaries (they will run slowly)")
 	verbose        = flag.Bool("v", false, "Verbose mode")
 	targets        = flag.String("targets", "", "Optional comma-separated list of targets (i.e go packages) to build and install. Empty means all. Example: camlistore.org/server/camlistored,camlistore.org/cmd/camput")
 	quiet          = flag.Bool("quiet", false, "Don't print anything unless there's a failure.")
@@ -67,7 +68,7 @@ var (
 	// Our temporary source tree root and build dir, i.e: buildGoPath + "src/camlistore.org"
 	buildSrcDir string
 	// files mirrored from camRoot to buildSrcDir
-	rxMirrored = regexp.MustCompile(`^([a-zA-Z0-9\-\_]+\.(?:go|html|js|css|png|jpg|gif|ico|gpg|json|err|camli|svg))$`)
+	rxMirrored = regexp.MustCompile(`^([a-zA-Z0-9\-\_]+\.(?:camli|css|err|gif|go|gpg|html|ico|jpg|js|json|min\.js|mp3|png|svg|pdf|psd|tiff|xcf|tar\.gz|gz|tar\.xz|tbz2|zip))$`)
 )
 
 func main() {
@@ -142,7 +143,7 @@ func main() {
 	for _, dir := range goDirs {
 		oriPath := filepath.Join(camRoot, filepath.FromSlash(dir))
 		dstPath := buildSrcPath(dir)
-		if maxMod, err := mirrorDir(oriPath, dstPath); err != nil {
+		if maxMod, err := mirrorDir(oriPath, dstPath, mirrorOpts{sqlite: sql}); err != nil {
 			log.Fatalf("Error while mirroring %s to %s: %v", oriPath, dstPath, err)
 		} else {
 			if maxMod.After(latestSrcMod) {
@@ -204,6 +205,9 @@ func main() {
 	baseArgs := []string{"install", "-v"}
 	if *all {
 		baseArgs = append(baseArgs, "-a")
+	}
+	if *race {
+		baseArgs = append(baseArgs, "-race")
 	}
 	baseArgs = append(baseArgs,
 		"--ldflags=-X camlistore.org/pkg/buildinfo.GitInfo "+version,
@@ -340,7 +344,9 @@ func genEmbeds() error {
 	cmdName := filepath.Join(buildGoPath, "bin", "genfileembed")
 	uiEmbeds := buildSrcPath("server/camlistored/ui")
 	serverEmbeds := buildSrcPath("pkg/server")
-	for _, embeds := range []string{uiEmbeds, serverEmbeds} {
+	reactEmbeds := buildSrcPath("third_party/react")
+	glitchEmbeds := buildSrcPath("third_party/glitch")
+	for _, embeds := range []string{uiEmbeds, serverEmbeds, reactEmbeds, glitchEmbeds} {
 		args := []string{embeds}
 		cmd := exec.Command(cmdName, args...)
 		cmd.Env = append(cleanGoEnv(),
@@ -471,13 +477,20 @@ func verifyGoVersion() {
 	}
 }
 
-func mirrorDir(src, dst string) (maxMod time.Time, err error) {
+type mirrorOpts struct {
+	sqlite bool // want sqlite package?
+}
+
+func mirrorDir(src, dst string, opts mirrorOpts) (maxMod time.Time, err error) {
 	err = filepath.Walk(src, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		base := fi.Name()
 		if fi.IsDir() {
+			if !opts.sqlite && strings.Contains(path, "mattn") && strings.Contains(path, "go-sqlite3") {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if strings.HasPrefix(base, ".#") || !rxMirrored.MatchString(base) {
@@ -590,15 +603,7 @@ func checkHaveSQLite() bool {
 	if err != nil {
 		return false
 	}
-	cmd := exec.Command("pkg-config", "--libs", "sqlite3")
-	if runtime.GOOS == "darwin" && os.Getenv("PKG_CONFIG_PATH") == "" {
-		matches, err := filepath.Glob("/usr/local/Cellar/sqlite/*/lib/pkgconfig/sqlite3.pc")
-		if err == nil && len(matches) > 0 {
-			cmd.Env = append(os.Environ(), "PKG_CONFIG_PATH="+filepath.Dir(matches[0]))
-		}
-	}
-
-	out, err := cmd.Output()
+	out, err := exec.Command("pkg-config", "--libs", "sqlite3").Output()
 	if err != nil && err.Error() == "exit status 1" {
 		// This is sloppy (comparing against a string), but
 		// doing it correctly requires using multiple *.go

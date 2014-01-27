@@ -49,15 +49,16 @@ type fileCmd struct {
 	title string
 	tag   string
 
-	makePermanode  bool // make new, unique permanode of the root (dir or file)
-	filePermanodes bool // make planned permanodes for each file (based on their digest)
-	vivify         bool
-	exifTime       bool // use metadata (such as in EXIF) to find the creation time of the file
-	capCtime       bool // use mtime as creation time of the file, if it would be bigger than modification time
-	diskUsage      bool // show "du" disk usage only (dry run mode), don't actually upload
-	argsFromInput  bool // Android mode: filenames piped into stdin, one at a time.
+	makePermanode     bool // make new, unique permanode of the root (dir or file)
+	filePermanodes    bool // make planned permanodes for each file (based on their digest)
+	vivify            bool
+	exifTime          bool // use metadata (such as in EXIF) to find the creation time of the file
+	capCtime          bool // use mtime as creation time of the file, if it would be bigger than modification time
+	diskUsage         bool // show "du" disk usage only (dry run mode), don't actually upload
+	argsFromInput     bool // Android mode: filenames piped into stdin, one at a time.
+	deleteAfterUpload bool // with fileNodes, deletes the input file once uploaded
 
-	havecache, statcache bool
+	statcache bool
 
 	// Go into in-memory stats mode only; doesn't actually upload.
 	memstats bool
@@ -71,6 +72,7 @@ func init() {
 		cmd := new(fileCmd)
 		flags.BoolVar(&cmd.makePermanode, "permanode", false, "Create an associate a new permanode for the uploaded file or directory.")
 		flags.BoolVar(&cmd.filePermanodes, "filenodes", false, "Create (if necessary) content-based permanodes for each uploaded file.")
+		flags.BoolVar(&cmd.deleteAfterUpload, "delete_after_upload", false, "If using -filenodes, deletes files once they're uploaded, of if they've already been uploaded.")
 		flags.BoolVar(&cmd.vivify, "vivify", false,
 			"If true, ask the server to create and sign permanode(s) associated with each uploaded"+
 				" file. This permits the server to have your signing key. Used mostly with untrusted"+
@@ -83,13 +85,11 @@ func init() {
 
 		if debug, _ := strconv.ParseBool(os.Getenv("CAMLI_DEBUG")); debug {
 			flags.BoolVar(&cmd.statcache, "statcache", true, "Use the stat cache, assuming unchanged files already uploaded in the past are still there. Fast, but potentially dangerous.")
-			flags.BoolVar(&cmd.havecache, "havecache", true, "Use the 'have cache', a cache keeping track of what blobs the remote server should already have from previous uploads.")
 			flags.BoolVar(&cmd.memstats, "debug-memstats", false, "Enter debug in-memory mode; collecting stats only. Doesn't upload anything.")
 			flags.StringVar(&cmd.histo, "debug-histogram-file", "", "Optional file to create and write the blob size for each file uploaded.  For use with GNU R and hist(read.table(\"filename\")$V1). Requires debug-memstats.")
 			flags.BoolVar(&cmd.capCtime, "capctime", false, "For file blobs use file modification time as creation time if it would be bigger (newer) than modification time. For stable filenode creation (you can forge mtime, but can't forge ctime).")
 			flags.BoolVar(&flagUseSQLiteChildCache, "sqlitecache", false, "Use sqlite for the statcache and havecache instead of a flat cache.")
 		} else {
-			cmd.havecache = true
 			cmd.statcache = true
 		}
 		if android.IsChild() {
@@ -131,6 +131,9 @@ func (c *fileCmd) RunCommand(args []string) error {
 	}
 	if c.histo != "" && !c.memstats {
 		return cmdmain.UsageError("Can't use histo without memstats")
+	}
+	if c.deleteAfterUpload && !c.filePermanodes {
+		return cmdmain.UsageError("Can't set use --delete_after_upload without --filenodes")
 	}
 	up := getUploader()
 	if c.memstats {
@@ -214,9 +217,6 @@ func (c *fileCmd) RunCommand(args []string) error {
 	if len(args) == 0 {
 		return cmdmain.UsageError("No files or directories given.")
 	}
-	if up.haveCache != nil {
-		defer up.haveCache.Close()
-	}
 	if up.statCache != nil {
 		defer up.statCache.Close()
 	}
@@ -224,6 +224,12 @@ func (c *fileCmd) RunCommand(args []string) error {
 		fi, err := os.Stat(filename)
 		if err != nil {
 			return err
+		}
+		// Skip ignored files or base directories.  Failing to skip the
+		// latter results in a panic.
+		if up.Client.IsIgnoredFile(filename) {
+			log.Printf("Client configured to ignore %s; skipping.", filename)
+			continue
 		}
 		if fi.IsDir() {
 			if up.fileOpts.wantVivify() {
@@ -234,17 +240,21 @@ func (c *fileCmd) RunCommand(args []string) error {
 			t.Start()
 			lastPut, err = t.Wait()
 		} else {
-			if up.fileOpts.wantFilePermanode() && up.Client.IsIgnoredFile(filename) {
-				continue
-			}
 			lastPut, err = up.UploadFile(filename)
+			if err == nil && c.deleteAfterUpload {
+				if err := os.Remove(filename); err != nil {
+					log.Printf("Error deleting %v: %v", filename, err)
+				} else {
+					log.Printf("Deleted %v", filename)
+				}
+			}
 		}
 		if handleResult("file", lastPut, err) != nil {
 			return err
 		}
 	}
 
-	if permaNode != nil {
+	if permaNode != nil && lastPut != nil {
 		put, err := up.UploadAndSignBlob(schema.NewSetAttributeClaim(permaNode.BlobRef, "camliContent", lastPut.BlobRef.String()))
 		if handleResult("claim-permanode-content", put, err) != nil {
 			return err
@@ -255,9 +265,8 @@ func (c *fileCmd) RunCommand(args []string) error {
 		}
 		if c.tag != "" {
 			tags := strings.Split(c.tag, ",")
-			m := schema.NewSetAttributeClaim(permaNode.BlobRef, "tag", tags[0])
 			for _, tag := range tags {
-				m = schema.NewAddAttributeClaim(permaNode.BlobRef, "tag", tag)
+				m := schema.NewAddAttributeClaim(permaNode.BlobRef, "tag", tag)
 				put, err := up.UploadAndSignBlob(m)
 				handleResult("claim-permanode-tag", put, err)
 			}
@@ -268,7 +277,7 @@ func (c *fileCmd) RunCommand(args []string) error {
 }
 
 func (c *fileCmd) initCaches(up *Uploader) {
-	if !c.statcache && !c.havecache {
+	if !c.statcache {
 		return
 	}
 	gen, err := up.StorageGeneration()
@@ -278,10 +287,6 @@ func (c *fileCmd) initCaches(up *Uploader) {
 	}
 	if c.statcache {
 		up.statCache = NewKvStatCache(gen)
-	}
-	if c.havecache {
-		up.haveCache = NewKvHaveCache(gen)
-		up.Client.SetHaveCache(up.haveCache)
 	}
 }
 
@@ -871,7 +876,7 @@ func (t *TreeUpload) statPath(fullPath string, fi os.FileInfo) (nod *node, err e
 			t.stattedc <- nod
 		}
 	}()
-	if t.up.fileOpts.wantFilePermanode() && t.up.Client.IsIgnoredFile(fullPath) {
+	if t.up.Client.IsIgnoredFile(fullPath) {
 		return nil, nil
 	}
 	if fi == nil {

@@ -21,7 +21,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +32,7 @@ import (
 	"camlistore.org/pkg/blobserver/localdisk"
 	"camlistore.org/pkg/client"
 	"camlistore.org/pkg/cmdmain"
+	"camlistore.org/pkg/context"
 )
 
 type syncCmd struct {
@@ -37,10 +40,12 @@ type syncCmd struct {
 	dest  string
 	third string
 
-	loop      bool
-	verbose   bool
-	all       bool
-	removeSrc bool
+	loop        bool
+	verbose     bool
+	all         bool
+	removeSrc   bool
+	wipe        bool
+	insecureTLS bool
 
 	logger *log.Logger
 }
@@ -54,8 +59,13 @@ func init() {
 
 		flags.BoolVar(&cmd.loop, "loop", false, "Create an associate a new permanode for the uploaded file or directory.")
 		flags.BoolVar(&cmd.verbose, "verbose", false, "Be verbose.")
+		flags.BoolVar(&cmd.wipe, "wipe", false, "If dest is an index, drop it and repopulate it from scratch. NOOP for now.")
 		flags.BoolVar(&cmd.all, "all", false, "Discover all sync destinations configured on the source server and run them.")
 		flags.BoolVar(&cmd.removeSrc, "removesrc", false, "Remove each blob from the source after syncing to the destination; for queue processing.")
+		// TODO(mpl): maybe move this flag up to the client pkg as an AddFlag, as it can be used by all commands.
+		if debug, _ := strconv.ParseBool(os.Getenv("CAMLI_DEBUG")); debug {
+			flags.BoolVar(&cmd.insecureTLS, "insecure", false, "If set, when using TLS, the server's certificates verification is disabled, and they are not checked against the trustedCerts in the client configuration either.")
+		}
 
 		return cmd
 	})
@@ -160,7 +170,10 @@ func (c *syncCmd) storageFromParam(which storageType, val string) (blobserver.St
 		return disk, nil
 	}
 	cl := client.New(val)
-	// TODO(mpl): probably needs the transport setup for trusted certs here.
+	cl.InsecureTLS = c.insecureTLS
+	cl.SetHTTPClient(&http.Client{
+		Transport: cl.TransportForConfig(nil),
+	})
 	cl.SetupAuth()
 	cl.SetLogger(c.logger)
 	return cl, nil
@@ -203,9 +216,17 @@ func (c *syncCmd) syncAll() error {
 	for _, sh := range syncHandlers {
 		from := client.New(sh.From)
 		from.SetLogger(c.logger)
+		from.InsecureTLS = c.insecureTLS
+		from.SetHTTPClient(&http.Client{
+			Transport: from.TransportForConfig(nil),
+		})
 		from.SetupAuth()
 		to := client.New(sh.To)
 		to.SetLogger(c.logger)
+		to.InsecureTLS = c.insecureTLS
+		to.SetHTTPClient(&http.Client{
+			Transport: to.TransportForConfig(nil),
+		})
 		to.SetupAuth()
 		if c.verbose {
 			log.Printf("Now syncing: %v -> %v", sh.From, sh.To)
@@ -232,20 +253,25 @@ func (c *syncCmd) discoClient() *client.Client {
 	} else {
 		cl = client.New(c.src)
 	}
+	cl.SetLogger(c.logger)
+	cl.InsecureTLS = c.insecureTLS
+	cl.SetHTTPClient(&http.Client{
+		Transport: cl.TransportForConfig(nil),
+	})
 	cl.SetupAuth()
 	return cl
 }
 
-func enumerateAllBlobs(s blobserver.Storage, destc chan<- blob.SizedRef) error {
+func enumerateAllBlobs(ctx *context.Context, s blobserver.Storage, destc chan<- blob.SizedRef) error {
 	// Use *client.Client's support for enumerating all blobs if
 	// possible, since it could probably do a better job knowing
 	// HTTP boundaries and such.
 	if c, ok := s.(*client.Client); ok {
-		return c.SimpleEnumerateBlobs(destc)
+		return c.SimpleEnumerateBlobs(ctx, destc)
 	}
 
 	defer close(destc)
-	return blobserver.EnumerateAll(s, func(sb blob.SizedRef) error {
+	return blobserver.EnumerateAll(ctx, s, func(sb blob.SizedRef) error {
 		destc <- sb
 		return nil
 	})
@@ -263,8 +289,10 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 	srcErr := make(chan error, 1)
 	destErr := make(chan error, 1)
 
+	ctx := context.TODO()
+	defer ctx.Cancel()
 	go func() {
-		srcErr <- enumerateAllBlobs(src, srcBlobs)
+		srcErr <- enumerateAllBlobs(ctx, src, srcBlobs)
 	}()
 	checkSourceError := func() {
 		if err := <-srcErr; err != nil {
@@ -280,8 +308,14 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 		return
 	}
 
+	if c.wipe {
+		// TODO(mpl): dest is a client. make it send a "wipe" request?
+		// upon reception its server then wipes itself if it is a wiper.
+		log.Print("Index wiping not yet supported.")
+	}
+
 	go func() {
-		destErr <- enumerateAllBlobs(dest, destBlobs)
+		destErr <- enumerateAllBlobs(ctx, dest, destBlobs)
 	}()
 	checkDestError := func() {
 		if err := <-destErr; err != nil {
@@ -306,7 +340,7 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 		thirdBlobs := make(chan blob.SizedRef, 100)
 		thirdErr := make(chan error, 1)
 		go func() {
-			thirdErr <- enumerateAllBlobs(thirdLeg, thirdBlobs)
+			thirdErr <- enumerateAllBlobs(ctx, thirdLeg, thirdBlobs)
 		}()
 		checkThirdError = func() {
 			if err := <-thirdErr; err != nil {

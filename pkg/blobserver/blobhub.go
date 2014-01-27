@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/syncutil"
 )
 
 type BlobHub interface {
@@ -33,13 +34,13 @@ type BlobHub interface {
 	//
 	// If any synchronous receive hooks are registered, they're run before
 	// NotifyBlobReceived returns and their error is returned.
-	NotifyBlobReceived(blob blob.Ref) error
+	NotifyBlobReceived(blob.SizedRef) error
 
 	// AddReceiveHook adds a hook that is synchronously run
 	// whenever blobs are received.  All registered hooks are run
 	// on each blob upload but if more than one returns an error,
 	// NotifyBlobReceived will only return one of the errors.
-	AddReceiveHook(func(blob.Ref) error)
+	AddReceiveHook(func(blob.SizedRef) error)
 
 	RegisterListener(ch chan<- blob.Ref)
 	UnregisterListener(ch chan<- blob.Ref)
@@ -107,50 +108,40 @@ func WaitForBlob(storage interface{}, deadline time.Time, blobs []blob.Ref) {
 type memHub struct {
 	mu sync.RWMutex
 
-	hooks         []func(blob.Ref) error
+	hooks         []func(blob.SizedRef) error
 	listeners     map[chan<- blob.Ref]bool
 	blobListeners map[blob.Ref]map[chan<- blob.Ref]bool
 }
 
-func (h *memHub) NotifyBlobReceived(br blob.Ref) error {
+func (h *memHub) NotifyBlobReceived(sb blob.SizedRef) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	// Callback channels to notify, nil until non-empty
-	var notify []chan<- blob.Ref
+	br := sb.Ref
 
-	// Append global listeners
+	// Synchronous hooks. If error, prevents notifying other
+	// subscribers.
+	var grp syncutil.Group
+	for i := range h.hooks {
+		hook := h.hooks[i]
+		grp.Go(func() error { return hook(sb) })
+	}
+	if err := grp.Err(); err != nil {
+		return err
+	}
+
+	// Global listeners
 	for ch := range h.listeners {
-		notify = append(notify, ch)
+		ch := ch
+		go func() { ch <- br }()
 	}
 
-	// Append blob-specific listeners
-	if h.blobListeners != nil {
-		if set, ok := h.blobListeners[br]; ok {
-			for ch, _ := range set {
-				notify = append(notify, ch)
-			}
-		}
+	// Blob-specific listeners
+	for ch := range h.blobListeners[br] {
+		ch := ch
+		go func() { ch <- br }()
 	}
-
-	if len(notify) > 0 {
-		// Run in a separate Goroutine so NotifyBlobReceived doesn't block
-		// callers if callbacks are slow.
-		go func() {
-			for _, ch := range notify {
-				ch <- br
-			}
-		}()
-	}
-
-	var ret error
-	for _, hook := range h.hooks {
-		if err := hook(br); err != nil && ret == nil {
-			ret = err
-		}
-	}
-
-	return ret
+	return nil
 }
 
 func (h *memHub) RegisterListener(ch chan<- blob.Ref) {
@@ -200,7 +191,7 @@ func (h *memHub) UnregisterBlobListener(br blob.Ref, ch chan<- blob.Ref) {
 	}
 }
 
-func (h *memHub) AddReceiveHook(hook func(blob.Ref) error) {
+func (h *memHub) AddReceiveHook(hook func(blob.SizedRef) error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.hooks = append(h.hooks, hook)

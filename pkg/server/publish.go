@@ -35,9 +35,11 @@ import (
 	"strings"
 	"time"
 
+	"camlistore.org/pkg/auth"
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
-	"camlistore.org/pkg/client" // just for NewUploadHandleFromString.  move elsewhere?
+	"camlistore.org/pkg/client"
+	"camlistore.org/pkg/constants" // just for NewUploadHandleFromString.  move elsewhere?
 	"camlistore.org/pkg/fileembed"
 	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/jsonconfig"
@@ -45,6 +47,7 @@ import (
 	"camlistore.org/pkg/publish"
 	"camlistore.org/pkg/schema"
 	"camlistore.org/pkg/search"
+	"camlistore.org/pkg/syncutil"
 	"camlistore.org/pkg/types/camtypes"
 	uistatic "camlistore.org/server/camlistored/ui"
 )
@@ -56,7 +59,10 @@ type PublishHandler struct {
 	Search   *search.Handler
 	Storage  blobserver.Storage // of blobRoot
 	Cache    blobserver.Storage // or nil
-	sc       ScaledImage        // cache of scaled images, optional
+
+	// Limit peak RAM used by concurrent image thumbnail calls.
+	resizeSem *syncutil.Sem
+	thumbMeta *thumbMeta // optional cache of scaled images
 
 	CSSFiles []string
 	// goTemplate is the go html template used for publishing.
@@ -92,10 +98,11 @@ func newPublishFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Han
 	blobRoot := conf.RequiredString("blobRoot")
 	searchRoot := conf.RequiredString("searchRoot")
 	cachePrefix := conf.OptionalString("cache", "")
-	scType := conf.OptionalString("scaledImage", "")
+	scaledImageConf := conf.OptionalObject("scaledImage")
 	bootstrapSignRoot := conf.OptionalString("devBootstrapPermanodeUsing", "")
 	rootNode := conf.OptionalList("rootPermanode")
 	ph.sourceRoot = conf.OptionalString("sourceRoot", "")
+	ph.resizeSem = syncutil.NewSem(int64(conf.OptionalInt("maxResizeBytes", constants.DefaultMaxResizeMem)))
 	if err = conf.Validate(); err != nil {
 		return
 	}
@@ -151,19 +158,20 @@ func newPublishFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (h http.Han
 		}
 	}
 
+	scaledImageKV, err := newKVOrNil(scaledImageConf)
+	if err != nil {
+		return nil, fmt.Errorf("in publish handler's scaledImage: %v", err)
+	}
+	if scaledImageKV != nil && cachePrefix == "" {
+		return nil, fmt.Errorf("in publish handler, can't specify scaledImage without cache")
+	}
 	if cachePrefix != "" {
 		bs, err := ld.GetStorage(cachePrefix)
 		if err != nil {
 			return nil, fmt.Errorf("publish handler's cache of %q error: %v", cachePrefix, err)
 		}
 		ph.Cache = bs
-		switch scType {
-		case "lrucache":
-			ph.sc = NewScaledImageLRU()
-		case "":
-		default:
-			return nil, fmt.Errorf("unsupported publish handler's scType: %q ", scType)
-		}
+		ph.thumbMeta = newThumbMeta(scaledImageKV)
 	}
 
 	// TODO(mpl): check that it works on appengine too.
@@ -300,6 +308,9 @@ type publishRequest struct {
 	// A describe request that we can reuse, sharing its map of
 	// blobs already described.
 	dr *search.DescribeRequest
+
+	// Limit peak RAM used by concurrent image thumbnail calls.
+	resizeSem *syncutil.Sem
 }
 
 func (ph *PublishHandler) NewRequest(rw http.ResponseWriter, req *http.Request) *publishRequest {
@@ -323,13 +334,13 @@ func (ph *PublishHandler) NewRequest(rw http.ResponseWriter, req *http.Request) 
 		dr:              ph.Search.NewDescribeRequest(),
 		inSubjectChain:  make(map[string]bool),
 		subjectBasePath: "",
+		resizeSem:       ph.resizeSem,
 	}
 }
 
 func (ph *PublishHandler) ViewerIsOwner(req *http.Request) bool {
 	// TODO: better check later
-	return strings.HasPrefix(req.RemoteAddr, "127.") ||
-		strings.HasPrefix(req.RemoteAddr, "localhost:")
+	return auth.Allowed(req, auth.OpAll)
 }
 
 func (pr *publishRequest) ViewerIsOwner() bool {
@@ -799,7 +810,7 @@ func (pr *publishRequest) subjectMembers(resMap map[string]*search.DescribedBlob
 	return &publish.PageMembers{
 		SubjectPath: subjectPath,
 		ZipName:     zipName,
-		Members:     subdes.Members(),
+		Members:     members,
 		Description: func(member *search.DescribedBlob) string {
 			des := member.Description()
 			if des != "" {
@@ -938,7 +949,8 @@ func (pr *publishRequest) serveScaledImage(des *search.DescribedBlob, maxWidth, 
 		MaxWidth:  maxWidth,
 		MaxHeight: maxHeight,
 		Square:    square,
-		sc:        pr.ph.sc,
+		thumbMeta: pr.ph.thumbMeta,
+		resizeSem: pr.resizeSem,
 	}
 	th.ServeHTTP(pr.rw, pr.req, fileref)
 }

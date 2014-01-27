@@ -21,21 +21,20 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"path"
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/cmdmain"
 	"camlistore.org/pkg/jsonsign"
 	"camlistore.org/pkg/osutil"
+	"camlistore.org/pkg/types/clientconfig"
 )
 
 type initCmd struct {
-	newKey bool
-	gpgkey string
+	newKey   bool
+	gpgkey   string
 	noconfig bool
 }
 
@@ -110,14 +109,12 @@ func (c *initCmd) getPublicKeyArmoredFromFile(secretRingFileName, keyId string) 
 }
 
 func (c *initCmd) getPublicKeyArmored(keyId string) (b []byte, err error) {
-	files := []string{osutil.IdentitySecretRing(), jsonsign.DefaultSecRingPath()}
-	for _, file := range files {
-		b, err = c.getPublicKeyArmoredFromFile(file, keyId)
-		if err == nil {
-			return b, nil
-		}
+	file := osutil.IdentitySecretRing()
+	b, err = c.getPublicKeyArmoredFromFile(file, keyId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to export armored public key ID %q from %v: %v", keyId, file, err)
 	}
-	return nil, fmt.Errorf("failed to export armored public key ID %q from locations: %q", keyId, files)
+	return b, nil
 }
 
 func (c *initCmd) RunCommand(args []string) error {
@@ -128,10 +125,6 @@ func (c *initCmd) RunCommand(args []string) error {
 	if c.newKey && c.gpgkey != "" {
 		log.Fatal("--newkey and --gpgkey are mutually exclusive")
 	}
-
-	blobDir := path.Join(osutil.CamliConfigDir(), "keyblobs")
-	os.Mkdir(osutil.CamliConfigDir(), 0700)
-	os.Mkdir(blobDir, 0700)
 
 	var keyId string
 	var err error
@@ -148,25 +141,12 @@ func (c *initCmd) RunCommand(args []string) error {
 		}
 	}
 
-	if os.Getenv("GPG_AGENT_INFO") == "" {
-		log.Printf("No GPG_AGENT_INFO found in environment; you should setup gnupg-agent.  camput might be annoying otherwise, if your private key is encrypted.")
-	}
-
 	pubArmor, err := c.getPublicKeyArmored(keyId)
 	if err != nil {
 		return err
 	}
 
 	bref := blob.SHA1FromString(string(pubArmor))
-
-	keyBlobPath := path.Join(blobDir, bref.String()+".camli")
-	if err = ioutil.WriteFile(keyBlobPath, pubArmor, 0644); err != nil {
-		log.Fatalf("Error writing public key blob to %q: %v", keyBlobPath, err)
-	}
-
-	if ok, err := jsonsign.VerifyPublicKeyFile(keyBlobPath, keyId); !ok {
-		log.Fatalf("Error verifying public key at %q: %v", keyBlobPath, err)
-	}
 
 	log.Printf("Your Camlistore identity (your GPG public key's blobref) is: %s", bref.String())
 
@@ -182,13 +162,17 @@ func (c *initCmd) RunCommand(args []string) error {
 
 	if f, err := os.OpenFile(configFilePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600); err == nil {
 		defer f.Close()
-		m := make(map[string]interface{})
-		m["keyId"] = keyId                    // TODO(bradfitz): make this 'identity' to match server config?
-		m["publicKeyBlobref"] = bref.String() // TODO(bradfitz): not used anymore?
-		m["server"] = "http://localhost:3179/"
-		m["selfPubKeyDir"] = blobDir
-		m["auth"] = "localhost"
-		m["ignoredFiles"] = []string{".DS_Store"}
+		m := &clientconfig.Config{
+			Servers: map[string]*clientconfig.Server{
+				"localhost": {
+					Server:    "http://localhost:3179",
+					IsDefault: true,
+					Auth:      "localhost",
+				},
+			},
+			Identity:     keyId,
+			IgnoredFiles: []string{".DS_Store"},
+		}
 
 		jsonBytes, err := json.MarshalIndent(m, "", "  ")
 		if err != nil {

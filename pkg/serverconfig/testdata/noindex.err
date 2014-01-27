@@ -1,1 +1,0 @@
-Unless runIndex is set to false, you must specify an index option (kvIndexFile, mongo, mysql, postgres, sqlite, memIndex).

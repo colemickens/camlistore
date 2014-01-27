@@ -64,6 +64,9 @@ type Handler struct {
 	// TODO: this may be required in the future, or folded into the index
 	// interface.
 	corpus *index.Corpus
+
+	// WebSocket hub
+	wsHub *wsHub
 }
 
 // IGetRecentPermanodes is the interface encapsulating the GetRecentPermanodes query.
@@ -80,7 +83,27 @@ var (
 )
 
 func NewHandler(index index.Interface, owner blob.Ref) *Handler {
-	return &Handler{index: index, owner: owner}
+	sh := &Handler{
+		index: index,
+		owner: owner,
+	}
+	sh.wsHub = newWebsocketHub(sh)
+	go sh.wsHub.run()
+	sh.subscribeToNewBlobs()
+	return sh
+}
+
+func (sh *Handler) subscribeToNewBlobs() {
+	ch := make(chan blob.Ref, buffered)
+	blobserver.GetHub(sh.index).RegisterListener(ch)
+	go func() {
+		for br := range ch {
+			bm, err := sh.index.GetBlobMeta(br)
+			if err == nil {
+				sh.wsHub.newBlobRecv <- bm.CamliType
+			}
+		}
+	}()
 }
 
 func (h *Handler) SetCorpus(c *index.Corpus) {
@@ -116,10 +139,7 @@ func newHandlerFromConfig(ld blobserver.Loader, conf jsonconfig.Obj) (http.Handl
 		return nil, fmt.Errorf("search 'owner' has malformed blobref %q; expecting e.g. sha1-xxxxxxxxxxxx",
 			ownerBlobStr)
 	}
-	h := &Handler{
-		index: indexer,
-		owner: ownerBlobRef,
-	}
+	h := NewHandler(indexer, ownerBlobRef)
 	if slurpToMemory {
 		ii := indexer.(*index.Index)
 		corpus, err := ii.KeepInMemory()
@@ -146,35 +166,26 @@ func jsonMap() map[string]interface{} {
 	return make(map[string]interface{})
 }
 
+var getHandler = map[string]func(*Handler, http.ResponseWriter, *http.Request){
+	"ws":              (*Handler).serveWebSocket,
+	"recent":          (*Handler).serveRecentPermanodes,
+	"permanodeattr":   (*Handler).servePermanodesWithAttr,
+	"describe":        (*Handler).serveDescribe,
+	"claims":          (*Handler).serveClaims,
+	"files":           (*Handler).serveFiles,
+	"signerattrvalue": (*Handler).serveSignerAttrValue,
+	"signerpaths":     (*Handler).serveSignerPaths,
+	"edgesto":         (*Handler).serveEdgesTo,
+}
+
 func (sh *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ret := jsonMap()
 	suffix := httputil.PathSuffix(req)
 
 	if httputil.IsGet(req) {
-		switch suffix {
-		case "camli/search/recent":
-			sh.serveRecentPermanodes(rw, req)
-			return
-		case "camli/search/permanodeattr":
-			sh.servePermanodesWithAttr(rw, req)
-			return
-		case "camli/search/describe":
-			sh.serveDescribe(rw, req)
-			return
-		case "camli/search/claims":
-			sh.serveClaims(rw, req)
-			return
-		case "camli/search/files":
-			sh.serveFiles(rw, req)
-			return
-		case "camli/search/signerattrvalue":
-			sh.serveSignerAttrValue(rw, req)
-			return
-		case "camli/search/signerpaths":
-			sh.serveSignerPaths(rw, req)
-			return
-		case "camli/search/edgesto":
-			sh.serveEdgesTo(rw, req)
+		fn := getHandler[strings.TrimPrefix(suffix, "camli/search/")]
+		if fn != nil {
+			fn(sh, rw, req)
 			return
 		}
 	}
@@ -208,15 +219,21 @@ type RecentRequest struct {
 }
 
 func (r *RecentRequest) URLSuffix() string {
-	// TODO: Before
-	return fmt.Sprintf("camli/search/recent?n=%d&thumbnails=%d", r.n(), r.thumbnailSize())
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "camli/search/recent?n=%d&thumbnails=%d", r.n(), r.thumbnailSize())
+	if !r.Before.IsZero() {
+		fmt.Fprintf(&buf, "&before=%s", types.Time3339(r.Before))
+	}
+	return buf.String()
 }
 
 // fromHTTP panics with an httputil value on failure
 func (r *RecentRequest) fromHTTP(req *http.Request) {
 	r.N, _ = strconv.Atoi(req.FormValue("n"))
 	r.ThumbnailSize = thumbnailSize(req)
-	// TODO: populate Before
+	if before := req.FormValue("before"); before != "" {
+		r.Before = time.Time(types.ParseTime3339OrZero(before))
+	}
 }
 
 // n returns the sanitized maximum number of search results.
@@ -305,6 +322,10 @@ func (r *WithAttrRequest) thumbnailSize() int {
 // ClaimsRequest is a request to get a ClaimsResponse.
 type ClaimsRequest struct {
 	Permanode blob.Ref
+}
+
+func (r *ClaimsRequest) URLSuffix() string {
+	return fmt.Sprintf("camli/search/claims?permanode=%v", r.Permanode)
 }
 
 // fromHTTP panics with an httputil value on failure
@@ -467,8 +488,12 @@ var testHookBug121 = func() {}
 func (sh *Handler) GetRecentPermanodes(req *RecentRequest) (*RecentResponse, error) {
 	ch := make(chan camtypes.RecentPermanode)
 	errch := make(chan error, 1)
+	before := time.Now()
+	if !req.Before.IsZero() {
+		before = req.Before
+	}
 	go func() {
-		errch <- sh.index.GetRecentPermanodes(ch, sh.owner, req.n())
+		errch <- sh.index.GetRecentPermanodes(ch, sh.owner, req.n(), before)
 	}()
 
 	dr := sh.NewDescribeRequest()
@@ -621,20 +646,28 @@ func (sh *Handler) serveClaims(rw http.ResponseWriter, req *http.Request) {
 type DescribeRequest struct {
 	// BlobRefs are the blobs to describe. If length zero, BlobRef
 	// is used.
-	BlobRefs []blob.Ref
+	BlobRefs []blob.Ref `json:"blobrefs,omitempty"`
 
 	// BlobRef is the blob to describe.
-	BlobRef blob.Ref
+	BlobRef blob.Ref `json:"blobref,omitempty"`
 
 	// Depth is the optional traversal depth to describe from the
 	// root BlobRef. If zero, a default is used.
-	Depth int
+	Depth int `json:"depth,omitempty"`
 	// MaxDirChildren is the requested optional limit to the number
 	// of children that should be fetched when describing a static
 	// directory. If zero, a default is used.
-	MaxDirChildren int
+	MaxDirChildren int `json:"maxDirChildren,omitempty"`
 
-	ThumbnailSize int // or zero for none
+	// At specifies the time which we wish to see the state of
+	// this blob.  If zero (unspecified), all claims will be
+	// considered, otherwise, any claims after this date will not
+	// be considered.
+	At types.Time3339 `json:"at"`
+
+	// ThumbnailSize sets the max dimension for the thumbnail ULR generated,
+	// or zero for none
+	ThumbnailSize int `json:"thumbnailSize,omitempty"`
 
 	// Internal details, used while loading.
 	// Initialized by sh.initDescribeRequest.
@@ -649,7 +682,8 @@ type DescribeRequest struct {
 
 func (r *DescribeRequest) URLSuffix() string {
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "camli/search/describe?depth=%d&maxdirchildren=%d", r.depth(), r.maxDirChildren())
+	fmt.Fprintf(&buf, "camli/search/describe?depth=%d&maxdirchildren=%d",
+		r.depth(), r.maxDirChildren())
 	for _, br := range r.BlobRefs {
 		buf.WriteString("&blobref=")
 		buf.WriteString(br.String())
@@ -657,6 +691,10 @@ func (r *DescribeRequest) URLSuffix() string {
 	if len(r.BlobRefs) == 0 && r.BlobRef.Valid() {
 		buf.WriteString("&blobref=")
 		buf.WriteString(r.BlobRef.String())
+	}
+	if !r.At.IsZero() {
+		buf.WriteString("&at=")
+		buf.WriteString(r.At.String())
 	}
 	return buf.String()
 }
@@ -678,6 +716,7 @@ func (r *DescribeRequest) fromHTTP(req *http.Request) {
 	r.Depth = httputil.OptionalInt(req, "depth")
 	r.MaxDirChildren = httputil.OptionalInt(req, "maxdirchildren")
 	r.ThumbnailSize = thumbnailSize(req)
+	r.At = types.ParseTime3339OrZero(req.FormValue("at"))
 }
 
 type DescribedBlob struct {
@@ -783,6 +822,8 @@ func (b *DescribedBlob) Description() string {
 	return ""
 }
 
+// Members returns all of b's children, as given by b's camliMember and camliPath:*
+// attributes. Only the first entry for a given camliPath attribute is used.
 func (b *DescribedBlob) Members() []*DescribedBlob {
 	if b == nil {
 		return nil
@@ -792,6 +833,13 @@ func (b *DescribedBlob) Members() []*DescribedBlob {
 		for _, bstr := range b.Permanode.Attr["camliMember"] {
 			if br, ok := blob.Parse(bstr); ok {
 				m = append(m, b.PeerBlob(br))
+			}
+		}
+		for k, bstrs := range b.Permanode.Attr {
+			if strings.HasPrefix(k, "camliPath:") && len(bstrs) > 0 {
+				if br, ok := blob.Parse(bstrs[0]); ok {
+					m = append(m, b.PeerBlob(br))
+				}
 			}
 		}
 	}
@@ -904,11 +952,11 @@ func (b *DescribedBlob) thumbnail(thumbSize int) (path string, width, height int
 		peer := b.peerBlob(content)
 		if peer.File != nil {
 			if peer.File.IsImage() {
-				image := fmt.Sprintf("thumbnail/%s/%s?mh=%d", peer.BlobRef,
-					url.QueryEscape(peer.File.FileName), thumbSize)
+				image := fmt.Sprintf("thumbnail/%s/%s?mh=%d&tv=%s", peer.BlobRef,
+					url.QueryEscape(peer.File.FileName), thumbSize, images.ThumbnailVersion())
 				if peer.Image != nil {
 					mw, mh := images.ScaledDimensions(
-						peer.Image.Width, peer.Image.Height,
+						int(peer.Image.Width), int(peer.Image.Height),
 						MaxImageSize, thumbSize)
 					return image, mw, mh, true
 				}
@@ -1277,6 +1325,11 @@ func (dr *DescribeRequest) populatePermanodeFields(pi *DescribedPermanode, pn, s
 	sort.Sort(camtypes.ClaimsByDate(claims))
 claimLoop:
 	for _, cl := range claims {
+		if !dr.At.IsZero() {
+			if cl.Date.After(dr.At.Time()) {
+				continue
+			}
+		}
 		switch cl.Type {
 		default:
 			continue

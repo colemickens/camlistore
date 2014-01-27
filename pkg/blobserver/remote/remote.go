@@ -25,6 +25,7 @@ Example low-level config:
          "handler": "storage-remote",
          "handlerArgs": {
              "url": "http://10.0.0.17/base",
+             "auth": "userpass:user:pass",
              "skipStartupCheck": false
           }
      },
@@ -34,10 +35,13 @@ package remote
 
 import (
 	"io"
+	"log"
+	"os"
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
 	"camlistore.org/pkg/client"
+	"camlistore.org/pkg/context"
 	"camlistore.org/pkg/jsonconfig"
 )
 
@@ -57,16 +61,17 @@ func NewFromClient(c *client.Client) blobserver.Storage {
 
 func newFromConfig(_ blobserver.Loader, config jsonconfig.Obj) (storage blobserver.Storage, err error) {
 	url := config.RequiredString("url")
+	auth := config.RequiredString("auth")
 	skipStartupCheck := config.OptionalBool("skipStartupCheck", false)
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
 	client := client.New(url)
-	err = client.SetupAuthFromConfig(config)
-	if err != nil {
+	if err = client.SetupAuthFromString(auth); err != nil {
 		return nil, err
 	}
+	client.SetLogger(log.New(os.Stderr, "remote", log.LstdFlags))
 	sto := &remoteStorage{
 		client: client,
 	}
@@ -75,7 +80,7 @@ func newFromConfig(_ blobserver.Loader, config jsonconfig.Obj) (storage blobserv
 		// correct.
 		// TODO(bradfitz,mpl): skip this operation smartly if it turns out this is annoying/slow for whatever reason.
 		c := make(chan blob.SizedRef, 1)
-		err = sto.EnumerateBlobs(c, "", 1)
+		err = sto.EnumerateBlobs(context.TODO(), c, "", 1)
 		if err != nil {
 			return nil, err
 		}
@@ -115,8 +120,8 @@ func (sto *remoteStorage) FetchStreaming(b blob.Ref) (file io.ReadCloser, size i
 
 func (sto *remoteStorage) MaxEnumerate() int { return 1000 }
 
-func (sto *remoteStorage) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit int) error {
-	return sto.client.EnumerateBlobsOpts(dest, client.EnumerateOpts{
+func (sto *remoteStorage) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRef, after string, limit int) error {
+	return sto.client.EnumerateBlobsOpts(ctx, dest, client.EnumerateOpts{
 		After: after,
 		Limit: limit,
 	})

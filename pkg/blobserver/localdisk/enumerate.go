@@ -25,9 +25,11 @@ import (
 	"strings"
 
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/context"
 )
 
 type readBlobRequest struct {
+	done    <-chan struct{}
 	ch      chan<- blob.SizedRef
 	after   string
 	remain  *int // limit countdown
@@ -52,8 +54,8 @@ func (ds *DiskStorage) readBlobs(opts readBlobRequest) error {
 	if err != nil {
 		return &enumerateError{"localdisk: opening directory " + dirFullPath, err}
 	}
-	defer dir.Close()
 	names, err := dir.Readdirnames(-1)
+	dir.Close()
 	if err == nil && len(names) == 0 {
 		// remove empty blob dir if we are in a queue but not the queue root itself
 		if strings.Contains(dirFullPath, "queue-") &&
@@ -66,26 +68,55 @@ func (ds *DiskStorage) readBlobs(opts readBlobRequest) error {
 		return &enumerateError{"localdisk: readdirnames of " + dirFullPath, err}
 	}
 	sort.Strings(names)
+	stat := make(map[string]chan interface{}) // gets sent error or os.FileInfo
+	for _, name := range names {
+		if skipDir(name) || isShardDir(name) {
+			continue
+		}
+		ch := make(chan interface{}, 1) // 1 in case it's not read
+		name := name
+		stat[name] = ch
+		go func() {
+			fi, err := os.Stat(filepath.Join(dirFullPath, name))
+			if err != nil {
+				ch <- err
+			} else {
+				ch <- fi
+			}
+		}()
+	}
+
 	for _, name := range names {
 		if *opts.remain == 0 {
 			return nil
 		}
-		if name == "partition" || name == "cache" {
-			// The partition directory is old. (removed from codebase, but
-			// likely still on disk for some people)
-			// the "cache" directory is just a hack: it's used
-			// by the serverconfig/genconfig code, as a default
-			// location for most users to put their thumbnail
-			// cache.  For now we just also skip it here.
+		if skipDir(name) {
 			continue
 		}
-		fullPath := dirFullPath + "/" + name
-		fi, err := os.Stat(fullPath)
-		if err != nil {
-			return &enumerateError{"localdisk: stat of file " + fullPath, err}
+		var (
+			fi      os.FileInfo
+			err     error
+			didStat bool
+		)
+		stat := func() {
+			if didStat {
+				return
+			}
+			didStat = true
+			fiv := <-stat[name]
+			var ok bool
+			if err, ok = fiv.(error); ok {
+				err = &enumerateError{"localdisk: stat of file " + filepath.Join(dirFullPath, name), err}
+			} else {
+				fi = fiv.(os.FileInfo)
+			}
+		}
+		isDir := func() bool {
+			stat()
+			return fi != nil && fi.IsDir()
 		}
 
-		if fi.IsDir() {
+		if isShardDir(name) || isDir() {
 			var newBlobPrefix string
 			if opts.blobPrefix == "" {
 				newBlobPrefix = name + "-"
@@ -108,13 +139,22 @@ func (ds *DiskStorage) readBlobs(opts readBlobRequest) error {
 			continue
 		}
 
+		stat()
+		if err != nil {
+			return err
+		}
+
 		if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
-			blobName := name[:len(name)-len(".dat")]
+			blobName := strings.TrimSuffix(name, ".dat")
 			if blobName <= opts.after {
 				continue
 			}
 			if blobRef, ok := blob.Parse(blobName); ok {
-				opts.ch <- blob.SizedRef{Ref: blobRef, Size: fi.Size()}
+				select {
+				case opts.ch <- blob.SizedRef{Ref: blobRef, Size: fi.Size()}:
+				case <-opts.done:
+					return context.ErrCanceled
+				}
 				(*opts.remain)--
 			}
 			continue
@@ -124,7 +164,7 @@ func (ds *DiskStorage) readBlobs(opts readBlobRequest) error {
 	return nil
 }
 
-func (ds *DiskStorage) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit int) error {
+func (ds *DiskStorage) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRef, after string, limit int) error {
 	defer close(dest)
 	if limit == 0 {
 		log.Printf("Warning: localdisk.EnumerateBlobs called with a limit of 0")
@@ -132,9 +172,28 @@ func (ds *DiskStorage) EnumerateBlobs(dest chan<- blob.SizedRef, after string, l
 
 	limitMutable := limit
 	return ds.readBlobs(readBlobRequest{
+		done:    ctx.Done(),
 		ch:      dest,
 		dirRoot: ds.root,
 		after:   after,
 		remain:  &limitMutable,
 	})
+}
+
+func skipDir(name string) bool {
+	// The partition directory is old. (removed from codebase, but
+	// likely still on disk for some people)
+	// the "cache" directory is just a hack: it's used
+	// by the serverconfig/genconfig code, as a default
+	// location for most users to put their thumbnail
+	// cache.  For now we just also skip it here.
+	return name == "partition" || name == "cache"
+}
+
+func isShardDir(name string) bool {
+	return len(name) == 2 && isHex(name[0]) && isHex(name[1])
+}
+
+func isHex(b byte) bool {
+	return ('0' <= b && b <= '9') || ('a' <= b && b <= 'f')
 }

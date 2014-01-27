@@ -27,7 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	"camlistore.org/pkg/osutil"
+	"camlistore.org/pkg/constants"
 	"camlistore.org/pkg/types"
 )
 
@@ -64,8 +64,26 @@ func (w *fetcherToSeekerWrapper) Fetch(r Ref) (file types.ReadSeekCloser, size i
 	if err != nil {
 		return
 	}
-	file = rc.(types.ReadSeekCloser)
-	return
+	file, ok := rc.(types.ReadSeekCloser)
+	if ok {
+		return
+	}
+	// we must make it seekable
+	var slurp bytes.Buffer
+	n, err := io.CopyN(&slurp, rc, constants.MaxBlobSize+1)
+	if err != nil && err != io.EOF {
+		return nil, 0, err
+	}
+	if n > constants.MaxBlobSize {
+		return nil, 0, fmt.Errorf("blob %v too big", r)
+	}
+	return struct {
+		io.ReadSeeker
+		io.Closer
+	}{
+		bytes.NewReader(slurp.Bytes()),
+		ioutil.NopCloser(nil),
+	}, n, err
 }
 
 // StreamingFetcher is the minimal interface for retrieving a blob from storage.
@@ -89,10 +107,6 @@ func NewSerialStreamingFetcher(fetchers ...StreamingFetcher) StreamingFetcher {
 
 func NewSimpleDirectoryFetcher(dir string) *DirFetcher {
 	return &DirFetcher{dir, "camli"}
-}
-
-func NewConfigDirFetcher() *DirFetcher {
-	return NewSimpleDirectoryFetcher(osutil.KeyBlobsDir())
 }
 
 type serialFetcher struct {

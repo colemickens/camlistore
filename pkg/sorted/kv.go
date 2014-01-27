@@ -34,6 +34,8 @@ type KeyValue interface {
 	Get(key string) (string, error)
 
 	Set(key, value string) error
+
+	// Delete deletes keys. Deleting a non-existent key does not return an error.
 	Delete(key string) error
 
 	BeginBatch() BatchMutation
@@ -43,15 +45,30 @@ type KeyValue interface {
 	// whose key is 'greater than or equal to' the given key. There may be no
 	// such pair, in which case the iterator will return false on Next.
 	//
+	// The optional end value specifies the exclusive upper
+	// bound. If the empty string, the iterator returns keys
+	// where "key >= start".
+	// If non-empty, the iterator returns keys where
+	// "key >= start && key < endHint".
+	//
 	// Any error encountered will be implicitly returned via the iterator. An
 	// error-iterator will yield no key/value pairs and closing that iterator
 	// will return that error.
-	Find(key string) Iterator
+	Find(start, end string) Iterator
 
 	// Close is a polite way for the server to shut down the storage.
 	// Implementations should never lose data after a Set, Delete,
 	// or CommmitBatch, though.
 	Close() error
+}
+
+// Wiper is an optional interface that may be implemented by storage
+// implementations.
+type Wiper interface {
+	KeyValue
+
+	// Wipe removes all key/value pairs.
+	Wipe() error
 }
 
 // Iterator iterates over an index KeyValue's key/value pairs in key order.
@@ -70,9 +87,23 @@ type Iterator interface {
 	// Only valid after a call to Next returns true.
 	Key() string
 
+	// KeyBytes returns the key as bytes. The returned bytes
+	// should not be written and are invalid after the next call
+	// to Next or Close.
+	// TODO(bradfitz): rename this and change it to return a
+	// mem.RO instead?
+	KeyBytes() []byte
+
 	// Value returns the value of the current key/value pair.
 	// Only valid after a call to Next returns true.
 	Value() string
+
+	// ValueBytes returns the value as bytes. The returned bytes
+	// should not be written and are invalid after the next call
+	// to Next or Close.
+	// TODO(bradfitz): rename this and change it to return a
+	// mem.RO instead?
+	ValueBytes() []byte
 
 	// Close closes the iterator and returns any accumulated error. Exhausting
 	// all the key/value pairs in a table is not considered to be an error.
@@ -150,12 +181,12 @@ func NewKeyValue(cfg jsonconfig.Obj) (KeyValue, error) {
 	typ := cfg.RequiredString("type")
 	ctor, ok := ctors[typ]
 	if typ != "" && !ok {
-		return nil, fmt.Errorf("Invalidate index storage type %q", typ)
+		return nil, fmt.Errorf("Invalid sorted.KeyValue type %q", typ)
 	}
 	if ok {
 		s, err = ctor(cfg)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error from %q KeyValue: %v", typ, err)
 		}
 	}
 	return s, cfg.Validate()

@@ -50,7 +50,7 @@ func condSkip(t *testing.T) {
 	if lasterr != nil {
 		t.Skipf("Skipping test; some other test already failed.")
 	}
-	if runtime.GOOS != "darwin" {
+	if !(runtime.GOOS == "darwin" || runtime.GOOS == "linux") {
 		t.Skipf("Skipping test on OS %q", runtime.GOOS)
 	}
 	if runtime.GOOS == "darwin" {
@@ -192,7 +192,7 @@ func TestRoot(t *testing.T) {
 			t.Fatal(err)
 		}
 		sort.Strings(names)
-		want := []string{"WELCOME.txt", "date", "recent", "roots", "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "tag"}
+		want := []string{"WELCOME.txt", "at", "date", "recent", "roots", "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "tag"}
 		if !reflect.DeepEqual(names, want) {
 			t.Errorf("root directory = %q; want %q", names, want)
 		}
@@ -318,12 +318,12 @@ func TestDifferentWriteTypes(t *testing.T) {
 			}
 			if wr.write != nil {
 				if n, err := f.Write(wr.write); err != nil || n != len(wr.write) {
-					t.Fatalf("%s: Write = (%n, %v); want (%d, nil)", wr.name, n, err, len(wr.write))
+					t.Fatalf("%s: Write = (%v, %v); want (%d, nil)", wr.name, n, err, len(wr.write))
 				}
 			}
 			if wr.writeAt != nil {
 				if n, err := f.WriteAt(wr.writeAt, wr.writePos); err != nil || n != len(wr.writeAt) {
-					t.Fatalf("%s: WriteAt = (%n, %v); want (%d, nil)", wr.name, n, err, len(wr.writeAt))
+					t.Fatalf("%s: WriteAt = (%v, %v); want (%d, nil)", wr.name, n, err, len(wr.writeAt))
 				}
 			}
 			if err := f.Close(); err != nil {
@@ -566,6 +566,10 @@ func dirToBeFUSE(dir string) func() bool {
 				return true
 			}
 			return false
+		}
+		if runtime.GOOS == "linux" {
+			return strings.Contains(string(out), "/dev/fuse") &&
+				strings.Contains(string(out), dir)
 		}
 		return false
 	}

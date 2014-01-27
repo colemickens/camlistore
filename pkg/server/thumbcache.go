@@ -18,47 +18,64 @@ package server
 
 import (
 	"errors"
+	"fmt"
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/lru"
+	"camlistore.org/pkg/sorted"
 )
 
-const cacheSize = 1024
+const memLRUSize = 1024 // arbitrary
 
-// ScaledImage is a mapping between the blobref of an image and
-// its scaling parameters, and the blobref of such a rescaled
-// version of that image.
-// Key will be some string containing the original full-sized image's blobref,
-// its target dimensions, and any possible transformations on it (e.g. cropping
-// it to square). This string packing should not be parsed by a ScaledImage
-// implementation and is not guaranteed to be stable over time.
-type ScaledImage interface {
-	Get(key string) (blob.Ref, error) // returns ErrCacheMiss when item not in cache
-	Put(key string, br blob.Ref) error
+// thumbMeta is a mapping from an image's scaling parameters (encoding
+// as an opaque "key" string) and the blobref of the thumbnail
+// (currently it's file schema blob)
+//
+// The key will be some string containing the original full-sized image's
+// blobref, its target dimensions, and any possible transformations on
+// it (e.g. cropping it to square).
+
+var errCacheMiss = errors.New("not in cache")
+
+type thumbMeta struct {
+	mem *lru.Cache      // string (see key format) -> blob.Ref
+	kv  sorted.KeyValue // optional
 }
 
-var ErrCacheMiss = errors.New("not in cache")
-
-type ScaledImageLRU struct {
-	nameToBlob *lru.Cache // string (see key format) -> blob.Ref
-}
-
-func NewScaledImageLRU() *ScaledImageLRU {
-	sc := &ScaledImageLRU{
-		nameToBlob: lru.New(cacheSize),
+// kv is optional
+func newThumbMeta(kv sorted.KeyValue) *thumbMeta {
+	return &thumbMeta{
+		mem: lru.New(memLRUSize),
+		kv:  kv,
 	}
-	return sc
 }
 
-func (sc *ScaledImageLRU) Get(key string) (blob.Ref, error) {
-	br, ok := sc.nameToBlob.Get(key)
-	if !ok {
-		return blob.Ref{}, ErrCacheMiss
+func (m *thumbMeta) Get(key string) (br blob.Ref, err error) {
+	if v, ok := m.mem.Get(key); ok {
+		return v.(blob.Ref), nil
 	}
-	return br.(blob.Ref), nil
+	if m.kv != nil {
+		v, err := m.kv.Get(key)
+		if err == sorted.ErrNotFound {
+			return br, errCacheMiss
+		}
+		if err != nil {
+			return br, err
+		}
+		br, ok := blob.Parse(v)
+		if !ok {
+			return br, fmt.Errorf("Invalid blobref %q found for key %q in thumbnail mea", v, key)
+		}
+		m.mem.Add(key, br)
+		return br, nil
+	}
+	return br, errCacheMiss
 }
 
-func (sc *ScaledImageLRU) Put(key string, br blob.Ref) error {
-	sc.nameToBlob.Add(key, br)
+func (m *thumbMeta) Put(key string, br blob.Ref) error {
+	m.mem.Add(key, br)
+	if m.kv != nil {
+		return m.kv.Set(key, br.String())
+	}
 	return nil
 }

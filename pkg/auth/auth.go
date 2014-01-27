@@ -18,12 +18,13 @@ limitations under the License.
 package auth
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"camlistore.org/pkg/httputil"
 )
@@ -186,6 +187,9 @@ func (up *UserPass) AllowedAccess(req *http.Request) Operation {
 		}
 	}
 
+	if websocketTokenMatches(req) {
+		return OpAll
+	}
 	if up.OrLocalhost && httputil.IsLocalhost(req) {
 		return OpAll
 	}
@@ -237,6 +241,10 @@ func (da *DevAuth) AllowedAccess(req *http.Request) Operation {
 		}
 	}
 
+	if websocketTokenMatches(req) {
+		return OpAll
+	}
+
 	// See if the local TCP port is owned by the same non-root user as this
 	// server.  This check performed last as it may require reading from the
 	// kernel or exec'ing a program.
@@ -249,10 +257,6 @@ func (da *DevAuth) AllowedAccess(req *http.Request) Operation {
 
 func (da *DevAuth) AddAuthHeader(req *http.Request) {
 	req.SetBasicAuth("", da.Password)
-}
-
-func isLocalhost(addrPort net.IP) bool {
-	return addrPort.IsLoopback()
 }
 
 func IsLocalhost(req *http.Request) bool {
@@ -270,6 +274,12 @@ func Allowed(req *http.Request, op Operation) bool {
 		op = op | OpVivify
 	}
 	return mode.AllowedAccess(req)&op == op
+}
+
+func websocketTokenMatches(req *http.Request) bool {
+	return req.Method == "GET" &&
+		req.Header.Get("Upgrade") == "websocket" &&
+		req.FormValue("authtoken") == ProcessRandom()
 }
 
 func TriedAuthorization(req *http.Request) bool {
@@ -311,14 +321,32 @@ func (h Handler) serveHTTPForOp(w http.ResponseWriter, r *http.Request, op Opera
 	}
 }
 
-// requireAuth wraps a function with another function that enforces
+// RequireAuth wraps a function with another function that enforces
 // HTTP Basic Auth and checks if the operations in op are all permitted.
-func RequireAuth(handler func(http.ResponseWriter, *http.Request), op Operation) func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
+func RequireAuth(h http.Handler, op Operation) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if Allowed(req, op) {
-			handler(rw, req)
+			h.ServeHTTP(rw, req)
 		} else {
 			SendUnauthorized(rw, req)
 		}
+	})
+}
+
+var (
+	processRand     string
+	processRandOnce sync.Once
+)
+
+func ProcessRandom() string {
+	processRandOnce.Do(genProcessRand)
+	return processRand
+}
+
+func genProcessRand() {
+	buf := make([]byte, 20)
+	if n, err := rand.Read(buf); err != nil || n != len(buf) {
+		panic("failed to get random: " + err.Error())
 	}
+	processRand = fmt.Sprintf("%x", buf)
 }

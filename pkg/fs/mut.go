@@ -20,6 +20,7 @@ package fs
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -35,11 +36,16 @@ import (
 	"camlistore.org/pkg/search"
 	"camlistore.org/pkg/syncutil"
 
-	"camlistore.org/third_party/code.google.com/p/rsc/fuse"
+	"camlistore.org/third_party/bazil.org/fuse"
+	"camlistore.org/third_party/bazil.org/fuse/fs"
 )
 
 // How often to refresh directory nodes by reading from the blobstore.
 const populateInterval = 30 * time.Second
+
+// How long an item that was created locally will be present
+// regardless of its presence in the indexing server.
+const deletionRefreshWindow = time.Minute
 
 type nodeType int
 
@@ -57,9 +63,17 @@ type mutDir struct {
 	parent    *mutDir // or nil, if the root within its roots.go root.
 	name      string  // ent name (base name within parent)
 
+	localCreateTime time.Time // time this node was created locally (iff it was)
+
 	mu       sync.Mutex
 	lastPop  time.Time
 	children map[string]mutFileOrDir
+	xattrs   map[string][]byte
+	deleted  bool
+}
+
+func (m *mutDir) String() string {
+	return fmt.Sprintf("&mutDir{%p name=%q perm:%v}", m, m.fullPath(), m.permanode)
 }
 
 // for debugging
@@ -77,6 +91,24 @@ func (n *mutDir) Attr() fuse.Attr {
 		Uid:   uint32(os.Getuid()),
 		Gid:   uint32(os.Getgid()),
 	}
+}
+
+func (n *mutDir) Access(req *fuse.AccessRequest, intr fs.Intr) fuse.Error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.deleted {
+		return fuse.ENOENT
+	}
+	return nil
+}
+
+func (n *mutFile) Access(req *fuse.AccessRequest, intr fs.Intr) fuse.Error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.deleted {
+		return fuse.ENOENT
+	}
+	return nil
 }
 
 // populate hits the blobstore to populate map of child nodes.
@@ -108,6 +140,7 @@ func (n *mutDir) populate() error {
 	if n.children == nil {
 		n.children = make(map[string]mutFileOrDir)
 	}
+	currentChildren := map[string]bool{}
 	for k, v := range db.Permanode.Attr {
 		const p = "camliPath:"
 		if !strings.HasPrefix(k, p) || len(v) < 1 {
@@ -122,17 +155,23 @@ func (n *mutDir) populate() error {
 		}
 		if target := child.Permanode.Attr.Get("camliSymlinkTarget"); target != "" {
 			// This is a symlink.
-			n.children[name] = &mutFile{
+			n.maybeAddChild(name, child.Permanode, &mutFile{
 				fs:        n.fs,
 				permanode: blob.ParseOrZero(childRef),
 				parent:    n,
 				name:      name,
 				symLink:   true,
 				target:    target,
-			}
-			continue
-		}
-		if contentRef := child.Permanode.Attr.Get("camliContent"); contentRef != "" {
+			})
+		} else if isDir(child.Permanode) {
+			// This is a directory.
+			n.maybeAddChild(name, child.Permanode, &mutDir{
+				fs:        n.fs,
+				permanode: blob.ParseOrZero(childRef),
+				parent:    n,
+				name:      name,
+			})
+		} else if contentRef := child.Permanode.Attr.Get("camliContent"); contentRef != "" {
 			// This is a file.
 			content := res.Meta[contentRef]
 			if content == nil {
@@ -143,28 +182,58 @@ func (n *mutDir) populate() error {
 				log.Printf("child not a file: %v", childRef)
 				continue
 			}
-			n.children[name] = &mutFile{
+			n.maybeAddChild(name, child.Permanode, &mutFile{
 				fs:        n.fs,
 				permanode: blob.ParseOrZero(childRef),
 				parent:    n,
 				name:      name,
 				content:   blob.ParseOrZero(contentRef),
 				size:      content.File.Size,
-			}
+			})
+		} else {
+			// unhandled type...
 			continue
 		}
-		// This is a directory.
-		n.children[name] = &mutDir{
-			fs:        n.fs,
-			permanode: blob.ParseOrZero(childRef),
-			parent:    n,
-			name:      name,
+		currentChildren[name] = true
+	}
+	// Remove unreferenced children
+	for name, oldchild := range n.children {
+		if _, ok := currentChildren[name]; !ok {
+			if oldchild.eligibleToDelete() {
+				delete(n.children, name)
+			}
 		}
 	}
 	return nil
 }
 
-func (n *mutDir) ReadDir(intr fuse.Intr) ([]fuse.Dirent, fuse.Error) {
+// maybeAddChild adds a child directory to this mutable directory
+// unless it already has one with this name and permanode.
+func (m *mutDir) maybeAddChild(name string, permanode *search.DescribedPermanode,
+	child mutFileOrDir) {
+	if current, ok := m.children[name]; !ok ||
+		current.permanodeString() != child.permanodeString() {
+
+		child.xattr().load(permanode)
+		m.children[name] = child
+	}
+}
+
+func isDir(d *search.DescribedPermanode) bool {
+	// Explicit
+	if d.Attr.Get("camliNodeType") == "directory" {
+		return true
+	}
+	// Implied
+	for k := range d.Attr {
+		if strings.HasPrefix(k, "camliPath:") {
+			return true
+		}
+	}
+	return false
+}
+
+func (n *mutDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 	if err := n.populate(); err != nil {
 		log.Println("populate:", err)
 		return nil, fuse.EIO
@@ -195,9 +264,9 @@ func (n *mutDir) ReadDir(intr fuse.Intr) ([]fuse.Dirent, fuse.Error) {
 	return ents, nil
 }
 
-func (n *mutDir) Lookup(name string, intr fuse.Intr) (ret fuse.Node, err fuse.Error) {
+func (n *mutDir) Lookup(name string, intr fs.Intr) (ret fs.Node, err fuse.Error) {
 	defer func() {
-		log.Printf("mutDir(%q).Lookup(%q) = %#v, %v", n.fullPath(), name, ret, err)
+		log.Printf("mutDir(%q).Lookup(%q) = %v, %v", n.fullPath(), name, ret, err)
 	}()
 	if err := n.populate(); err != nil {
 		log.Println("populate:", err)
@@ -220,7 +289,7 @@ func (n *mutDir) Lookup(name string, intr fuse.Intr) (ret fuse.Node, err fuse.Er
 //
 // 2013/07/21 05:26:35 <- &{Create [ID=0x3 Node=0x8 Uid=61652 Gid=5000 Pid=13115] "x" fl=514 mode=-rw-r--r-- fuse.Intr}
 // 2013/07/21 05:26:36 -> 0x3 Create {LookupResponse:{Node:23 Generation:0 EntryValid:1m0s AttrValid:1m0s Attr:{Inode:15976986887557313215 Size:0 Blocks:0 Atime:2013-07-21 05:23:51.537251251 +1200 NZST Mtime:2013-07-21 05:23:51.537251251 +1200 NZST Ctime:2013-07-21 05:23:51.537251251 +1200 NZST Crtime:2013-07-21 05:23:51.537251251 +1200 NZST Mode:-rw------- Nlink:1 Uid:61652 Gid:5000 Rdev:0 Flags:0}} OpenResponse:{Handle:1 Flags:OpenDirectIO}}
-func (n *mutDir) Create(req *fuse.CreateRequest, res *fuse.CreateResponse, intr fuse.Intr) (fuse.Node, fuse.Handle, fuse.Error) {
+func (n *mutDir) Create(req *fuse.CreateRequest, res *fuse.CreateResponse, intr fs.Intr) (fs.Node, fs.Handle, fuse.Error) {
 	child, err := n.creat(req.Name, fileType)
 	if err != nil {
 		log.Printf("mutDir.Create(%q): %v", req.Name, err)
@@ -241,7 +310,7 @@ func (n *mutDir) Create(req *fuse.CreateRequest, res *fuse.CreateResponse, intr 
 	return child, h, nil
 }
 
-func (n *mutDir) Mkdir(req *fuse.MkdirRequest, intr fuse.Intr) (fuse.Node, fuse.Error) {
+func (n *mutDir) Mkdir(req *fuse.MkdirRequest, intr fs.Intr) (fs.Node, fuse.Error) {
 	child, err := n.creat(req.Name, dirType)
 	if err != nil {
 		log.Printf("mutDir.Mkdir(%q): %v", req.Name, err)
@@ -251,7 +320,7 @@ func (n *mutDir) Mkdir(req *fuse.MkdirRequest, intr fuse.Intr) (fuse.Node, fuse.
 }
 
 // &fuse.SymlinkRequest{Header:fuse.Header{Conn:(*fuse.Conn)(0xc210047180), ID:0x4, Node:0x8, Uid:0xf0d4, Gid:0x1388, Pid:0x7e88}, NewName:"some-link", Target:"../../some-target"}
-func (n *mutDir) Symlink(req *fuse.SymlinkRequest, intr fuse.Intr) (fuse.Node, fuse.Error) {
+func (n *mutDir) Symlink(req *fuse.SymlinkRequest, intr fs.Intr) (fs.Node, fuse.Error) {
 	node, err := n.creat(req.NewName, symlinkType)
 	if err != nil {
 		log.Printf("mutDir.Symlink(%q): %v", req.NewName, err)
@@ -271,17 +340,40 @@ func (n *mutDir) Symlink(req *fuse.SymlinkRequest, intr fuse.Intr) (fuse.Node, f
 	return node, nil
 }
 
-func (n *mutDir) creat(name string, typ nodeType) (fuse.Node, error) {
+func (n *mutDir) creat(name string, typ nodeType) (fs.Node, error) {
 	// Create a Permanode for the file/directory.
 	pr, err := n.fs.client.UploadNewPermanode()
 	if err != nil {
 		return nil, err
 	}
 
-	// Add a camliPath:name attribute to the directory permanode.
-	claim := schema.NewSetAttributeClaim(n.permanode, "camliPath:"+name, pr.BlobRef.String())
-	_, err = n.fs.client.UploadAndSignBlob(claim)
-	if err != nil {
+	var grp syncutil.Group
+	grp.Go(func() (err error) {
+		// Add a camliPath:name attribute to the directory permanode.
+		claim := schema.NewSetAttributeClaim(n.permanode, "camliPath:"+name, pr.BlobRef.String())
+		_, err = n.fs.client.UploadAndSignBlob(claim)
+		return
+	})
+
+	// Hide OS X Finder .DS_Store junk.  This is distinct from
+	// extended attributes.
+	if name == ".DS_Store" {
+		grp.Go(func() (err error) {
+			claim := schema.NewSetAttributeClaim(pr.BlobRef, "camliDefVis", "hide")
+			_, err = n.fs.client.UploadAndSignBlob(claim)
+			return
+		})
+	}
+
+	if typ == dirType {
+		grp.Go(func() (err error) {
+			// Set a directory type on the permanode
+			claim := schema.NewSetAttributeClaim(pr.BlobRef, "camliNodeType", "directory")
+			_, err = n.fs.client.UploadAndSignBlob(claim)
+			return
+		})
+	}
+	if err := grp.Err(); err != nil {
 		return nil, err
 	}
 
@@ -290,17 +382,21 @@ func (n *mutDir) creat(name string, typ nodeType) (fuse.Node, error) {
 	switch typ {
 	case dirType:
 		child = &mutDir{
-			fs:        n.fs,
-			permanode: pr.BlobRef,
-			parent:    n,
-			name:      name,
+			fs:              n.fs,
+			permanode:       pr.BlobRef,
+			parent:          n,
+			name:            name,
+			xattrs:          map[string][]byte{},
+			localCreateTime: time.Now(),
 		}
 	case fileType, symlinkType:
 		child = &mutFile{
-			fs:        n.fs,
-			permanode: pr.BlobRef,
-			parent:    n,
-			name:      name,
+			fs:              n.fs,
+			permanode:       pr.BlobRef,
+			parent:          n,
+			name:            name,
+			xattrs:          map[string][]byte{},
+			localCreateTime: time.Now(),
 		}
 	default:
 		panic("bogus creat type")
@@ -312,10 +408,12 @@ func (n *mutDir) creat(name string, typ nodeType) (fuse.Node, error) {
 	n.children[name] = child
 	n.mu.Unlock()
 
+	log.Printf("Created %v in %p", child, n)
+
 	return child, nil
 }
 
-func (n *mutDir) Remove(req *fuse.RemoveRequest, intr fuse.Intr) fuse.Error {
+func (n *mutDir) Remove(req *fuse.RemoveRequest, intr fs.Intr) fuse.Error {
 	// Remove the camliPath:name attribute from the directory permanode.
 	claim := schema.NewDelAttributeClaim(n.permanode, "camliPath:"+req.Name, "")
 	_, err := n.fs.client.UploadAndSignBlob(claim)
@@ -326,14 +424,18 @@ func (n *mutDir) Remove(req *fuse.RemoveRequest, intr fuse.Intr) fuse.Error {
 	// Remove child from map.
 	n.mu.Lock()
 	if n.children != nil {
-		delete(n.children, req.Name)
+		if removed, ok := n.children[req.Name]; ok {
+			removed.invalidate()
+			delete(n.children, req.Name)
+			log.Printf("Removed %v from %p", removed, n)
+		}
 	}
 	n.mu.Unlock()
 	return nil
 }
 
 // &RenameRequest{Header:fuse.Header{Conn:(*fuse.Conn)(0xc210048180), ID:0x2, Node:0x8, Uid:0xf0d4, Gid:0x1388, Pid:0x5edb}, NewDir:0x8, OldName:"1", NewName:"2"}
-func (n *mutDir) Rename(req *fuse.RenameRequest, newDir fuse.Node, intr fuse.Intr) fuse.Error {
+func (n *mutDir) Rename(req *fuse.RenameRequest, newDir fs.Node, intr fs.Intr) fuse.Error {
 	n2, ok := newDir.(*mutDir)
 	if !ok {
 		log.Printf("*mutDir newDir node isn't a *mutDir; is a %T; can't handle. returning EIO.", newDir)
@@ -400,12 +502,20 @@ type mutFile struct {
 	parent    *mutDir
 	name      string // ent name (base name within parent)
 
+	localCreateTime time.Time // time this node was created locally (iff it was)
+
 	mu           sync.Mutex // protects all following fields
 	symLink      bool       // if true, is a symlink
 	target       string     // if a symlink
 	content      blob.Ref   // if a regular file
 	size         int64
 	mtime, atime time.Time // if zero, use serverStart
+	xattrs       map[string][]byte
+	deleted      bool
+}
+
+func (m *mutFile) String() string {
+	return fmt.Sprintf("&mutFile{%p name=%q perm:%v}", m, m.fullPath(), m.permanode)
 }
 
 // for debugging
@@ -414,6 +524,46 @@ func (n *mutFile) fullPath() string {
 		return ""
 	}
 	return filepath.Join(n.parent.fullPath(), n.name)
+}
+
+func (n *mutFile) xattr() *xattr {
+	return &xattr{"mutFile", n.fs, n.permanode, &n.mu, &n.xattrs}
+}
+
+func (n *mutDir) xattr() *xattr {
+	return &xattr{"mutDir", n.fs, n.permanode, &n.mu, &n.xattrs}
+}
+
+func (n *mutDir) Removexattr(req *fuse.RemovexattrRequest, intr fs.Intr) fuse.Error {
+	return n.xattr().remove(req)
+}
+
+func (n *mutDir) Setxattr(req *fuse.SetxattrRequest, intr fs.Intr) fuse.Error {
+	return n.xattr().set(req)
+}
+
+func (n *mutDir) Getxattr(req *fuse.GetxattrRequest, res *fuse.GetxattrResponse, intr fs.Intr) fuse.Error {
+	return n.xattr().get(req, res)
+}
+
+func (n *mutDir) Listxattr(req *fuse.ListxattrRequest, res *fuse.ListxattrResponse, intr fs.Intr) fuse.Error {
+	return n.xattr().list(req, res)
+}
+
+func (n *mutFile) Getxattr(req *fuse.GetxattrRequest, res *fuse.GetxattrResponse, intr fs.Intr) fuse.Error {
+	return n.xattr().get(req, res)
+}
+
+func (n *mutFile) Listxattr(req *fuse.ListxattrRequest, res *fuse.ListxattrResponse, intr fs.Intr) fuse.Error {
+	return n.xattr().list(req, res)
+}
+
+func (n *mutFile) Removexattr(req *fuse.RemovexattrRequest, intr fs.Intr) fuse.Error {
+	return n.xattr().remove(req)
+}
+
+func (n *mutFile) Setxattr(req *fuse.SetxattrRequest, intr fs.Intr) fuse.Error {
+	return n.xattr().set(req)
 }
 
 func (n *mutFile) Attr() fuse.Attr {
@@ -493,10 +643,10 @@ func (n *mutFile) setSizeAtLeast(size int64) {
 // open flags are O_WRONLY (1), O_RDONLY (0), or O_RDWR (2). and also
 // bitmaks of O_SYMLINK (0x200000) maybe. (from
 // fuse_filehandle_xlate_to_oflags in macosx/kext/fuse_file.h)
-func (n *mutFile) Open(req *fuse.OpenRequest, res *fuse.OpenResponse, intr fuse.Intr) (fuse.Handle, fuse.Error) {
+func (n *mutFile) Open(req *fuse.OpenRequest, res *fuse.OpenResponse, intr fs.Intr) (fs.Handle, fuse.Error) {
 	mutFileOpen.Incr()
 
-	log.Printf("mutFile.Open: %v: content: %v dir=%v flags=%v mode=%v", n.permanode, n.content, req.Dir, req.Flags, req.Mode)
+	log.Printf("mutFile.Open: %v: content: %v dir=%v flags=%v", n.permanode, n.content, req.Dir, req.Flags)
 	r, err := schema.NewFileReader(n.fs.fetcher, n.content)
 	if err != nil {
 		mutFileOpenError.Incr()
@@ -509,7 +659,7 @@ func (n *mutFile) Open(req *fuse.OpenRequest, res *fuse.OpenResponse, intr fuse.
 	res.Flags &= ^fuse.OpenDirectIO
 
 	// Read-only.
-	if req.Flags == 0 {
+	if !isWriteFlags(req.Flags) {
 		mutFileOpenRO.Incr()
 		log.Printf("mutFile.Open returning read-only file")
 		n := &node{
@@ -526,14 +676,14 @@ func (n *mutFile) Open(req *fuse.OpenRequest, res *fuse.OpenResponse, intr fuse.
 	return n.newHandle(r)
 }
 
-func (n *mutFile) Fsync(r *fuse.FsyncRequest, intr fuse.Intr) fuse.Error {
+func (n *mutFile) Fsync(r *fuse.FsyncRequest, intr fs.Intr) fuse.Error {
 	// TODO(adg): in the fuse package, plumb through fsync to mutFileHandle
 	// in the same way we did Truncate.
 	log.Printf("mutFile.Fsync: TODO")
 	return nil
 }
 
-func (n *mutFile) Readlink(req *fuse.ReadlinkRequest, intr fuse.Intr) (string, fuse.Error) {
+func (n *mutFile) Readlink(req *fuse.ReadlinkRequest, intr fs.Intr) (string, fuse.Error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	if !n.symLink {
@@ -543,7 +693,7 @@ func (n *mutFile) Readlink(req *fuse.ReadlinkRequest, intr fuse.Intr) (string, f
 	return n.target, nil
 }
 
-func (n *mutFile) Setattr(req *fuse.SetattrRequest, res *fuse.SetattrResponse, intr fuse.Intr) fuse.Error {
+func (n *mutFile) Setattr(req *fuse.SetattrRequest, res *fuse.SetattrResponse, intr fs.Intr) fuse.Error {
 	log.Printf("mutFile.Setattr on %q: %#v", n.fullPath(), req)
 	// 2013/07/17 19:43:41 mutFile.Setattr on "foo": &fuse.SetattrRequest{Header:fuse.Header{Conn:(*fuse.Conn)(0xc210047180), ID:0x3, Node:0x3d, Uid:0xf0d4, Gid:0x1388, Pid:0x75e8}, Valid:0x30, Handle:0x0, Size:0x0, Atime:time.Time{sec:63509651021, nsec:0x4aec6b8, loc:(*time.Location)(0x47f7600)}, Mtime:time.Time{sec:63509651021, nsec:0x4aec6b8, loc:(*time.Location)(0x47f7600)}, Mode:0x4000000, Uid:0x0, Gid:0x0, Bkuptime:time.Time{sec:62135596800, nsec:0x0, loc:(*time.Location)(0x47f7600)}, Chgtime:time.Time{sec:62135596800, nsec:0x0, loc:(*time.Location)(0x47f7600)}, Crtime:time.Time{sec:0, nsec:0x0, loc:(*time.Location)(nil)}, Flags:0x0}
 
@@ -565,7 +715,7 @@ func (n *mutFile) Setattr(req *fuse.SetattrRequest, res *fuse.SetattrResponse, i
 	return nil
 }
 
-func (n *mutFile) newHandle(body io.Reader) (fuse.Handle, fuse.Error) {
+func (n *mutFile) newHandle(body io.Reader) (fs.Handle, fuse.Error) {
 	tmp, err := ioutil.TempFile("", "camli-")
 	if err == nil && body != nil {
 		_, err = io.Copy(tmp, body)
@@ -592,7 +742,7 @@ type mutFileHandle struct {
 	tmp *os.File
 }
 
-func (h *mutFileHandle) Read(req *fuse.ReadRequest, res *fuse.ReadResponse, intr fuse.Intr) fuse.Error {
+func (h *mutFileHandle) Read(req *fuse.ReadRequest, res *fuse.ReadResponse, intr fs.Intr) fuse.Error {
 	if h.tmp == nil {
 		log.Printf("Read called on camli mutFileHandle without a tempfile set")
 		return fuse.EIO
@@ -611,14 +761,15 @@ func (h *mutFileHandle) Read(req *fuse.ReadRequest, res *fuse.ReadResponse, intr
 	return nil
 }
 
-func (h *mutFileHandle) Write(req *fuse.WriteRequest, res *fuse.WriteResponse, intr fuse.Intr) fuse.Error {
+func (h *mutFileHandle) Write(req *fuse.WriteRequest, res *fuse.WriteResponse, intr fs.Intr) fuse.Error {
 	if h.tmp == nil {
 		log.Printf("Write called on camli mutFileHandle without a tempfile set")
 		return fuse.EIO
 	}
 
 	n, err := h.tmp.WriteAt(req.Data, req.Offset)
-	log.Printf("mutFileHandle.Write(%q, at %d, flags %v, %q) = %d, %v", h.f.fullPath(), req.Offset, req.Flags, req.Data, n, err)
+	log.Printf("mutFileHandle.Write(%q, %d bytes at %d, flags %v) = %d, %v",
+		h.f.fullPath(), len(req.Data), req.Offset, req.Flags, n, err)
 	if err != nil {
 		log.Println("mutFileHandle.Write:", err)
 		return fuse.EIO
@@ -628,25 +779,48 @@ func (h *mutFileHandle) Write(req *fuse.WriteRequest, res *fuse.WriteResponse, i
 	return nil
 }
 
-func (h *mutFileHandle) Release(req *fuse.ReleaseRequest, intr fuse.Intr) fuse.Error {
+// Flush is called to let the file system clean up any data buffers
+// and to pass any errors in the process of closing a file to the user
+// application.
+//
+// Flush *may* be called more than once in the case where a file is
+// opened more than once, but it's not possible to detect from the
+// call itself whether this is a final flush.
+//
+// This is generally the last opportunity to finalize data and the
+// return value sets the return value of the Close that led to the
+// calling of Flush.
+//
+// Note that this is distinct from Fsync -- which is a user-requested
+// flush (fsync, etc...)
+func (h *mutFileHandle) Flush(*fuse.FlushRequest, fs.Intr) fuse.Error {
 	if h.tmp == nil {
-		log.Printf("Release called on camli mutFileHandle without a tempfile set")
+		log.Printf("Flush called on camli mutFileHandle without a tempfile set")
 		return fuse.EIO
 	}
-	log.Printf("mutFileHandle release.")
 	_, err := h.tmp.Seek(0, 0)
 	if err != nil {
-		log.Println("mutFileHandle.Release:", err)
+		log.Println("mutFileHandle.Flush:", err)
 		return fuse.EIO
 	}
 	var n int64
 	br, err := schema.WriteFileFromReader(h.f.fs.client, h.f.name, readerutil.CountingReader{Reader: h.tmp, N: &n})
 	if err != nil {
-		log.Println("mutFileHandle.Release:", err)
+		log.Println("mutFileHandle.Flush:", err)
 		return fuse.EIO
 	}
-	h.f.setContent(br, n)
+	err = h.f.setContent(br, n)
+	if err != nil {
+		log.Printf("mutFileHandle.Flush: %v", err)
+		return fuse.EIO
+	}
 
+	return nil
+}
+
+// Release is called when a file handle is no longer needed.  This is
+// called asynchronously after the last handle to a file is closed.
+func (h *mutFileHandle) Release(req *fuse.ReleaseRequest, intr fs.Intr) fuse.Error {
 	h.tmp.Close()
 	os.Remove(h.tmp.Name())
 	h.tmp = nil
@@ -654,7 +828,7 @@ func (h *mutFileHandle) Release(req *fuse.ReleaseRequest, intr fuse.Intr) fuse.E
 	return nil
 }
 
-func (h *mutFileHandle) Truncate(size uint64, intr fuse.Intr) fuse.Error {
+func (h *mutFileHandle) Truncate(size uint64, intr fs.Intr) fuse.Error {
 	if h.tmp == nil {
 		log.Printf("Truncate called on camli mutFileHandle without a tempfile set")
 		return fuse.EIO
@@ -670,8 +844,11 @@ func (h *mutFileHandle) Truncate(size uint64, intr fuse.Intr) fuse.Error {
 
 // mutFileOrDir is a *mutFile or *mutDir
 type mutFileOrDir interface {
-	fuse.Node
+	fs.Node
+	invalidate()
 	permanodeString() string
+	xattr() *xattr
+	eligibleToDelete() bool
 }
 
 func (n *mutFile) permanodeString() string {
@@ -680,4 +857,24 @@ func (n *mutFile) permanodeString() string {
 
 func (n *mutDir) permanodeString() string {
 	return n.permanode.String()
+}
+
+func (n *mutFile) invalidate() {
+	n.mu.Lock()
+	n.deleted = true
+	n.mu.Unlock()
+}
+
+func (n *mutDir) invalidate() {
+	n.mu.Lock()
+	n.deleted = true
+	n.mu.Unlock()
+}
+
+func (n *mutFile) eligibleToDelete() bool {
+	return n.localCreateTime.Before(time.Now().Add(-deletionRefreshWindow))
+}
+
+func (n *mutDir) eligibleToDelete() bool {
+	return n.localCreateTime.Before(time.Now().Add(-deletionRefreshWindow))
 }

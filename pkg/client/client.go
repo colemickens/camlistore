@@ -30,7 +30,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -41,8 +40,10 @@ import (
 	"camlistore.org/pkg/client/android"
 	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/misc"
+	"camlistore.org/pkg/osutil"
 	"camlistore.org/pkg/schema"
 	"camlistore.org/pkg/search"
+	"camlistore.org/pkg/types/camtypes"
 )
 
 // A Client provides access to a Camlistore server.
@@ -77,10 +78,8 @@ type Client struct {
 	haveCache  HaveCache
 
 	initTrustedCertsOnce sync.Once
-	// We define a certificate fingerprint as the 10 digits lowercase prefix
-	// of the SHA1 of the complete certificate (in ASN.1 DER encoding).
-	// It is the same as what 'openssl x509 -fingerprint' shows and what
-	// web browsers commonly use (except truncated to 10 digits).
+	// We define a certificate fingerprint as the 20 digits lowercase prefix
+	// of the SHA256 of the complete certificate (in ASN.1 DER encoding).
 	// trustedCerts contains the fingerprints of the self-signed
 	// certificates we trust.
 	// If not empty, (and if using TLS) the full x509 verification is
@@ -93,18 +92,19 @@ type Client struct {
 	InsecureTLS bool
 
 	initIgnoredFilesOnce sync.Once
-	// list of files that camput should ignore when using -filenodes.
+	// list of files that camput should ignore.
 	// Defaults to empty, but camput init creates a config with a non
 	// empty list.
-	ignoredFiles []string
+	// See IsIgnoredFile for the matching rules.
+	ignoredFiles  []string
+	ignoreChecker func(path string) bool
 
 	pendStatMu sync.Mutex             // guards pendStat
 	pendStat   map[blob.Ref][]statReq // blobref -> reqs; for next batch(es)
 
-	initSelfPubKeyDirOnce sync.Once
-	// dir containing the public key(s) blob(s).
-	// Defaults to osutil.KeyblobsDir().
-	selfPubKeyDir string
+	initSignerPublicKeyBlobrefOnce sync.Once
+	signerPublicKeyRef             blob.Ref
+	publicKeyArmored               string
 
 	statsMutex sync.Mutex
 	stats      Stats
@@ -121,21 +121,29 @@ type Client struct {
 const maxParallelHTTP = 5
 
 // New returns a new Camlistore Client.
-// The provided server is either "host:port" (assumed http, not https) or a
-// URL prefix, with or without a path.
+// The provided server is either "host:port" (assumed http, not https) or a URL prefix, with or without a path, or a server alias from the client configuration file. A server alias should not be confused with a hostname, therefore it cannot contain any colon or period.
 // Errors are not returned until subsequent operations.
 func New(server string) *Client {
+	if !isURLOrHostPort(server) {
+		configOnce.Do(parseConfig)
+		serverConf, ok := config.Servers[server]
+		if !ok {
+			log.Fatalf("%q looks like a server alias, but no such alias found in config at %v", server, osutil.UserClientConfigPath())
+		}
+		server = serverConf.Server
+	}
 	return &Client{
 		server:     server,
 		httpClient: http.DefaultClient,
 		reqGate:    make(chan bool, maxParallelHTTP),
 		haveCache:  noHaveCache{},
+		log:        log.New(os.Stderr, "", log.Ldate|log.Ltime),
+		authMode:   auth.None{},
 	}
 }
 
 func NewOrFail() *Client {
 	c := New(serverOrDie())
-	c.log = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 	err := c.SetupAuth()
 	if err != nil {
 		log.Fatal(err)
@@ -180,7 +188,7 @@ func (c *Client) TransportForConfig(tc *TransportConfig) http.RoundTripper {
 		httpStats.VerboseLog = tc.Verbose
 	}
 	transport = httpStats
-	if android.OnAndroid() {
+	if android.IsChild() {
 		transport = &android.StatsTransport{transport}
 	}
 	return transport
@@ -200,6 +208,23 @@ func (o optionInsecure) modifyClient(c *Client) {
 	c.InsecureTLS = bool(o)
 }
 
+func OptionTrustedCert(cert string) ClientOption {
+	return optionTrustedCert(cert)
+}
+
+type optionTrustedCert string
+
+func (o optionTrustedCert) modifyClient(c *Client) {
+	cert := string(o)
+	if cert != "" {
+		c.initTrustedCertsOnce.Do(noop)
+		c.trustedCerts = []string{string(o)}
+	}
+}
+
+// noop is for use with sync.Onces.
+func noop() {}
+
 var shareURLRx = regexp.MustCompile(`^(.+)/(` + blob.Pattern + ")$")
 
 // NewFromShareRoot uses shareBlobURL to set up and return a client that
@@ -211,10 +236,8 @@ func NewFromShareRoot(shareBlobURL string, opts ...ClientOption) (c *Client, tar
 		return nil, blob.Ref{}, fmt.Errorf("Unkown share URL base")
 	}
 	c = New(m[1])
-	c.discoOnce.Do(func() { /* nothing */
-	})
-	c.prefixOnce.Do(func() { /* nothing */
-	})
+	c.discoOnce.Do(noop)
+	c.prefixOnce.Do(noop)
 	c.prefixv = m[1]
 	c.isSharePrefix = true
 	c.authMode = auth.None{}
@@ -227,7 +250,7 @@ func NewFromShareRoot(shareBlobURL string, opts ...ClientOption) (c *Client, tar
 	c.SetHTTPClient(&http.Client{Transport: c.TransportForConfig(nil)})
 
 	req := c.newRequest("GET", shareBlobURL, nil)
-	res, err := c.doReqGated(req)
+	res, err := c.expect2XX(req)
 	if err != nil {
 		return nil, blob.Ref{}, fmt.Errorf("Error fetching %s: %v", shareBlobURL, err)
 	}
@@ -347,8 +370,9 @@ func (c *Client) StorageGeneration() (string, error) {
 // SyncInfo holds the data that were acquired with a discovery
 // and that are relevant to a syncHandler.
 type SyncInfo struct {
-	From string
-	To   string
+	From    string
+	To      string
+	ToIndex bool // whether this sync is from a blob storage to an index
 }
 
 // SyncHandlers returns the server's sync handlers "from" and
@@ -376,7 +400,7 @@ func (c *Client) GetRecentPermanodes(req *search.RecentRequest) (*search.RecentR
 	}
 	url := sr + req.URLSuffix()
 	hreq := c.newRequest("GET", url)
-	hres, err := c.doReqGated(hreq)
+	hres, err := c.expect2XX(hreq)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +422,7 @@ func (c *Client) GetPermanodesWithAttr(req *search.WithAttrRequest) (*search.Wit
 	}
 	url := sr + req.URLSuffix()
 	hreq := c.newRequest("GET", url)
-	hres, err := c.doReqGated(hreq)
+	hres, err := c.expect2XX(hreq)
 	if err != nil {
 		return nil, err
 	}
@@ -420,12 +444,54 @@ func (c *Client) Describe(req *search.DescribeRequest) (*search.DescribeResponse
 	}
 	url := sr + req.URLSuffix()
 	hreq := c.newRequest("GET", url)
-	hres, err := c.doReqGated(hreq)
+	hres, err := c.expect2XX(hreq)
 	if err != nil {
 		return nil, err
 	}
 	defer hres.Body.Close()
 	res := new(search.DescribeResponse)
+	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *Client) GetClaims(req *search.ClaimsRequest) (*search.ClaimsResponse, error) {
+	sr, err := c.SearchRoot()
+	if err != nil {
+		return nil, err
+	}
+	url := sr + req.URLSuffix()
+	hreq := c.newRequest("GET", url)
+	hres, err := c.expect2XX(hreq)
+	if err != nil {
+		return nil, err
+	}
+	defer hres.Body.Close()
+	res := new(search.ClaimsResponse)
+	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *Client) Search(req *search.SearchQuery) (*search.SearchResult, error) {
+	sr, err := c.SearchRoot()
+	if err != nil {
+		return nil, err
+	}
+	url := sr + req.URLSuffix()
+	body, err := json.MarshalIndent(req, "", "\t")
+	if err != nil {
+		return nil, err
+	}
+	hreq := c.newRequest("POST", url, bytes.NewReader(body))
+	hres, err := c.expect2XX(hreq)
+	if err != nil {
+		return nil, err
+	}
+	defer hres.Body.Close()
+	res := new(search.SearchResult)
 	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
 		return nil, err
 	}
@@ -490,7 +556,7 @@ func (c *Client) FileHasContents(f, wholeRef blob.Ref) bool {
 		return false
 	}
 	req := c.newRequest("HEAD", c.downloadHelper+f.String()+"/?verifycontents="+wholeRef.String())
-	res, err := c.doReqGated(req)
+	res, err := c.expect2XX(req)
 	if err != nil {
 		log.Printf("download helper HEAD error: %v", err)
 		return false
@@ -526,10 +592,11 @@ func (c *Client) blobPrefix() (string, error) {
 	return pfx, nil
 }
 
+// discoRoot returns the user defined server for this client. It prepends "https://" if no scheme was specified.
 func (c *Client) discoRoot() string {
 	s := c.server
 	if !strings.HasPrefix(s, "http") {
-		s = "http://" + s
+		s = "https://" + s
 	}
 	return s
 }
@@ -640,8 +707,12 @@ func (c *Client) doDiscovery() {
 				c.discoErr = fmt.Errorf("client: invalid %q \"to\" sync; failed to resolve", to)
 				return
 			}
-			c.syncHandlers = append(c.syncHandlers,
-				&SyncInfo{From: ufrom.String(), To: uto.String()})
+			toIndex, _ := vmap["toIndex"].(bool)
+			c.syncHandlers = append(c.syncHandlers, &SyncInfo{
+				From:    ufrom.String(),
+				To:      uto.String(),
+				ToIndex: toIndex,
+			})
 		}
 	}
 }
@@ -674,6 +745,19 @@ func (c *Client) releaseHTTPToken() {
 	<-c.reqGate
 }
 
+// expect2XX will doReqGated and promote HTTP response codes outside of
+// the 200-299 range to a non-nil error containing the response body.
+func (c *Client) expect2XX(req *http.Request) (*http.Response, error) {
+	res, err := c.doReqGated(req)
+	if err == nil && (res.StatusCode < 200 || res.StatusCode > 299) {
+		buf := new(bytes.Buffer)
+		io.CopyN(buf, res.Body, 1<<20)
+		res.Body.Close()
+		return res, fmt.Errorf("client: got status code %d from URL %s; body %s", res.StatusCode, req.URL.String(), buf.String())
+	}
+	return res, err
+}
+
 func (c *Client) doReqGated(req *http.Request) (*http.Response, error) {
 	c.requestHTTPToken()
 	defer c.releaseHTTPToken()
@@ -691,7 +775,7 @@ func (c *Client) insecureTLS() bool {
 // When true, we run with InsecureSkipVerify and it is our responsibility
 // to check the server's cert against our trusted certs.
 func (c *Client) selfVerifiedSSL() bool {
-	return c.useTLS() && len(c.GetTrustedCerts()) > 0
+	return c.useTLS() && len(c.getTrustedCerts()) > 0
 }
 
 // condRewriteURL changes "https://" to "http://" if we are in
@@ -712,7 +796,7 @@ func (c *Client) TLSConfig() (*tls.Config, error) {
 	if !c.useTLS() {
 		return nil, nil
 	}
-	trustedCerts := c.GetTrustedCerts()
+	trustedCerts := c.getTrustedCerts()
 	if len(trustedCerts) > 0 {
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
@@ -729,10 +813,10 @@ func (c *Client) TLSConfig() (*tls.Config, error) {
 // certificate will be checked against those in the config after
 // the TLS handshake.
 func (c *Client) DialFunc() func(network, addr string) (net.Conn, error) {
-	trustedCerts := c.GetTrustedCerts()
+	trustedCerts := c.getTrustedCerts()
 	if !c.useTLS() || (!c.InsecureTLS && len(trustedCerts) == 0) {
 		// No TLS, or TLS with normal/full verification
-		if android.OnAndroid() {
+		if android.IsChild() {
 			return func(network, addr string) (net.Conn, error) {
 				return android.Dial(network, addr)
 			}
@@ -743,7 +827,7 @@ func (c *Client) DialFunc() func(network, addr string) (net.Conn, error) {
 	return func(network, addr string) (net.Conn, error) {
 		var conn *tls.Conn
 		var err error
-		if android.OnAndroid() {
+		if android.IsChild() {
 			con, err := android.Dial(network, addr)
 			if err != nil {
 				return nil, err
@@ -765,7 +849,7 @@ func (c *Client) DialFunc() func(network, addr string) (net.Conn, error) {
 		if certs == nil || len(certs) < 1 {
 			return nil, errors.New("Could not get server's certificate from the TLS connection.")
 		}
-		sig := misc.SHA1Prefix(certs[0].Raw)
+		sig := misc.SHA256Prefix(certs[0].Raw)
 		for _, v := range trustedCerts {
 			if v == sig {
 				return conn, nil
@@ -785,12 +869,11 @@ func (c *Client) signerInit() {
 }
 
 func (c *Client) buildSigner() (*schema.Signer, error) {
-	pubKeyRef, armored := signerPublicKey()
-	if !pubKeyRef.Valid() {
-		// TODO: more helpful error message
-		return nil, errors.New("No public key configured.")
+	c.initSignerPublicKeyBlobrefOnce.Do(c.initSignerPublicKeyBlobref)
+	if !c.signerPublicKeyRef.Valid() {
+		return nil, camtypes.Err("client-no-public-key")
 	}
-	return schema.NewSigner(pubKeyRef, strings.NewReader(armored), c.SecretRingFile())
+	return schema.NewSigner(c.signerPublicKeyRef, strings.NewReader(c.publicKeyArmored), c.SecretRingFile())
 }
 
 // sigTime optionally specifies the signature time.
@@ -803,38 +886,43 @@ func (c *Client) signBlob(bb schema.Buildable, sigTime time.Time) (string, error
 	return bb.Builder().SignAt(signer, sigTime)
 }
 
+// uploadPublicKey uploads the public key (if one is defined), so
+// subsequent (likely synchronous) indexing of uploaded signed blobs
+// will have access to the public key to verify it. In the normal
+// case, the stat cache prevents this from doing anything anyway.
+func (c *Client) uploadPublicKey() error {
+	sigRef := c.SignerPublicKeyBlobref()
+	if !sigRef.Valid() {
+		return nil
+	}
+	var err error
+	if _, keyUploaded := c.haveCache.StatBlobCache(sigRef); !keyUploaded {
+		_, err = c.uploadString(c.publicKeyArmored, false)
+	}
+	return err
+}
+
 func (c *Client) UploadAndSignBlob(b schema.AnyBlob) (*PutResult, error) {
 	signed, err := c.signBlob(b.Blob(), time.Time{})
 	if err != nil {
 		return nil, err
 	}
-
-	// sigRef is guaranteed valid at this point, because SignBlob
-	// succeeded.  If we don't know for sure that the server
-	// already has this public key, upload it.  And do it serially
-	// so by the time we do the second upload of the signed blob,
-	// any synchronous indexing on the server won't fail due to a
-	// missing public key.
-	sigRef := c.SignerPublicKeyBlobref()
-	if _, keyUploaded := c.haveCache.StatBlobCache(sigRef); !keyUploaded {
-		if _, err := c.uploadString(publicKeyArmored); err != nil {
-			return nil, err
-		}
+	if err := c.uploadPublicKey(); err != nil {
+		return nil, err
 	}
-
-	return c.uploadString(signed)
+	return c.uploadString(signed, false)
 }
 
 func (c *Client) UploadBlob(b schema.AnyBlob) (*PutResult, error) {
 	// TODO(bradfitz): ask the blob for its own blobref, rather
 	// than changing the hash function with uploadString?
-	blerb := b.Blob()
-	json := blerb.JSON()
-	return c.uploadString(json)
+	return c.uploadString(b.Blob().JSON(), true)
 }
 
-func (c *Client) uploadString(s string) (*PutResult, error) {
-	return c.Upload(NewUploadHandleFromString(s))
+func (c *Client) uploadString(s string, stat bool) (*PutResult, error) {
+	uh := NewUploadHandleFromString(s)
+	uh.SkipStat = !stat
+	return c.Upload(uh)
 }
 
 func (c *Client) UploadNewPermanode() (*PutResult, error) {
@@ -848,18 +936,19 @@ func (c *Client) UploadPlannedPermanode(key string, sigTime time.Time) (*PutResu
 	if err != nil {
 		return nil, err
 	}
-	return c.uploadString(signed)
+	if err := c.uploadPublicKey(); err != nil {
+		return nil, err
+	}
+	return c.uploadString(signed, true)
 }
 
-// IsIgnoredFile returns whether the file name in fullpath
-// is in the list of file names that should be ignored when
-// uploading with camput -filenodes.
+// IsIgnoredFile returns whether the file at fullpath should be ignored by camput.
+// The fullpath is checked against the ignoredFiles list, trying the following rules in this order:
+// 1) star-suffix style matching (.e.g *.jpg).
+// 2) Shell pattern match as done by http://golang.org/pkg/path/filepath/#Match
+// 3) If the pattern is an absolute path to a directory, fullpath matches if it is that directory or a child of it.
+// 4) If the pattern is a relative path, fullpath matches if it has pattern as a path component (i.e the pattern is a part of fullpath that fits exactly between two path separators).
 func (c *Client) IsIgnoredFile(fullpath string) bool {
-	filename := filepath.Base(fullpath)
-	for _, v := range c.getIgnoredFiles() {
-		if filename == v {
-			return true
-		}
-	}
-	return false
+	c.initIgnoredFilesOnce.Do(c.initIgnoredFiles)
+	return c.ignoreChecker(fullpath)
 }

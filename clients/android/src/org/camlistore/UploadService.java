@@ -18,6 +18,7 @@ package org.camlistore;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -58,11 +59,12 @@ public class UploadService extends Service {
     public static final String INTENT_POWER_CONNECTED = "POWER_CONNECTED";
     public static final String INTENT_POWER_DISCONNECTED = "POWER_DISCONNECTED";
     public static final String INTENT_UPLOAD_ALL = "UPLOAD_ALL";
+    public static final String INTENT_NETWORK_WIFI = "WIFI_NOW";
+    public static final String INTENT_NETWORK_NOT_WIFI = "NOT_WIFI_NOW";
 
     // Everything in this block guarded by 'this':
     private boolean mUploading = false; // user's desired state (notified
                                         // quickly)
-
     private UploadThread mUploadThread = null; // last thread created; null when
                                                // thread exits
     private final Map<QueuedFile, Long> mFileBytesRemain = new HashMap<QueuedFile, Long>();
@@ -158,15 +160,37 @@ public class UploadService extends Service {
         }
 
         try {
-            if (INTENT_POWER_CONNECTED.equals(action) && mPrefs.autoUpload()) {
-                service.resume();
-                handleUploadAll();
-            }
+            if (mPrefs.autoUpload()) {
+                boolean startAuto = false;
+                boolean stopAuto = false;
 
-            if (INTENT_POWER_DISCONNECTED.equals(action) && mPrefs.autoRequiresPower()) {
-                service.pause();
-                stopBackgroundWatchers();
-                stopServiceIfEmpty();
+                if (INTENT_POWER_CONNECTED.equals(action)) {
+                    if (!mPrefs.autoRequiresWifi() || WifiPowerReceiver.onWifi(this)) {
+                        startAuto = true;
+                    }
+                } else if (INTENT_NETWORK_WIFI.equals(action)) {
+                    if (!mPrefs.autoRequiresPower() || WifiPowerReceiver.onPower(this)) {
+                        startAuto = true;
+                    }
+                } else if (INTENT_POWER_DISCONNECTED.equals(action)) {
+                    stopAuto = mPrefs.autoRequiresPower();
+                } else if (INTENT_NETWORK_NOT_WIFI.equals(action)) {
+                    stopAuto = mPrefs.autoRequiresWifi();
+                }
+
+                if (startAuto) {
+                    Log.d(TAG, "Starting automatic uploads");
+                    service.resume();
+                    handleUploadAll();
+                    return;
+                }
+                if (stopAuto) {
+                    Log.d(TAG, "Stopping automatic uploads");
+                    service.pause();
+                    stopBackgroundWatchers();
+                    stopServiceIfEmpty();
+                    return;
+                }
             }
         } catch (RemoteException e) {
             // Ignore.
@@ -215,12 +239,22 @@ public class UploadService extends Service {
                     List<Uri> filesToQueue = new ArrayList<Uri>();
                     for (String dirName : dirs) {
                         File dir = new File(dirName);
+                        if (!dir.exists()) {
+                            continue;
+                        }
                         File[] files = dir.listFiles();
-                        Log.d(TAG, "Contents of " + dirName + ": " + files);
                         if (files != null) {
                             for (int i = 0; i < files.length; ++i) {
-                                Log.d(TAG, "  " + files[i]);
-                                filesToQueue.add(Uri.fromFile(files[i]));
+                                File f = files[i];
+                                if (f.isDirectory()) {
+                                    // Skip thumbnails directory.
+                                    // TODO: are any interesting enough to recurse into?
+                                    // Definitely don't need to upload thumbnails, but
+                                    // but maybe some other app in the the future creates
+                                    // sharded directories. Eye-Fi doesn't, though.
+                                    continue;
+                                }
+                                filesToQueue.add(Uri.fromFile(f));
                             }
                         }
                     }
@@ -241,6 +275,7 @@ public class UploadService extends Service {
         ArrayList<String> dirs = new ArrayList<String>();
         if (mPrefs.autoDirPhotos()) {
             dirs.add(Environment.getExternalStorageDirectory() + "/DCIM/Camera");
+            dirs.add(Environment.getExternalStorageDirectory() + "/Eye-Fi");
         }
         if (mPrefs.autoDirMyTracks()) {
             dirs.add(Environment.getExternalStorageDirectory() + "/gpx");
@@ -297,8 +332,17 @@ public class UploadService extends Service {
     private void startBackgroundWatchers() {
         Log.d(TAG, "Starting background watchers...");
         synchronized (UploadService.this) {
-            mObservers.add(new CamliFileObserver(service, new File(Environment.getExternalStorageDirectory(), "DCIM/Camera")));
-            mObservers.add(new CamliFileObserver(service, new File(Environment.getExternalStorageDirectory(), "gpx")));
+            maybeAddObserver("DCIM/Camera");
+            maybeAddObserver("Eye-Fi");
+            maybeAddObserver("gpx");
+        }
+    }
+
+    // Requires that UploadService.this is locked.
+    private void maybeAddObserver(String suffix) {
+        File f = new File(Environment.getExternalStorageDirectory(), suffix);
+        if (f.exists()) {
+            mObservers.add(new CamliFileObserver(service, f));
         }
     }
 
@@ -399,6 +443,7 @@ public class UploadService extends Service {
         Log.d(TAG, "onUploadComplete of " + qf);
         synchronized (this) {
             if (!mFileBytesRemain.containsKey(qf)) {
+                Log.w(TAG, "onUploadComplete of un-queued file: " + qf);
                 return;
             }
             incrBytes(qf, qf.getSize());
@@ -411,6 +456,7 @@ public class UploadService extends Service {
                 // stats event.
                 mFilesUploaded = mFilesTotal;
                 mBytesUploaded = mBytesTotal;
+                mNotificationManager.cancel(NOTIFY_ID_UPLOADING);
                 stopUploadThread();
             }
             mQueueList.remove(qf); // TODO: ghetto, linear scan
@@ -462,21 +508,30 @@ public class UploadService extends Service {
         broadcastFileStatus();
     }
 
+    // pathOfURI tries to return the on-disk absolute path of uri.
+    // It may return null if it fails.
     public String pathOfURI(Uri uri) {
         if (uri == null) {
             return null;
         }
-        String[] proj = { MediaStore.Images.Media.DATA };
-        Cursor cursor = getContentResolver().query(uri, proj, null, null, null);
-        if (cursor == null) {
-            return null;
+        if ("file".equals(uri.getScheme())) {
+            return uri.getPath();
         }
-        cursor.moveToFirst();
-
-        int columnIndex = cursor.getColumnIndex(proj[0]);
-        String filePath = cursor.getString(columnIndex);
-        cursor.close();
-        return filePath;
+        String[] proj = { MediaStore.Images.Media.DATA };
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(uri, proj, null, null, null);
+            if (cursor == null) {
+                return null;
+            }
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex(proj[0]);
+            return cursor.getString(columnIndex); // might still be null
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     private final IUploadService.Stub service = new IUploadService.Stub() {
@@ -502,17 +557,33 @@ public class UploadService extends Service {
         }
 
         private boolean enqueueSingleUri(Uri uri) throws RemoteException {
-            ParcelFileDescriptor pfd = getFileDescriptor(uri);
-            if (pfd == null) {
-                incrementFilesToUpload(-1);
-                stopServiceIfEmpty();
-                return false;
+            long statSize = 0;
+            {
+                ParcelFileDescriptor pfd = getFileDescriptor(uri);
+                if (pfd == null) {
+                    incrementFilesToUpload(-1);
+                    stopServiceIfEmpty();
+                    return false;
+                }
+
+                try {
+                    statSize = pfd.getStatSize();
+                } finally {
+                    try {
+                        pfd.close();
+                    } catch (IOException e) {
+                    }
+                }
             }
 
             String diskPath = pathOfURI(uri);
+            if (diskPath == null) {
+                Log.e(TAG, "failed to find pathOfURI(" + uri + ")");
+                return false;
+            }
             Log.d(TAG, "diskPath of " + uri + " = " + diskPath);
 
-            QueuedFile qf = new QueuedFile(uri, pfd.getStatSize(), diskPath);
+            QueuedFile qf = new QueuedFile(uri, statSize, diskPath);
 
             boolean needResume = false;
             synchronized (UploadService.this) {

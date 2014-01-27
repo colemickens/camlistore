@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"io"
 	"reflect"
 	"regexp"
 	"strings"
@@ -188,16 +189,34 @@ func Parse(s string) (ref Ref, ok bool) {
 		ok = false
 		return
 	}
-	buf := getBuf(meta.size)
-	defer putBuf(buf)
-	bad := false
-	for i := 0; i < len(hex); i += 2 {
-		buf[i/2] = hexVal(hex[i], &bad)<<4 | hexVal(hex[i+1], &bad)
-	}
-	if bad {
+	dt, ok := meta.ctors(hex)
+	if !ok {
 		return
 	}
-	return Ref{meta.ctor(buf)}, true
+	return Ref{dt}, true
+}
+
+// ParseBytes is like Parse, but parses from a byte slice.
+func ParseBytes(s []byte) (ref Ref, ok bool) {
+	i := bytes.IndexByte(s, '-')
+	if i < 0 {
+		return
+	}
+	name := s[:i] // e.g. "sha1"
+	hex := s[i+1:]
+	meta, ok := metaFromBytes(name)
+	if !ok {
+		return parseUnknown(string(name), string(hex))
+	}
+	if len(hex) != meta.size*2 {
+		ok = false
+		return
+	}
+	dt, ok := meta.ctorb(hex)
+	if !ok {
+		return
+	}
+	return Ref{dt}, true
 }
 
 // Parse parse s as a blobref. If s is invalid, a zero Ref is returned
@@ -279,13 +298,38 @@ func parseUnknown(digest, hex string) (ref Ref, ok bool) {
 	return Ref{o}, true
 }
 
-func fromSHA1Bytes(b []byte) digestType {
-	var a sha1Digest
-	if len(b) != len(a) {
+func sha1FromBinary(b []byte) digestType {
+	var d sha1Digest
+	if len(d) != len(b) {
 		panic("bogus sha-1 length")
 	}
-	copy(a[:], b)
-	return a
+	copy(d[:], b)
+	return d
+}
+
+func sha1FromHexString(hex string) (digestType, bool) {
+	var d sha1Digest
+	var bad bool
+	for i := 0; i < len(hex); i += 2 {
+		d[i/2] = hexVal(hex[i], &bad)<<4 | hexVal(hex[i+1], &bad)
+	}
+	if bad {
+		return nil, false
+	}
+	return d, true
+}
+
+// yawn. exact copy of sha1FromHexString.
+func sha1FromHexBytes(hex []byte) (digestType, bool) {
+	var d sha1Digest
+	var bad bool
+	for i := 0; i < len(hex); i += 2 {
+		d[i/2] = hexVal(hex[i], &bad)<<4 | hexVal(hex[i+1], &bad)
+	}
+	if bad {
+		return nil, false
+	}
+	return d, true
 }
 
 // RefFromHash returns a blobref representing the given hash.
@@ -338,12 +382,39 @@ func (d otherDigest) bytes() []byte      { return d.sum[:d.sumLen] }
 func (d otherDigest) newHash() hash.Hash { return nil }
 
 var sha1Meta = &digestMeta{
-	ctor: fromSHA1Bytes,
-	size: sha1.Size,
+	ctor:  sha1FromBinary,
+	ctors: sha1FromHexString,
+	ctorb: sha1FromHexBytes,
+	size:  sha1.Size,
 }
 
 var metaFromString = map[string]*digestMeta{
 	"sha1": sha1Meta,
+}
+
+type blobTypeAndMeta struct {
+	name []byte
+	meta *digestMeta
+}
+
+var metas []blobTypeAndMeta
+
+func metaFromBytes(name []byte) (meta *digestMeta, ok bool) {
+	for _, bm := range metas {
+		if bytes.Equal(name, bm.name) {
+			return bm.meta, true
+		}
+	}
+	return
+}
+
+func init() {
+	for name, meta := range metaFromString {
+		metas = append(metas, blobTypeAndMeta{
+			name: []byte(name),
+			meta: meta,
+		})
+	}
 }
 
 var sha1Type = reflect.TypeOf(sha1.New())
@@ -353,17 +424,32 @@ var metaFromType = map[reflect.Type]*digestMeta{
 }
 
 type digestMeta struct {
-	ctor func(b []byte) digestType
-	size int // bytes of digest
+	ctor  func(binary []byte) digestType
+	ctors func(hex string) (digestType, bool)
+	ctorb func(hex []byte) (digestType, bool)
+	size  int // bytes of digest
 }
 
+var bufPool = make(chan []byte, 20)
+
 func getBuf(size int) []byte {
-	// TODO: pool
-	return make([]byte, size)
+	for {
+		select {
+		case b := <-bufPool:
+			if cap(b) >= size {
+				return b[:size]
+			}
+		default:
+			return make([]byte, size)
+		}
+	}
 }
 
 func putBuf(b []byte) {
-	// TODO: pool
+	select {
+	case bufPool <- b:
+	default:
+	}
 }
 
 // NewHash returns a new hash.Hash of the currently recommended hash type.
@@ -378,23 +464,31 @@ func ValidRefString(s string) bool {
 	return ParseOrZero(s).Valid()
 }
 
+var null = []byte(`null`)
+
 func (r *Ref) UnmarshalJSON(d []byte) error {
 	if r.digest != nil {
 		return errors.New("Can't UnmarshalJSON into a non-zero Ref")
 	}
+	if len(d) == 0 || bytes.Equal(d, null) {
+		return nil
+	}
 	if len(d) < 2 || d[0] != '"' || d[len(d)-1] != '"' {
 		return fmt.Errorf("blob: expecting a JSON string to unmarshal, got %q", d)
 	}
-	refStr := string(d[1 : len(d)-1])
-	p, ok := Parse(refStr)
+	d = d[1 : len(d)-1]
+	p, ok := ParseBytes(d)
 	if !ok {
-		return fmt.Errorf("blobref: invalid blobref %q (%d)", refStr, len(refStr))
+		return fmt.Errorf("blobref: invalid blobref %q (%d)", d, len(d))
 	}
 	*r = p
 	return nil
 }
 
 func (r Ref) MarshalJSON() ([]byte, error) {
+	if !r.Valid() {
+		return null, nil
+	}
 	dname := r.digest.digestName()
 	bs := r.digest.bytes()
 	buf := make([]byte, 0, 3+len(dname)+len(bs)*2)
@@ -442,4 +536,64 @@ func (r *Ref) UnmarshalBinary(data []byte) error {
 	}
 	r.digest = meta.ctor(buf)
 	return nil
+}
+
+// Less reports whether r sorts before o. Invalid references blobs sort first.
+func (r Ref) Less(o Ref) bool {
+	if r.Valid() != o.Valid() {
+		return o.Valid()
+	}
+	if !r.Valid() {
+		return false
+	}
+	if n1, n2 := r.digest.digestName(), o.digest.digestName(); n1 != n2 {
+		return n1 < n2
+	}
+	return bytes.Compare(r.digest.bytes(), o.digest.bytes()) < 0
+}
+
+// ByRef sorts blob references.
+type ByRef []Ref
+
+func (s ByRef) Len() int           { return len(s) }
+func (s ByRef) Less(i, j int) bool { return s[i].Less(s[j]) }
+func (s ByRef) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// SizedByRef sorts SizedRefs by their blobref.
+type SizedByRef []SizedRef
+
+func (s SizedByRef) Len() int           { return len(s) }
+func (s SizedByRef) Less(i, j int) bool { return s[i].Less(s[j].Ref) }
+func (s SizedByRef) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+// Blob represents a blob. Use the methods Size, SizedRef and
+// Open to query and get data from Blob.
+type Blob struct {
+	ref       Ref
+	size      uint32
+	newReader func() io.ReadCloser
+}
+
+// NewBlob constructs a Blob from its Ref, size and a function that
+// returns an io.ReadCloser from which the blob can be read. Any error
+// in the function newReader when constructing the io.ReadCloser should
+// be returned upon the first call to Read or Close.
+func NewBlob(ref Ref, size uint32, newReader func() io.ReadCloser) Blob {
+	return Blob{ref, size, newReader}
+}
+
+// Size returns the size of the blob (in bytes).
+func (b Blob) Size() uint32 {
+	return b.size
+}
+
+// SizedRef returns the SizedRef corresponding to the blob.
+func (b Blob) SizedRef() SizedRef {
+	return SizedRef{b.ref, int64(b.size)}
+}
+
+// Open returns an io.ReadCloser that can be used to read the blob
+// data. The caller must close the io.ReadCloser when finished.
+func (b Blob) Open() io.ReadCloser {
+	return b.newReader()
 }

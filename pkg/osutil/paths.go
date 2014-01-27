@@ -31,7 +31,7 @@ import (
 // It returns the empty string if the value isn't known.
 func HomeDir() string {
 	if runtime.GOOS == "windows" {
-		return os.Getenv("HOMEPATH")
+		return os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 	}
 	return os.Getenv("HOME")
 }
@@ -128,10 +128,18 @@ func IdentitySecretRing() string {
 	return filepath.Join(CamliConfigDir(), "identity-secring.gpg")
 }
 
-// KeyBlobsDir returns the path to the directory containing
-// the blob(s) for the public gpg key(s)
-func KeyBlobsDir() string {
-	return filepath.Join(CamliConfigDir(), "keyblobs")
+// DefaultTLSCert returns the path to the default TLS certificate
+// file that is used (creating if necessary) when TLS is specified
+// without the cert file.
+func DefaultTLSCert() string {
+	return filepath.Join(CamliConfigDir(), "selfgen_pem.crt")
+}
+
+// DefaultTLSKey returns the path to the default TLS key
+// file that is used (creating if necessary) when TLS is specified
+// without the key file.
+func DefaultTLSKey() string {
+	return filepath.Join(CamliConfigDir(), "selfgen_pem.key")
 }
 
 // Find the correct absolute path corresponding to a relative path,

@@ -35,17 +35,20 @@ Example config:
 package replica
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"time"
 
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/blobserver"
+	"camlistore.org/pkg/context"
 	"camlistore.org/pkg/jsonconfig"
 )
+
+var _ blobserver.Generationer = (*replicaStorage)(nil)
 
 const buffered = 8
 
@@ -61,8 +64,23 @@ type replicaStorage struct {
 	// Minimum number of writes that must succeed before
 	// acknowledging success to the client.
 	minWritesForSuccess int
+}
 
-	ctx *http.Request // optional per-request context
+// NewForTest returns a replicated storage that writes, reads, and
+// deletes from all the provided storages.
+func NewForTest(sto []blobserver.Storage) blobserver.Storage {
+	sto = append([]blobserver.Storage(nil), sto...) // clone
+	names := make([]string, len(sto))
+	for i := range names {
+		names[i] = "/unknown-prefix/"
+	}
+	return &replicaStorage{
+		replicaPrefixes:     names,
+		replicas:            sto,
+		readPrefixes:        names,
+		readReplicas:        sto,
+		minWritesForSuccess: len(sto),
+	}
 }
 
 func newFromConfig(ld blobserver.Loader, config jsonconfig.Obj) (storage blobserver.Storage, err error) {
@@ -167,45 +185,35 @@ func (sto *replicaStorage) StatBlobs(dest chan<- blob.SizedRef, blobs []blob.Ref
 }
 
 type sizedBlobAndError struct {
+	idx int
 	sb  blob.SizedRef
 	err error
 }
 
-func (sto *replicaStorage) ReceiveBlob(b blob.Ref, source io.Reader) (_ blob.SizedRef, err error) {
-	nReplicas := len(sto.replicas)
-	rpipe, wpipe, writer := make([]*io.PipeReader, nReplicas), make([]*io.PipeWriter, nReplicas), make([]io.Writer, nReplicas)
-	for idx := range sto.replicas {
-		rpipe[idx], wpipe[idx] = io.Pipe()
-		writer[idx] = wpipe[idx]
-		// TODO: deal with slow/hung clients. this scheme of pipes +
-		// multiwriter (even with a bufio.Writer thrown in) isn't
-		// sufficient to guarantee forward progress. perhaps something
-		// like &MoveOrDieWriter{Writer: wpipe[idx], HeartbeatSec: 10}
-	}
-	upResult := make(chan sizedBlobAndError, nReplicas)
-	uploadToReplica := func(source io.Reader, dst blobserver.BlobReceiver) {
-		sb, err := blobserver.Receive(dst, b, source)
-		if err != nil {
-			io.Copy(ioutil.Discard, source)
-		}
-		upResult <- sizedBlobAndError{sb, err}
-	}
-	for idx, replica := range sto.replicas {
-		go uploadToReplica(rpipe[idx], replica)
-	}
-	size, err := io.Copy(io.MultiWriter(writer...), source)
+func (sto *replicaStorage) ReceiveBlob(br blob.Ref, src io.Reader) (_ blob.SizedRef, err error) {
+	// Slurp the whole blob before replicating. Bounded by 16 MB anyway.
+	var buf bytes.Buffer
+	size, err := io.Copy(&buf, src)
 	if err != nil {
-		for i := range wpipe {
-			wpipe[i].CloseWithError(err)
-		}
 		return
 	}
-	for idx := range sto.replicas {
-		wpipe[idx].Close()
+
+	nReplicas := len(sto.replicas)
+	resc := make(chan sizedBlobAndError, nReplicas)
+	uploadToReplica := func(idx int, dst blobserver.BlobReceiver) {
+		// Using ReceiveNoHash because it's already been
+		// verified implicitly by the io.Copy above:
+		sb, err := blobserver.ReceiveNoHash(dst, br, bytes.NewReader(buf.Bytes()))
+		resc <- sizedBlobAndError{idx, sb, err}
 	}
-	nSuccess, nFailures := 0, 0
+	for idx, replica := range sto.replicas {
+		go uploadToReplica(idx, replica)
+	}
+
+	nSuccess := 0
+	var fails []sizedBlobAndError
 	for _ = range sto.replicas {
-		res := <-upResult
+		res := <-resc
 		switch {
 		case res.err == nil && res.sb.Size == size:
 			nSuccess++
@@ -213,16 +221,19 @@ func (sto *replicaStorage) ReceiveBlob(b blob.Ref, source io.Reader) (_ blob.Siz
 				return res.sb, nil
 			}
 		case res.err == nil:
-			nFailures++
 			err = fmt.Errorf("replica: upload shard reported size %d, expected %d", res.sb.Size, size)
+			res.err = err
+			fails = append(fails, res)
 		default:
-			nFailures++
 			err = res.err
+			fails = append(fails, res)
 		}
 	}
-	if nFailures > 0 {
-		log.Printf("replica: receiving blob, %d successes, %d failures; last error = %v",
-			nSuccess, nFailures, err)
+	for _, res := range fails {
+		log.Printf("replica: receiving blob %v, %d successes, %d failures; backend %s reported: %v",
+			br,
+			nSuccess, len(fails),
+			sto.replicaPrefixes[res.idx], res.err)
 	}
 	return
 }
@@ -237,7 +248,7 @@ func (sto *replicaStorage) RemoveBlobs(blobs []blob.Ref) error {
 	}
 	var reterr error
 	nSuccess := 0
-	for _ = range errch {
+	for _ = range sto.replicas {
 		if err := <-errch; err != nil {
 			reterr = err
 		} else {
@@ -253,8 +264,53 @@ func (sto *replicaStorage) RemoveBlobs(blobs []blob.Ref) error {
 	return reterr
 }
 
-func (sto *replicaStorage) EnumerateBlobs(dest chan<- blob.SizedRef, after string, limit int) error {
-	return blobserver.MergedEnumerate(dest, sto.readReplicas, after, limit)
+func (sto *replicaStorage) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRef, after string, limit int) error {
+	return blobserver.MergedEnumerate(ctx, dest, sto.readReplicas, after, limit)
+}
+
+func (sto *replicaStorage) ResetStorageGeneration() error {
+	var ret error
+	n := 0
+	for _, replica := range sto.replicas {
+		if g, ok := replica.(blobserver.Generationer); ok {
+			n++
+			if err := g.ResetStorageGeneration(); err != nil && ret == nil {
+				ret = err
+			}
+		}
+	}
+	if n == 0 {
+		return errors.New("ResetStorageGeneration not supported")
+	}
+	return ret
+}
+
+func (sto *replicaStorage) StorageGeneration() (initTime time.Time, random string, err error) {
+	var buf bytes.Buffer
+	n := 0
+	for _, replica := range sto.replicas {
+		if g, ok := replica.(blobserver.Generationer); ok {
+			n++
+			rt, rrand, rerr := g.StorageGeneration()
+			if rerr != nil {
+				err = rerr
+			} else {
+				if rt.After(initTime) {
+					// Returning the max of all initialization times.
+					// TODO: not sure whether max or min makes more sense.
+					initTime = rt
+				}
+				if buf.Len() != 0 {
+					buf.WriteByte('/')
+				}
+				buf.WriteString(rrand)
+			}
+		}
+	}
+	if n == 0 {
+		err = errors.New("No replicas support StorageGeneration")
+	}
+	return initTime, buf.String(), err
 }
 
 func init() {

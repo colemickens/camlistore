@@ -25,18 +25,21 @@ import (
 
 	"camlistore.org/pkg/blob"
 
-	"camlistore.org/third_party/code.google.com/p/rsc/fuse"
+	"camlistore.org/third_party/bazil.org/fuse"
+	"camlistore.org/third_party/bazil.org/fuse/fs"
 )
 
 // root implements fuse.Node and is the typical root of a
 // CamliFilesystem with a little hello message and the ability to
 // search and browse static snapshots, etc.
 type root struct {
+	noXattr
 	fs *CamliFileSystem
 
 	mu     sync.Mutex // guards recent
 	recent *recentDir
 	roots  *rootsDir
+	atDir  *atDir
 }
 
 func (n *root) Attr() fuse.Attr {
@@ -47,13 +50,14 @@ func (n *root) Attr() fuse.Attr {
 	}
 }
 
-func (n *root) ReadDir(intr fuse.Intr) ([]fuse.Dirent, fuse.Error) {
+func (n *root) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 	return []fuse.Dirent{
 		{Name: "WELCOME.txt"},
 		{Name: "tag"},
 		{Name: "date"},
 		{Name: "recent"},
 		{Name: "roots"},
+		{Name: "at"},
 		{Name: "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
 	}, nil
 }
@@ -76,7 +80,16 @@ func (n *root) getRootsDir() *rootsDir {
 	return n.roots
 }
 
-func (n *root) Lookup(name string, intr fuse.Intr) (fuse.Node, fuse.Error) {
+func (n *root) getAtDir() *atDir {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.atDir == nil {
+		n.atDir = &atDir{fs: n.fs}
+	}
+	return n.atDir
+}
+
+func (n *root) Lookup(name string, intr fs.Intr) (fs.Node, fuse.Error) {
 	switch name {
 	case ".quitquitquit":
 		log.Fatalf("Shutting down due to root .quitquitquit lookup.")
@@ -86,6 +99,8 @@ func (n *root) Lookup(name string, intr fuse.Intr) (fuse.Node, fuse.Error) {
 		return n.getRecentDir(), nil
 	case "tag", "date":
 		return notImplementDirNode{}, nil
+	case "at":
+		return n.getAtDir(), nil
 	case "roots":
 		return n.getRootsDir(), nil
 	case "sha1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":

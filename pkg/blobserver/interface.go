@@ -24,16 +24,17 @@ import (
 	"time"
 
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/constants"
+	"camlistore.org/pkg/context"
 )
 
 // MaxBlobSize is the size of a single blob in Camlistore.
-//
-// TODO: formalize this in the specs. This value of 16 MB is less than
-// App Engine's 32 MB request limit, much more than Venti's limit, and
-// much more than the ~64 KB & 256 KB chunks that the FileWriter make
-const MaxBlobSize = 16 << 20
+const MaxBlobSize = constants.MaxBlobSize
 
 var ErrCorruptBlob = errors.New("corrupt blob; digest doesn't match")
+
+// ErrNotImplemented should be returned in methods where the function is not implemented
+var ErrNotImplemented = errors.New("not implemented")
 
 // BlobReceiver is the interface for receiving
 type BlobReceiver interface {
@@ -87,10 +88,28 @@ type BlobEnumerator interface {
 	// after (if provided).
 	// limit will be supplied and sanity checked by caller.
 	// EnumerateBlobs must close the channel.  (even if limit
-	// was hit and more blobs remain)
-	EnumerateBlobs(dest chan<- blob.SizedRef,
+	// was hit and more blobs remain, or an error is returned, or
+	// the ctx is canceled)
+	EnumerateBlobs(ctx *context.Context,
+		dest chan<- blob.SizedRef,
 		after string,
 		limit int) error
+}
+
+type BlobStreamer interface {
+	// StreamBlobs sends blobs to dest in unspecified order. It is
+	// expected that a blobstorage implementing BlobStreamer will
+	// send blobs to dest in the most efficient order
+	// possible. StreamBlobs will stop sending blobs to dest and
+	// return an opaque continuation token (in the string return
+	// parameter) when the total size of the blobs it has sent
+	// equals or exceeds limit. A succeeding call to StreamBlobs
+	// should pass the string returned from the previous call in
+	// contToken, or an empty string if the caller wishes to
+	// receive blobs from "the start". StreamBlobs must
+	// unconditionally close dest before returning, and it must
+	// return if ctx.Done() becomes readable.
+	StreamBlobs(ctx *context.Context, dest chan<- blob.Blob, contToken string, limitBytes int64) (nextContinueToken string, err error)
 }
 
 // Cache is the minimal interface expected of a blob cache.
@@ -120,6 +139,7 @@ type BlobRemover interface {
 	// RemoveBlobs removes 0 or more blobs.  Removal of
 	// non-existent items isn't an error.  Returns failure if any
 	// items existed but failed to be deleted.
+	// ErrNotImplemented may be returned for storage types not implementing removal.
 	RemoveBlobs(blobs []blob.Ref) error
 }
 
@@ -131,6 +151,11 @@ type Storage interface {
 	BlobStatter
 	BlobEnumerator
 	BlobRemover
+}
+
+type FetcherEnumerator interface {
+	blob.StreamingFetcher
+	BlobEnumerator
 }
 
 // StorageHandler is a storage implementation that also exports an HTTP

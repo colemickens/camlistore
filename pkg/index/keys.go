@@ -24,7 +24,8 @@ import (
 
 // requiredSchemaVersion is incremented every time
 // an index key type is added, changed, or removed.
-const requiredSchemaVersion = 3
+// Version 4: EXIF tags + GPS
+const requiredSchemaVersion = 4
 
 // type of key returns the identifier in k before the first ":" or "|".
 // (Originally we packed keys by hand and there are a mix of styles)
@@ -97,6 +98,8 @@ func (k *keyType) build(isPrefix, isKey bool, parts []part, args ...interface{})
 			}
 		case typeStr:
 			buf.WriteString(urle(asStr()))
+		case typeRawStr:
+			buf.WriteString(asStr())
 		case typeReverseTime:
 			s := asStr()
 			const example = "2011-01-23T05:23:12"
@@ -130,8 +133,9 @@ const (
 	typeTime
 	typeReverseTime // time prepended with "rt" + each numeric digit reversed from '9'
 	typeBlobRef
-	typeStr
+	typeStr    // URL-escaped
 	typeIntStr // integer as string
+	typeRawStr // not URL-escaped
 )
 
 var (
@@ -269,17 +273,6 @@ var (
 		nil,
 	}
 
-	// keyDeletes indexes a claim that deletes an entity. It ties the deleter
-	// claim to the deleted entity.
-	keyDeletes = &keyType{
-		"deletes",
-		[]part{
-			{"deleter", typeBlobRef}, // the deleter claim blobref
-			{"deleted", typeBlobRef}, // the deleted entity (a permanode or another claim)
-		},
-		nil,
-	}
-
 	// Given a blobref (permanode or static file or directory), provide a mapping
 	// to potential parents (they may no longer be parents, in the case of permanodes).
 	// In the case of permanodes, camliMember or camliContent constitutes a forward
@@ -324,15 +317,57 @@ var (
 		},
 	}
 
-	// Audio attributes (e.g., ID3 tags). Uses generic terms like
+	// Media attributes (e.g. ID3 tags). Uses generic terms like
 	// "artist", "title", "album", etc.
-	keyAudioTag = &keyType{
-		"audiotag",
+	keyMediaTag = &keyType{
+		"mediatag",
 		[]part{
-			{"tag", typeStr},
-			{"value", typeStr},
 			{"wholeRef", typeBlobRef}, // wholeRef for song
+			{"tag", typeStr},
 		},
-		nil,
+		[]part{
+			{"value", typeStr},
+		},
+	}
+
+	// EXIF tags
+	keyEXIFTag = &keyType{
+		"exiftag",
+		[]part{
+			{"wholeRef", typeBlobRef}, // of entire file, not fileref
+			{"tag", typeStr},          // uint16 tag number as hex: xxxx
+		},
+		[]part{
+			{"type", typeStr},    // "int", "rat", "float", "string"
+			{"n", typeIntStr},    // n components of type
+			{"vals", typeRawStr}, // pipe-separated; rats are n/d. strings are URL-escaped.
+		},
+	}
+
+	// Redundant version of keyEXIFTag. TODO: maybe get rid of this.
+	// Easier to process as one row instead of 4, though.
+	keyEXIFGPS = &keyType{
+		"exifgps",
+		[]part{
+			{"wholeRef", typeBlobRef}, // of entire file, not fileref
+		},
+		[]part{
+			{"lat", typeStr},
+			{"long", typeStr},
+		},
 	}
 )
+
+func containsUnsafeRawStrByte(s string) bool {
+	for _, r := range s {
+		if r >= 'z' || r < ' ' {
+			// pipe ('|) and non-ASCII are above 'z'.
+			return true
+		}
+		if r == '%' || r == '+' {
+			// Could be interpretted as URL-encoded
+			return true
+		}
+	}
+	return false
+}

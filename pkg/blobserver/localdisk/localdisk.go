@@ -75,6 +75,9 @@ func New(root string) (*DiskStorage, error) {
 		dirLockMu: new(sync.RWMutex),
 		gen:       local.NewGenerationer(root),
 	}
+	if err := ds.migrate3to2(); err != nil {
+		return nil, fmt.Errorf("Error updating localdisk format: %v", err)
+	}
 	if _, _, err := ds.StorageGeneration(); err != nil {
 		return nil, fmt.Errorf("Error initialization generation for %q: %v", root, err)
 	}

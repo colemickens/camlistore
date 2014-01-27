@@ -1,17 +1,28 @@
+<!--
+Copyright 2012 The Camlistore Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 <!doctype html>
 <html>
 <head>
 	<title>Permanode</title>
 	<script src="closure/goog/base.js"></script>
 	<script src="./deps.js"></script>
-    <script src="?camli.mode=config&var=CAMLISTORE_CONFIG"></script>
-	<!-- Begin non-Closure cheating; but depended on by server_connection.js -->
-	<script type="text/javascript" src="base64.js"></script>
-	<script type="text/javascript" src="Crypto.js"></script>
-	<script type="text/javascript" src="SHA1.js"></script>
-	<!-- End non-Closure cheating -->
+	<script src="?camli.mode=config&var=CAMLISTORE_CONFIG"></script>
 	<script>
-		goog.require('camlistore.PermanodePage');
+		goog.require('cam.PermanodePage');
 	</script>
 	<link rel="stylesheet" href="permanode.css">
 	<link rel="stylesheet" href="blob_item.css">
@@ -25,6 +36,7 @@
 	Permalink:
 	<span id="permanode"></span>
 	<span id="permanodeBlob" class="cam-permanode-nav"></span>
+	<span id="detailLink" class="cam-permanode-nav"></span>
 	</p>
 
 	<form id="formTitle">
@@ -87,7 +99,7 @@
 	<pre id="debugattrs" style="font-size: 8pt"></pre>
 
 	<script>
-		var page = new camlistore.PermanodePage(CAMLISTORE_CONFIG);
+		var page = new cam.PermanodePage(CAMLISTORE_CONFIG);
 		page.decorate(document.body);
 	</script>
 </body>
