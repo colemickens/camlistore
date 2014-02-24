@@ -10,6 +10,7 @@
 #import "LACamliUtil.h"
 #import "LACamliFile.h"
 #import "LAViewController.h"
+#import <BugshotKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <HockeySDK/HockeySDK.h>
 
@@ -22,6 +23,10 @@
     [[BITHockeyManager sharedHockeyManager] startManager];
     [[BITHockeyManager sharedHockeyManager].updateManager setDelegate:self];
     [[BITHockeyManager sharedHockeyManager].updateManager checkForUpdate];
+
+    [BugshotKit enableWithNumberOfTouches:1
+                       performingGestures:BSKInvocationGestureNone
+                     feedbackEmailAddress:@"nick.oneill@gmail.com"];
 
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
@@ -89,13 +94,18 @@
                     if (result && [result valueForProperty:ALAssetPropertyType] != ALAssetTypeVideo) { // enumerate returns null after the last item
                         LACamliFile *file = [[LACamliFile alloc] initWithAsset:result];
 
-                        if (![_client fileAlreadyUploaded:file]) {
-                            filesToUpload++;
-                            LALog(@"found %ld files",(long)filesToUpload);
-                            [LACamliUtil logText:@[[NSString stringWithFormat:@"found %ld files",(long)filesToUpload]]];
-                            [_client addFile:file withCompletion:nil];
-                        } else {
-                            LALog(@"file already uploaded: %@",file.blobRef);
+                        @synchronized(_client){
+                            if (![_client fileAlreadyUploaded:file]) {
+                                filesToUpload++;
+
+                                [LACamliUtil logText:@[[NSString stringWithFormat:@"found %ld files",(long)filesToUpload]]];
+
+                                __block LACamliClient *weakClient = _client;
+
+                                [_client addFile:file withCompletion:^{
+                                    [UIApplication sharedApplication].applicationIconBadgeNumber = [weakClient.uploadQueue operationCount];
+                                }];
+                            }
                         }
                     }
                 }];
@@ -107,7 +117,6 @@
                 [UIApplication sharedApplication].applicationIconBadgeNumber = filesToUpload;
 
             } failureBlock:^(NSError *error) {
-                LALog(@"failed enumerate: %@",error);
                 [LACamliUtil errorText:@[@"failed enumerate: ",[error description]]];
             }];
         });

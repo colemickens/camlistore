@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package osutil provides operating system-specific path information,
-// and other utility functions.
 package osutil
 
 import (
@@ -25,11 +23,14 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"camlistore.org/pkg/buildinfo"
 )
 
 // HomeDir returns the path to the user's home directory.
 // It returns the empty string if the value isn't known.
 func HomeDir() string {
+	failInTests()
 	if runtime.GOOS == "windows" {
 		return os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 	}
@@ -56,6 +57,7 @@ func cacheDir() string {
 	if d := os.Getenv("CAMLI_CACHE_DIR"); d != "" {
 		return d
 	}
+	failInTests()
 	switch runtime.GOOS {
 	case "darwin":
 		return filepath.Join(HomeDir(), "Library", "Caches", "Camlistore")
@@ -84,6 +86,10 @@ func makeCacheDir() {
 }
 
 func CamliVarDir() string {
+	if d := os.Getenv("CAMLI_VAR_DIR"); d != "" {
+		return d
+	}
+	failInTests()
 	switch runtime.GOOS {
 	case "windows":
 		return filepath.Join(os.Getenv("APPDATA"), "Camlistore")
@@ -101,6 +107,7 @@ func CamliConfigDir() string {
 	if p := os.Getenv("CAMLI_CONFIG_DIR"); p != "" {
 		return p
 	}
+	failInTests()
 	if runtime.GOOS == "windows" {
 		return filepath.Join(os.Getenv("APPDATA"), "Camlistore")
 	}
@@ -201,4 +208,10 @@ func GoPackagePath(pkg string) (path string, err error) {
 		return dir, nil
 	}
 	return path, os.ErrNotExist
+}
+
+func failInTests() {
+	if buildinfo.TestingLinked() {
+		panic("Unexpected non-hermetic use of host configuration during testing. (alternatively: the 'testing' package got accidentally linked in)")
+	}
 }

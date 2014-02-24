@@ -31,6 +31,7 @@ import (
 	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/osutil"
 	"camlistore.org/third_party/code.google.com/p/go.crypto/openpgp"
+	"camlistore.org/third_party/code.google.com/p/go.crypto/openpgp/packet"
 )
 
 type EntityFetcher interface {
@@ -117,8 +118,7 @@ type SignRequest struct {
 
 	// SecretKeyringPath is only used if EntityFetcher is nil,
 	// in which case SecretKeyringPath is used if non-empty.
-	// As a final resort, the flag value (defaulting to
-	// ~/.gnupg/secring.gpg) is used.
+	// As a final resort, we default to osutil.IdentitySecretRing().
 	SecretKeyringPath string
 }
 
@@ -189,7 +189,7 @@ func (sr *SignRequest) Sign() (signedJSON string, err error) {
 	if entityFetcher == nil {
 		file := sr.secretRingPath()
 		if file == "" {
-			return "", errors.New("jsonsign: no EntityFetcher, SecretKeyringPath, or secret-keyring flag provided")
+			return "", errors.New("jsonsign: no EntityFetcher, and no secret ring file defined.")
 		}
 		secring, err := os.Open(sr.secretRingPath())
 		if err != nil {
@@ -204,7 +204,12 @@ func (sr *SignRequest) Sign() (signedJSON string, err error) {
 	}
 
 	var buf bytes.Buffer
-	err = openpgp.ArmoredDetachSignAt(&buf, signer, sr.SignatureTime, strings.NewReader(trimmedJSON))
+	err = openpgp.ArmoredDetachSign(
+		&buf,
+		signer,
+		strings.NewReader(trimmedJSON),
+		&packet.Config{Time: func() time.Time { return sr.SignatureTime }},
+	)
 	if err != nil {
 		return "", err
 	}

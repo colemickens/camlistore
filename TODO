@@ -4,6 +4,55 @@ There are two TODO lists. This file (good for airplanes) and the online bug trac
 
 Offline list:
 
+-- diskpacked doesn't seem to sync its index quickly enough.
+   A new blob receieved + process exit + read in a new process
+   doesn't find that blob. kv bug? Seems to need an explicit Close.
+   This feels broken. Add tests & debug.
+
+-- also rename serverinit/serverconfig.go to serverinit.go
+
+-- websocket upload protocol. different write & read on same socket,
+   as opposed to HTTP, to have multiple chunks in flight.
+
+-- extension to blobserver upload protocol to minimize fsyncs: maybe a
+   client can say "no rush" on a bunch of data blobs first (which
+   still don't get acked back over websocket until they've been
+   fsynced), and then when the client uploads the schema/vivivy blob,
+   that websocket message won't have the "no rush" flag, calling the
+   optional blobserver.Storage method to fsync (in the case of
+   diskpacked/localdisk) and getting all the "uploaded" messages back
+   for the data chunks that were written-but-not-synced.
+
+-- benchmark uploading a 100MB file to localdisk & diskpacked
+   from camput.
+
+-- measure FUSE operations, latency, round-trips, performance.
+   see next item:
+
+-- ... we probaby need a "describe all chunks in file" HTTP handler.
+   then FUSE (when it sees sequential access) can say "what's the
+   list of all chunks in this file?" and then fetch them all at once.
+   see next item:
+
+-- ... HTTP handler to get multiple blobs at once. multi-download
+   in multipart/mime body. we have this for stat and upload, but
+   not download.
+
+-- ... if we do blob fetching over websocket too, then we can support
+   cancellation of blob requests.  Then we can combine the previous
+   two items: FUSE client can ask the server, over websockets, for a
+   list of all chunks, and to also start streaming them all.  assume a
+   high-latency (but acceptable bandwidth) link. the chunks are
+   already in flight, but some might be redundant. once the client figures
+   out some might be redundant, it can issue "stop send" messages over
+   that websocket connection to prevent dups. this should work on
+   both "files" and "bytes" types.
+
+-- cacher: configurable policy on max cache size. clean oldest
+   things (consider mtime+atime) to get back under max cache size.
+   maybe prefer keeping small things (metadata blobs) too,
+   and only delete large data chunks.
+
 -- UI: video, at least thumbnailing (use external program,
    like VLC or whatever nautilus uses?)
 
@@ -18,19 +67,10 @@ Offline list:
 -- make leveldb memdb's iterator struct only 8 bytes, pointing to a recycled
    object, and just nil out that pointer at EOF.
 
--- genconfig needs to be updated to route incoming blobs to sync handlers;
-   or should sync handlers subscribe to their source's blobhub?
-   No, see latest email to Bill Thiede: sync handlers already subscribe
-   with a blocking hook. Related: index should too.
-
 -- bring in the google glog package to third_party and use it in
    places that want selective logging (e.g. pkg/index/receive.go)
 
--- use 'uint32' instead of 'int64' for blob sizes everywhere (notably
-   blob.SizedRef).  blobs have a max size of 10-32 MB anyway, and the
-   index.Corpus is now using uint32 to save memory.
-
--- verify all ReceiveBlob calls and see which should be
+-- (Mostly done) verify all ReceiveBlob calls and see which should be
    blobserver.Receive instead, or ReceiveNoHash.  git grep -E
    "\.ReceiveBlob\(" And maybe ReceiveNoHash should go away and be
    replaced with a "ReceiveString" method which combines the
@@ -125,13 +165,10 @@ Offline list:
 
 OLD:
 
--- add CROS support?
+-- add CROS support? Access-Control-Allow-Origin: * + w/ OPTIONS
    http://hacks.mozilla.org/2009/07/cross-site-xmlhttprequest-with-cors/
 
 -- brackup integration, perhaps sans GPG? (requires Perl client?)
-
--- blobserver test suite: flesh it out.  (bs-test.pl ... it's pretty good
-   so far, but not done)
 
 -- blobserver: clean up channel-closing consistency in blobserver interface
    (most close, one doesn't.  all should probably close)

@@ -27,6 +27,7 @@ import (
 	"strings"
 	"sync"
 
+	"camlistore.org/pkg/blobserver/dir"
 	"camlistore.org/pkg/client"
 	"camlistore.org/pkg/cmdmain"
 	"camlistore.org/pkg/httputil"
@@ -39,6 +40,7 @@ var (
 	flagProxyLocal = false
 	flagHTTP       = flag.Bool("verbose_http", false, "show HTTP request summaries")
 	flagHaveCache  = true
+	flagBlobDir    = flag.String("blobdir", "", "If non-empty, the local directory to put blobs, instead of sending them over the network.")
 )
 
 var (
@@ -46,22 +48,27 @@ var (
 	uploader     *Uploader // initialized by getUploader
 )
 
+var debugFlagOnce sync.Once
+
+func registerDebugFlags() {
+	flag.BoolVar(&flagProxyLocal, "proxy_local", false, "If true, the HTTP_PROXY environment is also used for localhost requests. This can be helpful during debugging.")
+	flag.BoolVar(&flagHaveCache, "havecache", true, "Use the 'have cache', a cache keeping track of what blobs the remote server should already have from previous uploads.")
+}
+
 func init() {
 	if debug, _ := strconv.ParseBool(os.Getenv("CAMLI_DEBUG")); debug {
-		flag.BoolVar(&flagProxyLocal, "proxy_local", false, "If true, the HTTP_PROXY environment is also used for localhost requests. This can be helpful during debugging.")
-		flag.BoolVar(&flagHaveCache, "havecache", true, "Use the 'have cache', a cache keeping track of what blobs the remote server should already have from previous uploads.")
+		debugFlagOnce.Do(registerDebugFlags)
 	}
-	cmdmain.ExtraFlagRegistration = func() {
-		client.AddFlags()
-	}
+	cmdmain.ExtraFlagRegistration = client.AddFlags
 	cmdmain.PreExit = func() {
-		up := getUploader()
-		if up.haveCache != nil {
-			up.haveCache.Close()
+		if up := uploader; up != nil {
+			up.Close()
+			stats := up.Stats()
+			log.Printf("Client stats: %s", stats.String())
+			if up.transport != nil {
+				log.Printf("  #HTTP reqs: %d", up.transport.Requests())
+			}
 		}
-		stats := up.Stats()
-		log.Printf("Client stats: %s", stats.String())
-		log.Printf("  #HTTP reqs: %d", up.transport.Requests())
 	}
 }
 
@@ -72,7 +79,7 @@ func getUploader() *Uploader {
 
 func initUploader() {
 	up := newUploader()
-	if flagHaveCache {
+	if flagHaveCache && *flagBlobDir == "" {
 		gen, err := up.StorageGeneration()
 		if err != nil {
 			log.Printf("WARNING: not using local server inventory cache; failed to retrieve server's storage generation: %v", err)
@@ -123,22 +130,31 @@ func proxyFromEnvironment(req *http.Request) (*url.URL, error) {
 }
 
 func newUploader() *Uploader {
-	cc := client.NewOrFail()
+	var cc *client.Client
+	var httpStats *httputil.StatsTransport
+	if d := *flagBlobDir; d != "" {
+		ss, err := dir.New(d)
+		if err != nil {
+			log.Fatalf("Error using dir %s as storage: %v", d, err)
+		}
+		cc = client.NewStorageClient(ss)
+	} else {
+		cc = client.NewOrFail()
+		proxy := http.ProxyFromEnvironment
+		if flagProxyLocal {
+			proxy = proxyFromEnvironment
+		}
+		tr := cc.TransportForConfig(
+			&client.TransportConfig{
+				Proxy:   proxy,
+				Verbose: *flagHTTP,
+			})
+		httpStats, _ = tr.(*httputil.StatsTransport)
+		cc.SetHTTPClient(&http.Client{Transport: tr})
+	}
 	if !*cmdmain.FlagVerbose {
 		cc.SetLogger(nil)
 	}
-
-	proxy := http.ProxyFromEnvironment
-	if flagProxyLocal {
-		proxy = proxyFromEnvironment
-	}
-	tr := cc.TransportForConfig(
-		&client.TransportConfig{
-			Proxy:   proxy,
-			Verbose: *flagHTTP,
-		})
-	httpStats, _ := tr.(*httputil.StatsTransport)
-	cc.SetHTTPClient(&http.Client{Transport: tr})
 
 	pwd, err := os.Getwd()
 	if err != nil {

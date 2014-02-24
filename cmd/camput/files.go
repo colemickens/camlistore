@@ -67,6 +67,12 @@ type fileCmd struct {
 
 var flagUseSQLiteChildCache bool // Use sqlite for the statcache and havecache.
 
+var (
+	uploadWorkers    = 5 // concurrent upload workers (negative means unbounded: memory hog)
+	dirUploadWorkers = 3 // concurrent directory uploading workers
+	statCacheWorkers = 5 // concurrent statcache workers
+)
+
 func init() {
 	cmdmain.RegisterCommand("file", func(flags *flag.FlagSet) cmdmain.CommandRunner {
 		cmd := new(fileCmd)
@@ -94,6 +100,10 @@ func init() {
 		}
 		if android.IsChild() {
 			flags.BoolVar(&cmd.argsFromInput, "stdinargs", false, "If true, filenames to upload are sent one-per-line on stdin. EOF means to quit the process with exit status 0.")
+			// limit number of goroutines to limit memory
+			uploadWorkers = 2
+			dirUploadWorkers = 2
+			statCacheWorkers = 2
 		}
 		flagCacheLog = flags.Bool("logcache", false, "log caching details")
 
@@ -206,6 +216,7 @@ func (c *fileCmd) RunCommand(args []string) error {
 				tu.Enqueue(path)
 			}
 			if err == io.EOF {
+				android.PreExit()
 				os.Exit(0)
 			}
 			if err != nil {
@@ -235,6 +246,9 @@ func (c *fileCmd) RunCommand(args []string) error {
 			if up.fileOpts.wantVivify() {
 				vlog.Printf("Directories not supported in vivify mode; skipping %v\n", filename)
 				continue
+			}
+			if !*cmdmain.FlagVerbose {
+				log.SetOutput(ioutil.Discard)
 			}
 			t := up.NewTreeUpload(filename)
 			t.Start()
@@ -277,7 +291,7 @@ func (c *fileCmd) RunCommand(args []string) error {
 }
 
 func (c *fileCmd) initCaches(up *Uploader) {
-	if !c.statcache {
+	if !c.statcache || *flagBlobDir != "" {
 		return
 	}
 	gen, err := up.StorageGeneration()
@@ -424,6 +438,32 @@ func (up *Uploader) statReceiver(n *node) blobserver.StatReceiver {
 	return statReceiver
 }
 
+func (up *Uploader) noStatReceiver(r blobserver.BlobReceiver) blobserver.StatReceiver {
+	return noStatReceiver{r}
+}
+
+// A haveCacheStatReceiver relays Receive calls to the embedded
+// BlobReceiver and treats all Stat calls like the blob doesn't exist.
+//
+// This is used by the client once it's already asked the server that
+// it doesn't have the whole file in some chunk layout already, so we
+// know we're just writing new stuff. For resuming in the middle of
+// larger uploads, it turns out that the pkg/client.Client.Upload
+// already checks the have cache anyway, so going right to mid-chunk
+// receives is fine.
+//
+// TODO(bradfitz): this probabaly all needs an audit/rationalization/tests
+// to make sure all the players are agreeing on the responsibilities.
+// And maybe the Android stats are wrong, too. (see pkg/client/android's
+// StatReceiver)
+type noStatReceiver struct {
+	blobserver.BlobReceiver
+}
+
+func (noStatReceiver) StatBlobs(dest chan<- blob.SizedRef, blobs []blob.Ref) error {
+	return nil
+}
+
 var atomicDigestOps int64 // number of files digested
 
 // wholeFileDigest returns the sha1 digest of the regular file's absolute
@@ -491,7 +531,7 @@ func (up *Uploader) fileMapFromDuplicate(bs blobserver.StatReceiver, fileMap *sc
 	}
 	if !uh.Vivify && uh.BlobRef == dupFileRef {
 		// Unchanged (same filename, modtime, JSON serialization, etc)
-		return &client.PutResult{BlobRef: dupFileRef, Size: int64(len(json)), Skipped: true}, true
+		return &client.PutResult{BlobRef: dupFileRef, Size: uint32(len(json)), Skipped: true}, true
 	}
 	pr, err = up.Upload(uh)
 	if err != nil {
@@ -560,7 +600,7 @@ func (up *Uploader) uploadNodeRegularFile(n *node) (*client.PutResult, error) {
 
 	if up.fileOpts.wantVivify() {
 		// If vivify wasn't already done in fileMapFromDuplicate.
-		err := schema.WriteFileChunks(up.statReceiver(n), filebb, fileContents)
+		err := schema.WriteFileChunks(up.noStatReceiver(up.statReceiver(n)), filebb, fileContents)
 		if err != nil {
 			return nil, err
 		}
@@ -571,7 +611,7 @@ func (up *Uploader) uploadNodeRegularFile(n *node) (*client.PutResult, error) {
 		br = blob.SHA1FromString(json)
 		h := &client.UploadHandle{
 			BlobRef:  br,
-			Size:     int64(len(json)),
+			Size:     uint32(len(json)),
 			Contents: strings.NewReader(json),
 			Vivify:   true,
 		}
@@ -584,13 +624,13 @@ func (up *Uploader) uploadNodeRegularFile(n *node) (*client.PutResult, error) {
 	}
 
 	if !br.Valid() {
-		// br still nil means fileMapFromDuplicate did not find the file on the server,
+		// br still zero means fileMapFromDuplicate did not find the file on the server,
 		// and the file has not just been uploaded subsequently to a vivify request.
 		// So we do the full file + file schema upload here.
 		if sum == "" && up.fileOpts.wantFilePermanode() {
 			fileContents = &trackDigestReader{r: fileContents}
 		}
-		br, err = schema.WriteFileMap(up.statReceiver(n), filebb, fileContents)
+		br, err = schema.WriteFileMap(up.noStatReceiver(up.statReceiver(n)), filebb, fileContents)
 		if err != nil {
 			return nil, err
 		}
@@ -627,7 +667,7 @@ func (up *Uploader) uploadNodeRegularFile(n *node) (*client.PutResult, error) {
 	// statReceiver) that can track some of this?  or make
 	// schemaWriteFileMap return it?
 	json, _ := filebb.JSON()
-	pr = &client.PutResult{BlobRef: br, Size: int64(len(json)), Skipped: false}
+	pr = &client.PutResult{BlobRef: br, Size: uint32(len(json)), Skipped: false}
 	return pr, nil
 }
 
@@ -904,7 +944,7 @@ func (t *TreeUpload) statPath(fullPath string, fi os.FileInfo) (nod *node, err e
 	if err != nil {
 		return nil, err
 	}
-	sort.Sort(byFileName(fis))
+	sort.Sort(byTypeAndName(fis))
 	for _, fi := range fis {
 		depn, err := t.statPath(filepath.Join(fullPath, filepath.Base(fi.Name())), fi)
 		if err != nil {
@@ -916,6 +956,9 @@ func (t *TreeUpload) statPath(fullPath string, fi os.FileInfo) (nod *node, err e
 	}
 	return n, nil
 }
+
+// testHookStatCache, if non-nil, runs first in the checkStatCache worker.
+var testHookStatCache func(n *node, ok bool)
 
 func (t *TreeUpload) run() {
 	defer close(t.donec)
@@ -972,9 +1015,9 @@ func (t *TreeUpload) run() {
 			}
 		})
 	} else {
-		upload = NewNodeWorker(-1, func(n *node, ok bool) {
+		dirUpload := NewNodeWorker(dirUploadWorkers, func(n *node, ok bool) {
 			if !ok {
-				log.Printf("done with all uploads.")
+				log.Printf("done uploading directories - done with all uploads.")
 				uploadsdonec <- true
 				return
 			}
@@ -983,7 +1026,25 @@ func (t *TreeUpload) run() {
 				log.Fatalf("Error uploading %s: %v", n.fullPath, err)
 			}
 			n.SetPutResult(put, nil)
-			if c := t.up.statCache; c != nil && !n.fi.IsDir() {
+			uploadedc <- n
+		})
+
+		upload = NewNodeWorker(uploadWorkers, func(n *node, ok bool) {
+			if !ok {
+				log.Printf("done with all uploads.")
+				close(dirUpload)
+				return
+			}
+			if n.fi.IsDir() {
+				dirUpload <- n
+				return
+			}
+			put, err := t.up.uploadNode(n)
+			if err != nil {
+				log.Fatalf("Error uploading %s: %v", n.fullPath, err)
+			}
+			n.SetPutResult(put, nil)
+			if c := t.up.statCache; c != nil {
 				c.AddCachedPutResult(
 					t.up.pwd, n.fullPath, n.fi, put, withPermanode)
 			}
@@ -991,7 +1052,10 @@ func (t *TreeUpload) run() {
 		})
 	}
 
-	checkStatCache := NewNodeWorker(10, func(n *node, ok bool) {
+	checkStatCache := NewNodeWorker(statCacheWorkers, func(n *node, ok bool) {
+		if hook := testHookStatCache; hook != nil {
+			hook(n, ok)
+		}
 		if !ok {
 			if t.up.statCache != nil {
 				log.Printf("done checking stat cache")
@@ -1035,7 +1099,7 @@ Loop:
 			t.skipped.incr(n)
 		case n, ok := <-stattedc:
 			if !ok {
-				log.Printf("done stattting:")
+				log.Printf("done statting:")
 				dumpStats()
 				close(checkStatCache)
 				stattedc = nil
@@ -1079,11 +1143,21 @@ func (t *TreeUpload) Wait() (*client.PutResult, error) {
 	return t.finalPutRes, t.err
 }
 
-type byFileName []os.FileInfo
+type byTypeAndName []os.FileInfo
 
-func (s byFileName) Len() int           { return len(s) }
-func (s byFileName) Less(i, j int) bool { return s[i].Name() < s[j].Name() }
-func (s byFileName) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s byTypeAndName) Len() int { return len(s) }
+func (s byTypeAndName) Less(i, j int) bool {
+	// files go before directories
+	if s[i].IsDir() {
+		if !s[j].IsDir() {
+			return false
+		}
+	} else if s[j].IsDir() {
+		return true
+	}
+	return s[i].Name() < s[j].Name()
+}
+func (s byTypeAndName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // trackDigestReader is an io.Reader wrapper which records the digest of what it reads.
 type trackDigestReader struct {

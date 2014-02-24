@@ -21,7 +21,8 @@ package fs
 import (
 	"log"
 	"os"
-	"path"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,9 +40,11 @@ type recentDir struct {
 	noXattr
 	fs *CamliFileSystem
 
-	mu      sync.Mutex
-	ents    map[string]*search.DescribedBlob // filename to blob meta
-	modTime map[string]time.Time             // filename to permanode modtime
+	mu          sync.Mutex
+	ents        map[string]*search.DescribedBlob // filename to blob meta
+	modTime     map[string]time.Time             // filename to permanode modtime
+	lastReaddir time.Time
+	lastNames   []string
 }
 
 func (n *recentDir) Attr() fuse.Attr {
@@ -52,10 +55,22 @@ func (n *recentDir) Attr() fuse.Attr {
 	}
 }
 
+const recentSearchInterval = 10 * time.Second
+
 func (n *recentDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
-	log.Printf("fs.recent: ReadDir / searching")
+	var ents []fuse.Dirent
+
 	n.mu.Lock()
 	defer n.mu.Unlock()
+	if n.lastReaddir.After(time.Now().Add(-recentSearchInterval)) {
+		log.Printf("fs.recent: ReadDir from cache")
+		for _, name := range n.lastNames {
+			ents = append(ents, fuse.Dirent{Name: name})
+		}
+		return ents, nil
+	}
+
+	log.Printf("fs.recent: ReadDir, doing search")
 
 	n.ents = make(map[string]*search.DescribedBlob)
 	n.modTime = make(map[string]time.Time)
@@ -67,7 +82,7 @@ func (n *recentDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 		return nil, fuse.EIO
 	}
 
-	var ents []fuse.Dirent
+	n.lastNames = nil
 	for _, ri := range res.Recent {
 		modTime := ri.ModTime.Time()
 		meta := res.Meta.Get(ri.BlobRef)
@@ -95,7 +110,11 @@ func (n *recentDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 			continue
 		}
 		if name == "" || n.ents[name] != nil {
-			name = ccMeta.BlobRef.String() + path.Ext(name)
+			ext := filepath.Ext(name)
+			if ext == "" && strings.HasSuffix(ccMeta.File.MIMEType, "image/jpeg") {
+				ext = ".jpg"
+			}
+			name = strings.TrimPrefix(ccMeta.BlobRef.String(), "sha1-")[:10] + ext
 			if n.ents[name] != nil {
 				continue
 			}
@@ -103,11 +122,13 @@ func (n *recentDir) ReadDir(intr fs.Intr) ([]fuse.Dirent, fuse.Error) {
 		n.ents[name] = ccMeta
 		n.modTime[name] = modTime
 		log.Printf("fs.recent: name %q = %v (at %v -> %v)", name, ccMeta.BlobRef, ri.ModTime.Time(), modTime)
+		n.lastNames = append(n.lastNames, name)
 		ents = append(ents, fuse.Dirent{
 			Name: name,
 		})
 	}
 	log.Printf("fs.recent returning %d entries", len(ents))
+	n.lastReaddir = time.Now()
 	return ents, nil
 }
 

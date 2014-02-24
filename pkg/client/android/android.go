@@ -56,6 +56,13 @@ func IsChild() bool {
 	return androidOutput
 }
 
+func PreExit() {
+	if !IsChild() {
+		return
+	}
+	Printf("STAT exit 1\n")
+}
+
 var androidOutMu sync.Mutex
 
 func Printf(format string, args ...interface{}) {
@@ -115,7 +122,8 @@ var (
 	statTCPStart       = &namedInt{name: "tcp_start"}
 	statTCPStarted     = &namedInt{name: "tcp_started"}
 	statTCPFail        = &namedInt{name: "tcp_fail"}
-	statTCPDone        = &namedInt{name: "tcp_done"}
+	statTCPDone        = &namedInt{name: "tcp_done_because_close"}
+	statTCPDoneRead    = &namedInt{name: "tcp_done_because_read"}
 	statTCPWrites      = &namedInt{name: "tcp_write_byte"}
 	statTCPWrote       = &namedInt{name: "tcp_wrote_byte"}
 	statTCPReads       = &namedInt{name: "tcp_read_byte"}
@@ -132,19 +140,32 @@ var (
 
 type statTrackingConn struct {
 	net.Conn
+	once sync.Once // guards close stats
 }
 
-func (c statTrackingConn) Write(p []byte) (n int, err error) {
+func (c *statTrackingConn) Write(p []byte) (n int, err error) {
 	statTCPWrites.Incr(int64(len(p)))
 	n, err = c.Conn.Write(p)
 	statTCPWrote.Incr(int64(n))
 	return
 }
 
-func (c statTrackingConn) Read(p []byte) (n int, err error) {
+func (c *statTrackingConn) Read(p []byte) (n int, err error) {
 	n, err = c.Conn.Read(p)
 	statTCPReads.Incr(int64(n))
+	if err != nil {
+		c.once.Do(func() {
+			statTCPDoneRead.Incr(1)
+		})
+	}
 	return
+}
+
+func (c *statTrackingConn) Close() error {
+	c.once.Do(func() {
+		statTCPDone.Incr(1)
+	})
+	return nil
 }
 
 var (
@@ -243,7 +264,7 @@ func Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 	statTCPStarted.Incr(1)
-	return statTrackingConn{Conn: c}, err
+	return &statTrackingConn{Conn: c}, err
 }
 
 func TLSConfig() (*tls.Config, error) {

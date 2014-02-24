@@ -53,7 +53,7 @@ var (
 	all            = flag.Bool("all", false, "Force rebuild of everything (go install -a)")
 	race           = flag.Bool("race", false, "Build race-detector version of binaries (they will run slowly)")
 	verbose        = flag.Bool("v", false, "Verbose mode")
-	targets        = flag.String("targets", "", "Optional comma-separated list of targets (i.e go packages) to build and install. Empty means all. Example: camlistore.org/server/camlistored,camlistore.org/cmd/camput")
+	targets        = flag.String("targets", "", "Optional comma-separated list of targets (i.e go packages) to build and install. '*' builds everything.  Empty builds defaults for this platform. Example: camlistore.org/server/camlistored,camlistore.org/cmd/camput")
 	quiet          = flag.Bool("quiet", false, "Don't print anything unless there's a failure.")
 	onlysync       = flag.Bool("onlysync", false, "Only populate the temporary source/build tree and output its full path. It is meant to prepare the environment for running the full test suite with 'devcam test'.")
 	// TODO(mpl): looks like ifModsSince is not used anywhere?
@@ -161,7 +161,7 @@ func main() {
 		return
 	}
 
-	buildAll := true
+	buildAll := false
 	targs := []string{
 		"camlistore.org/dev/devcam",
 		"camlistore.org/cmd/camget",
@@ -169,10 +169,18 @@ func main() {
 		"camlistore.org/cmd/camtool",
 		"camlistore.org/server/camlistored",
 	}
-	if *targets != "" {
+	switch *targets {
+	case "*":
+		buildAll = true
+	case "":
+		// Add cammount to default build targets on OSes that support FUSE.
+		switch *buildOS {
+		case "linux", "darwin":
+			targs = append(targs, "camlistore.org/cmd/cammount")
+		}
+	default:
 		if t := strings.Split(*targets, ","); len(t) != 0 {
 			targs = t
-			buildAll = false
 		}
 	}
 
@@ -212,13 +220,6 @@ func main() {
 	baseArgs = append(baseArgs,
 		"--ldflags=-X camlistore.org/pkg/buildinfo.GitInfo "+version,
 		"--tags="+tags)
-
-	if buildAll {
-		switch *buildOS {
-		case "linux", "darwin":
-			targs = append(targs, "camlistore.org/cmd/cammount")
-		}
-	}
 
 	// First install command: build just the final binaries, installed to a GOBIN
 	// under <camlistore_root>/bin:

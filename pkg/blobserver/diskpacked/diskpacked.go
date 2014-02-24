@@ -97,6 +97,29 @@ var (
 	writeTotVar = expvar.NewMap("diskpacked-total-write-bytes")
 )
 
+const indexKV = "index.kv"
+
+// IsDir reports whether dir is a diskpacked directory.
+func IsDir(dir string) (bool, error) {
+	_, err := os.Stat(filepath.Join(dir, indexKV))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// New returns a diskpacked storage implementation, adding blobs to
+// the provided directory. It doesn't delete any existing blob pack
+// files.
+func New(dir string) (blobserver.Storage, error) {
+	var maxSize int64
+	if ok, _ := IsDir(dir); ok {
+		// TODO: detect existing max size from size of files, if obvious,
+		// and set maxSize to that?
+	}
+	return newStorage(dir, maxSize)
+}
+
 // newStorage returns a new storage in path root with the given maxFileSize,
 // or defaultMaxFileSize (512MB) if <= 0
 func newStorage(root string, maxFileSize int64) (s *storage, err error) {
@@ -110,7 +133,7 @@ func newStorage(root string, maxFileSize int64) (s *storage, err error) {
 	if !fi.IsDir() {
 		return nil, fmt.Errorf("storage root %q exists but is not a directory.", root)
 	}
-	index, err := kvfile.NewStorage(filepath.Join(root, "index.kv"))
+	index, err := kvfile.NewStorage(filepath.Join(root, indexKV))
 	if err != nil {
 		return nil, err
 	}
@@ -285,11 +308,11 @@ func (s *storage) Close() error {
 	return closeErr
 }
 
-func (s *storage) FetchStreaming(br blob.Ref) (io.ReadCloser, int64, error) {
+func (s *storage) FetchStreaming(br blob.Ref) (io.ReadCloser, uint32, error) {
 	return s.Fetch(br)
 }
 
-func (s *storage) Fetch(br blob.Ref) (types.ReadSeekCloser, int64, error) {
+func (s *storage) Fetch(br blob.Ref) (types.ReadSeekCloser, uint32, error) {
 	meta, err := s.meta(br)
 	if err != nil {
 		return nil, 0, err
@@ -299,7 +322,7 @@ func (s *storage) Fetch(br blob.Ref) (types.ReadSeekCloser, int64, error) {
 		return nil, 0, fmt.Errorf("diskpacked: attempt to fetch blob from out of range pack file %d > %d", meta.file, len(s.fds))
 	}
 	rac := s.fds[meta.file]
-	var rs io.ReadSeeker = io.NewSectionReader(rac, meta.offset, meta.size)
+	var rs io.ReadSeeker = io.NewSectionReader(rac, meta.offset, int64(meta.size))
 	fn := rac.Name()
 	// Ensure entry is in map.
 	readVar.Add(fn, 0)
@@ -394,7 +417,18 @@ func (s *storage) ReceiveBlob(br blob.Ref, source io.Reader) (sbr blob.SizedRef,
 	if err != nil {
 		return
 	}
-	sbr = blob.SizedRef{Ref: br, Size: n}
+
+	sbr = blob.SizedRef{Ref: br, Size: uint32(n)}
+
+	// Check if it's a dup. Still accept it if the pack file on disk seems to be corrupt
+	// or truncated.
+	if m, err := s.meta(br); err == nil {
+		fi, err := os.Stat(s.filename(m.file))
+		if err == nil && fi.Size() >= m.offset+int64(m.size) {
+			return sbr, nil
+		}
+	}
+
 	err = s.append(sbr, &b)
 	return
 }
@@ -434,7 +468,7 @@ func (s *storage) append(br blob.SizedRef, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if n2 != br.Size {
+	if n2 != int64(br.Size) {
 		return fmt.Errorf("diskpacked: written blob size %d didn't match size %d", n, br.Size)
 	}
 	if err = s.writer.Sync(); err != nil {
@@ -468,8 +502,9 @@ func (s *storage) meta(br blob.Ref) (m blobMeta, err error) {
 
 // blobMeta is the blob metadata stored in the index.
 type blobMeta struct {
-	file         int
-	offset, size int64
+	file   int
+	offset int64
+	size   uint32
 }
 
 func parseBlobMeta(s string) (m blobMeta, ok bool) {

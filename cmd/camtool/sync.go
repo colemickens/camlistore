@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -53,7 +52,7 @@ type syncCmd struct {
 func init() {
 	cmdmain.RegisterCommand("sync", func(flags *flag.FlagSet) cmdmain.CommandRunner {
 		cmd := new(syncCmd)
-		flags.StringVar(&cmd.src, "src", "", "Source blobserver is either a URL prefix (with optional path), a host[:port], a path (starting with /, ./, or ../), or blank to use the Camlistore client config's default host.")
+		flags.StringVar(&cmd.src, "src", "", "Source blobserver. "+serverFlagHelp)
 		flags.StringVar(&cmd.dest, "dest", "", "Destination blobserver (same format as src), or 'stdout' to just enumerate the --src blobs to stdout.")
 		flags.StringVar(&cmd.third, "thirdleg", "", "Copy blobs present in source but missing from destination to this 'third leg' blob store, instead of the destination. (same format as src)")
 
@@ -142,6 +141,8 @@ const (
 
 // which is one of "src", "dest", or "thirdleg"
 func (c *syncCmd) storageFromParam(which storageType, val string) (blobserver.Storage, error) {
+	var httpClient *http.Client
+
 	if val == "" {
 		switch which {
 		case storageThird:
@@ -154,6 +155,7 @@ func (c *syncCmd) storageFromParam(which storageType, val string) (blobserver.St
 				return nil, fmt.Errorf("Failed to discover source server's blob path: %v", err)
 			}
 			val = src
+			httpClient = discl.HTTPClient()
 		}
 		if val == "" {
 			return nil, cmdmain.UsageError("No --" + string(which) + " flag value specified")
@@ -171,9 +173,12 @@ func (c *syncCmd) storageFromParam(which storageType, val string) (blobserver.St
 	}
 	cl := client.New(val)
 	cl.InsecureTLS = c.insecureTLS
-	cl.SetHTTPClient(&http.Client{
-		Transport: cl.TransportForConfig(nil),
-	})
+	if httpClient == nil {
+		httpClient = &http.Client{
+			Transport: cl.TransportForConfig(nil),
+		}
+	}
+	cl.SetHTTPClient(httpClient)
 	cl.SetupAuth()
 	cl.SetLogger(c.logger)
 	return cl, nil
@@ -247,18 +252,9 @@ func (c *syncCmd) syncAll() error {
 // is blank. The returned client can then be used to discover
 // the blobRoot and syncHandlers.
 func (c *syncCmd) discoClient() *client.Client {
-	var cl *client.Client
-	if c.src == "" {
-		cl = client.NewOrFail()
-	} else {
-		cl = client.New(c.src)
-	}
+	cl := newClient(c.src)
 	cl.SetLogger(c.logger)
 	cl.InsecureTLS = c.insecureTLS
-	cl.SetHTTPClient(&http.Client{
-		Transport: cl.TransportForConfig(nil),
-	})
-	cl.SetupAuth()
 	return cl
 }
 
@@ -319,7 +315,7 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 	}()
 	checkDestError := func() {
 		if err := <-destErr; err != nil {
-			retErr = errors.New(fmt.Sprintf("Enumerate error from destination: %v", err))
+			retErr = fmt.Errorf("Enumerate error from destination: %v", err)
 		}
 	}
 
@@ -385,7 +381,7 @@ For:
 				continue
 			}
 			stats.BlobsCopied++
-			stats.BytesCopied += size
+			stats.BytesCopied += int64(size)
 
 			if c.removeSrc {
 				if err = src.RemoveBlobs([]blob.Ref{sb.Ref}); err != nil {
@@ -414,7 +410,7 @@ func loggingBlobRefChannel(ch <-chan blob.SizedRef) chan blob.SizedRef {
 		for v := range ch {
 			ch2 <- v
 			nblob++
-			nbyte += v.Size
+			nbyte += int64(v.Size)
 			now := time.Now()
 			if last.IsZero() || now.After(last.Add(1*time.Second)) {
 				last = now

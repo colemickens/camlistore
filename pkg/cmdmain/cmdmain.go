@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 
 	"camlistore.org/pkg/buildinfo"
 )
@@ -60,6 +61,7 @@ var (
 	// mode name to actual subcommand mapping
 	modeCommand = make(map[string]CommandRunner)
 	modeFlags   = make(map[string]*flag.FlagSet)
+	wantHelp    = make(map[string]*bool)
 
 	// Indirections for replacement by tests
 	Stderr io.Writer = os.Stderr
@@ -99,6 +101,10 @@ func RegisterCommand(mode string, makeCmd func(Flags *flag.FlagSet) CommandRunne
 	}
 	flags := flag.NewFlagSet(mode+" options", flag.ContinueOnError)
 	flags.Usage = func() {}
+
+	var cmdHelp bool
+	flags.BoolVar(&cmdHelp, "help", false, "Help for this mode.")
+	wantHelp[mode] = &cmdHelp
 	modeFlags[mode] = flags
 	modeCommand[mode] = makeCmd(flags)
 }
@@ -170,8 +176,11 @@ Modes:
 	Errorf("\nExamples:\n")
 	for mode, cmd := range modeCommand {
 		if ex, ok := cmd.(exampler); ok {
-			Errorf("\n")
-			for _, example := range ex.Examples() {
+			exs := ex.Examples()
+			if len(exs) > 0 {
+				Errorf("\n")
+			}
+			for _, example := range exs {
 				Errorf("  %s %s %s\n", cmdName, mode, example)
 			}
 		}
@@ -193,6 +202,7 @@ func help(mode string) {
 	// We can skip all the checks as they're done in Main
 	cmd := modeCommand[mode]
 	cmdFlags := modeFlags[mode]
+	cmdFlags.SetOutput(Stderr)
 	if des, ok := cmd.(describer); ok {
 		Errorf("%s\n", des.Describe())
 	}
@@ -209,11 +219,21 @@ func help(mode string) {
 	}
 }
 
+// registerFlagOnce guards ExtraFlagRegistration. Tests may invoke
+// Main multiple times, but duplicate flag registration is fatal.
+var registerFlagOnce sync.Once
+
+var setCommandLineOutput func(io.Writer) // or nil if before Go 1.2
+
 // Main is meant to be the core of a command that has
 // subcommands (modes), such as camput or camtool.
 func Main() {
-	ExtraFlagRegistration()
+	registerFlagOnce.Do(ExtraFlagRegistration)
+	if setCommandLineOutput != nil {
+		setCommandLineOutput(Stderr)
+	}
 	flag.Parse()
+
 	args := flag.Args()
 	if *FlagVersion {
 		fmt.Fprintf(Stderr, "%s version: %s\n", os.Args[0], buildinfo.Version())
@@ -233,13 +253,12 @@ func Main() {
 	}
 
 	cmdFlags := modeFlags[mode]
-	var cmdHelp bool
-	cmdFlags.BoolVar(&cmdHelp, "help", false, "Help for this mode.")
+	cmdFlags.SetOutput(Stderr)
 	err := cmdFlags.Parse(args[1:])
 	if err != nil {
 		err = ErrUsage
 	} else {
-		if cmdHelp {
+		if *wantHelp[mode] {
 			help(mode)
 			return
 		}

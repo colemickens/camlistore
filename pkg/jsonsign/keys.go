@@ -18,7 +18,6 @@ package jsonsign
 
 import (
 	"bytes"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -26,7 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"camlistore.org/pkg/osutil"
 
@@ -62,8 +60,8 @@ func VerifyPublicKeyFile(file, keyid string) (bool, error) {
 	}
 	keyId := publicKeyId(key)
 	if keyId != strings.ToUpper(keyid) {
-		return false, errors.New(fmt.Sprintf("Key in file %q has id %q; expected %q",
-			file, keyId, keyid))
+		return false, fmt.Errorf("Key in file %q has id %q; expected %q",
+			file, keyId, keyid)
 	}
 	return true, nil
 }
@@ -87,17 +85,17 @@ func openArmoredPublicKeyFile(reader io.ReadCloser) (*packet.PublicKey, error) {
 	}
 	p, err := packet.Read(block.Body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Invalid public key blob: %v", err))
+		return nil, fmt.Errorf("Invalid public key blob: %v", err)
 	}
 
 	pk, ok := p.(*packet.PublicKey)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("Invalid public key blob; not a public key packet"))
+		return nil, fmt.Errorf("Invalid public key blob; not a public key packet")
 	}
 	return pk, nil
 }
 
-// keyFile defaults to $HOME/.gnupg/secring.gpg
+// EntityFromSecring returns the openpgp Entity from keyFile that matches keyId. If empty, keyFile defaults to osutil.IdentitySecretRing().
 func EntityFromSecring(keyId, keyFile string) (*openpgp.Entity, error) {
 	keyId = strings.ToUpper(keyId)
 	if keyFile == "" {
@@ -159,12 +157,12 @@ func NewEntity() (*openpgp.Entity, error) {
 	name := "" // intentionally empty
 	comment := "camlistore"
 	email := "" // intentionally empty
-	return openpgp.NewEntity(rand.Reader, time.Now(), name, comment, email)
+	return openpgp.NewEntity(name, comment, email, nil)
 }
 
 func WriteKeyRing(w io.Writer, el openpgp.EntityList) error {
 	for _, ent := range el {
-		if err := ent.SerializePrivate(w); err != nil {
+		if err := ent.SerializePrivate(w, nil); err != nil {
 			return err
 		}
 	}

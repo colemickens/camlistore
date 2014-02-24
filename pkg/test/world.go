@@ -28,9 +28,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"camlistore.org/pkg/blob"
 	"camlistore.org/pkg/osutil"
 )
 
@@ -45,7 +48,10 @@ type World struct {
 	listener net.Listener // randomly chosen 127.0.0.1 port for the server
 	port     int
 
-	server   *exec.Cmd
+	server    *exec.Cmd
+	isRunning int32 // state of the camlistored server. Access with sync/atomic only.
+	serverErr error
+
 	cammount *os.Process
 }
 
@@ -72,6 +78,10 @@ func NewWorld() (*World, error) {
 		listener: ln,
 		port:     ln.Addr().(*net.TCPAddr).Port,
 	}, nil
+}
+
+func (w *World) Addr() string {
+	return w.listener.Addr().String()
 }
 
 // Start builds the Camlistore binaries and starts a server.
@@ -119,11 +129,16 @@ func (w *World) Start() error {
 		}
 		w.server.ExtraFiles = []*os.File{listenerFD}
 		if err := w.server.Start(); err != nil {
-			return fmt.Errorf("Starting camlistored: %v", err)
+			w.serverErr = fmt.Errorf("starting camlistored: %v", err)
+			return w.serverErr
 		}
+		atomic.StoreInt32(&w.isRunning, 1)
 		waitc := make(chan error, 1)
 		go func() {
-			waitc <- w.server.Wait()
+			err := w.server.Wait()
+			w.serverErr = fmt.Errorf("%v: %s", err, buf.String())
+			atomic.StoreInt32(&w.isRunning, 0)
+			waitc <- w.serverErr
 		}()
 		upc := make(chan bool)
 		timeoutc := make(chan bool)
@@ -137,17 +152,30 @@ func (w *World) Start() error {
 				}
 				time.Sleep(50 * time.Millisecond)
 			}
+			w.serverErr = errors.New(buf.String())
+			atomic.StoreInt32(&w.isRunning, 0)
 			timeoutc <- true
 		}()
 
 		select {
-		case err := <-waitc:
-			return fmt.Errorf("server exited: %v: %s", err, buf.String())
+		case <-waitc:
+			return fmt.Errorf("server exited: %v", w.serverErr)
 		case <-timeoutc:
-			return errors.New("server never became reachable")
+			return fmt.Errorf("server never became reachable: %v", w.serverErr)
 		case <-upc:
+			if err := w.Ping(); err != nil {
+				return err
+			}
 			// Success.
 		}
+	}
+	return nil
+}
+
+// Ping returns an error if the world's camlistored is not running.
+func (w *World) Ping() error {
+	if atomic.LoadInt32(&w.isRunning) != 1 {
+		return fmt.Errorf("camlistored not running: %v", w.serverErr)
 	}
 	return nil
 }
@@ -161,6 +189,18 @@ func (w *World) Stop() {
 	if d := w.tempDir; d != "" {
 		os.RemoveAll(d)
 	}
+}
+
+func (w *World) NewPermanode(t *testing.T) blob.Ref {
+	if err := w.Ping(); err != nil {
+		t.Fatal(err)
+	}
+	out := MustRunCmd(t, w.Cmd("camput", "permanode"))
+	br, ok := blob.Parse(strings.TrimSpace(out))
+	if !ok {
+		t.Fatalf("Expected permanode in camput stdout; got %q", out)
+	}
+	return br
 }
 
 func (w *World) Cmd(binary string, args ...string) *exec.Cmd {
@@ -252,3 +292,6 @@ func (w *World) ClientIdentity() string {
 func (w *World) SecretRingFile() string {
 	return filepath.Join(w.camRoot, "pkg", "jsonsign", "testdata", "test-secring.gpg")
 }
+
+// SearchHandlerPath returns the path to the search handler, with trailing slash.
+func (w *World) SearchHandlerPath() string { return "/my-search/" }

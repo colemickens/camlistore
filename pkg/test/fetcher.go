@@ -35,7 +35,7 @@ import (
 // interface.  It started as just a fetcher and grew. It also includes
 // other convenience methods for testing.
 type Fetcher struct {
-	l      sync.Mutex
+	mu     sync.RWMutex
 	m      map[string]*Blob // keyed by blobref string
 	sorted []string         // blobrefs sorted
 
@@ -50,8 +50,8 @@ type Fetcher struct {
 var _ blobserver.Storage = (*Fetcher)(nil)
 
 func (tf *Fetcher) AddBlob(b *Blob) {
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
 	if tf.m == nil {
 		tf.m = make(map[string]*Blob)
 	}
@@ -64,20 +64,18 @@ func (tf *Fetcher) AddBlob(b *Blob) {
 	}
 }
 
-func (tf *Fetcher) FetchStreaming(ref blob.Ref) (file io.ReadCloser, size int64, err error) {
+func (tf *Fetcher) FetchStreaming(ref blob.Ref) (file io.ReadCloser, size uint32, err error) {
 	return tf.Fetch(ref)
 }
 
-var dummyCloser = ioutil.NopCloser(nil)
-
-func (tf *Fetcher) Fetch(ref blob.Ref) (file types.ReadSeekCloser, size int64, err error) {
+func (tf *Fetcher) Fetch(ref blob.Ref) (file types.ReadSeekCloser, size uint32, err error) {
 	if tf.FetchErr != nil {
 		if err = tf.FetchErr(); err != nil {
 			return
 		}
 	}
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.RLock()
+	defer tf.mu.RUnlock()
 	if tf.m == nil {
 		err = os.ErrNotExist
 		return
@@ -87,19 +85,19 @@ func (tf *Fetcher) Fetch(ref blob.Ref) (file types.ReadSeekCloser, size int64, e
 		err = os.ErrNotExist
 		return
 	}
-	size = int64(len(tb.Contents))
+	size = uint32(len(tb.Contents))
 	return struct {
 		*io.SectionReader
 		io.Closer
 	}{
-		io.NewSectionReader(strings.NewReader(tb.Contents), 0, size),
-		dummyCloser,
+		io.NewSectionReader(strings.NewReader(tb.Contents), 0, int64(size)),
+		types.NopCloser,
 	}, size, nil
 }
 
 func (tf *Fetcher) BlobContents(br blob.Ref) (contents string, ok bool) {
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.RLock()
+	defer tf.mu.RUnlock()
 	b, ok := tf.m[br.String()]
 	if !ok {
 		return
@@ -128,25 +126,31 @@ func (tf *Fetcher) ReceiveBlob(br blob.Ref, source io.Reader) (blob.SizedRef, er
 	}
 	b := &Blob{Contents: string(all)}
 	tf.AddBlob(b)
-	return blob.SizedRef{br, int64(len(all))}, nil
+	return blob.SizedRef{br, uint32(len(all))}, nil
 }
 
 func (tf *Fetcher) StatBlobs(dest chan<- blob.SizedRef, blobs []blob.Ref) error {
 	for _, br := range blobs {
-		tf.l.Lock()
+		tf.mu.RLock()
 		b, ok := tf.m[br.String()]
-		tf.l.Unlock()
+		tf.mu.RUnlock()
 		if ok {
-			dest <- blob.SizedRef{br, int64(len(b.Contents))}
+			dest <- blob.SizedRef{br, uint32(len(b.Contents))}
 		}
 	}
 	return nil
 }
 
+func (tf *Fetcher) NumBlobs() int {
+	tf.mu.RLock()
+	defer tf.mu.RUnlock()
+	return len(tf.m)
+}
+
 // BlobrefStrings returns the sorted stringified blobrefs stored in this fetcher.
 func (tf *Fetcher) BlobrefStrings() []string {
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.RLock()
+	defer tf.mu.RUnlock()
 	s := make([]string, len(tf.sorted))
 	copy(s, tf.sorted)
 	return s
@@ -154,8 +158,8 @@ func (tf *Fetcher) BlobrefStrings() []string {
 
 func (tf *Fetcher) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRef, after string, limit int) error {
 	defer close(dest)
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.RLock()
+	defer tf.mu.RUnlock()
 	n := 0
 	for _, k := range tf.sorted {
 		if k <= after {
@@ -163,7 +167,7 @@ func (tf *Fetcher) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRe
 		}
 		b := tf.m[k]
 		select {
-		case dest <- blob.SizedRef{b.BlobRef(), b.Size()}:
+		case dest <- blob.SizedRef{b.BlobRef(), uint32(b.Size())}:
 		case <-ctx.Done():
 			return context.ErrCanceled
 		}
@@ -176,8 +180,8 @@ func (tf *Fetcher) EnumerateBlobs(ctx *context.Context, dest chan<- blob.SizedRe
 }
 
 func (tf *Fetcher) RemoveBlobs(blobs []blob.Ref) error {
-	tf.l.Lock()
-	defer tf.l.Unlock()
+	tf.mu.Lock()
+	defer tf.mu.Unlock()
 	for _, br := range blobs {
 		delete(tf.m, br.String())
 	}

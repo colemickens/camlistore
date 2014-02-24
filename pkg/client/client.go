@@ -37,12 +37,14 @@ import (
 
 	"camlistore.org/pkg/auth"
 	"camlistore.org/pkg/blob"
+	"camlistore.org/pkg/blobserver"
 	"camlistore.org/pkg/client/android"
 	"camlistore.org/pkg/httputil"
 	"camlistore.org/pkg/misc"
 	"camlistore.org/pkg/osutil"
 	"camlistore.org/pkg/schema"
 	"camlistore.org/pkg/search"
+	"camlistore.org/pkg/syncutil"
 	"camlistore.org/pkg/types/camtypes"
 )
 
@@ -56,13 +58,11 @@ type Client struct {
 	// prefix is.
 	server string
 
-	prefixOnce    sync.Once // guards init of following 3 fields
-	prefixErr     error
-	prefixv       string // URL prefix before "/camli/"
-	isSharePrefix bool   // URL is a request for a share blob
+	prefixOnce    syncutil.Once // guards init of following 2 fields
+	prefixv       string        // URL prefix before "/camli/"
+	isSharePrefix bool          // URL is a request for a share blob
 
-	discoOnce      sync.Once
-	discoErr       error
+	discoOnce      syncutil.Once
 	searchRoot     string      // Handler prefix, or "" if none
 	downloadHelper string      // or "" if none
 	storageGen     string      // storage generation, or "" if not reported
@@ -77,6 +77,9 @@ type Client struct {
 	httpClient *http.Client
 	haveCache  HaveCache
 
+	// If sto is set, it's used before the httpClient or other network operations.
+	sto blobserver.Storage
+
 	initTrustedCertsOnce sync.Once
 	// We define a certificate fingerprint as the 20 digits lowercase prefix
 	// of the SHA256 of the complete certificate (in ASN.1 DER encoding).
@@ -89,7 +92,7 @@ type Client struct {
 	// when starting.
 	trustedCerts []string
 	// if set, we also skip the check against trustedCerts
-	InsecureTLS bool
+	InsecureTLS bool // TODO: hide this. add accessor?
 
 	initIgnoredFilesOnce sync.Once
 	// list of files that camput should ignore.
@@ -114,8 +117,8 @@ type Client struct {
 	// a share.
 	via map[string]string // target => via (target is referenced from via)
 
-	log     *log.Logger // not nil
-	reqGate chan bool
+	log      *log.Logger // not nil
+	httpGate *syncutil.Gate
 }
 
 const maxParallelHTTP = 5
@@ -132,10 +135,15 @@ func New(server string) *Client {
 		}
 		server = serverConf.Server
 	}
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: maxParallelHTTP,
+		},
+	}
 	return &Client{
 		server:     server,
-		httpClient: http.DefaultClient,
-		reqGate:    make(chan bool, maxParallelHTTP),
+		httpClient: httpClient,
+		httpGate:   syncutil.NewGate(maxParallelHTTP),
 		haveCache:  noHaveCache{},
 		log:        log.New(os.Stderr, "", log.Ldate|log.Ltime),
 		authMode:   auth.None{},
@@ -149,6 +157,20 @@ func NewOrFail() *Client {
 		log.Fatal(err)
 	}
 	return c
+}
+
+// NewStorageClient returns a Client that doesn't use HTTP, but uses s
+// directly. This exists mainly so all the convenience methods on
+// Client (e.g. the Upload variants) are available against storage
+// directly.
+// When using NewStorageClient, callers should call Close when done,
+// in case the storage wishes to do a cleaner shutdown.
+func NewStorageClient(s blobserver.Storage) *Client {
+	return &Client{
+		sto:       s,
+		log:       log.New(os.Stderr, "", log.Ldate|log.Ltime),
+		haveCache: noHaveCache{},
+	}
 }
 
 // TransportConfig contains options for SetupTransport.
@@ -177,9 +199,10 @@ func (c *Client) TransportForConfig(tc *TransportConfig) http.RoundTripper {
 		proxy = tc.Proxy
 	}
 	transport = &http.Transport{
-		Dial:            c.DialFunc(),
-		TLSClientConfig: tlsConfig,
-		Proxy:           proxy,
+		Dial:                c.DialFunc(),
+		TLSClientConfig:     tlsConfig,
+		Proxy:               proxy,
+		MaxIdleConnsPerHost: maxParallelHTTP,
 	}
 	httpStats := &httputil.StatsTransport{
 		Transport: transport,
@@ -217,13 +240,13 @@ type optionTrustedCert string
 func (o optionTrustedCert) modifyClient(c *Client) {
 	cert := string(o)
 	if cert != "" {
-		c.initTrustedCertsOnce.Do(noop)
+		c.initTrustedCertsOnce.Do(func() {})
 		c.trustedCerts = []string{string(o)}
 	}
 }
 
-// noop is for use with sync.Onces.
-func noop() {}
+// noop is for use with syncutil.Onces.
+func noop() error { return nil }
 
 var shareURLRx = regexp.MustCompile(`^(.+)/(` + blob.Pattern + ")$")
 
@@ -279,16 +302,21 @@ func (c *Client) SetHTTPClient(client *http.Client) {
 	c.httpClient = client
 }
 
+// HTTPClient returns the Client's underlying http.Client.
+func (c *Client) HTTPClient() *http.Client {
+	return c.httpClient
+}
+
 // A HaveCache caches whether a remote blobserver has a blob.
 type HaveCache interface {
-	StatBlobCache(br blob.Ref) (size int64, ok bool)
-	NoteBlobExists(br blob.Ref, size int64)
+	StatBlobCache(br blob.Ref) (size uint32, ok bool)
+	NoteBlobExists(br blob.Ref, size uint32)
 }
 
 type noHaveCache struct{}
 
-func (noHaveCache) StatBlobCache(blob.Ref) (int64, bool) { return 0, false }
-func (noHaveCache) NoteBlobExists(blob.Ref, int64)       {}
+func (noHaveCache) StatBlobCache(blob.Ref) (uint32, bool) { return 0, false }
+func (noHaveCache) NoteBlobExists(blob.Ref, uint32)       {}
 
 func (c *Client) SetHaveCache(cache HaveCache) {
 	if cache == nil {
@@ -337,9 +365,8 @@ func (c *Client) BlobRoot() (string, error) {
 // If the server isn't running an index and search handler, the error
 // will be ErrNoSearchRoot.
 func (c *Client) SearchRoot() (string, error) {
-	c.condDiscovery()
-	if c.discoErr != nil {
-		return "", c.discoErr
+	if err := c.condDiscovery(); err != nil {
+		return "", err
 	}
 	if c.searchRoot == "" {
 		return "", ErrNoSearchRoot
@@ -357,9 +384,8 @@ func (c *Client) SearchRoot() (string, error) {
 // If the server doesn't return such a value, the error will be
 // ErrNoStorageGeneration.
 func (c *Client) StorageGeneration() (string, error) {
-	c.condDiscovery()
-	if c.discoErr != nil {
-		return "", c.discoErr
+	if err := c.condDiscovery(); err != nil {
+		return "", err
 	}
 	if c.storageGen == "" {
 		return "", ErrNoStorageGeneration
@@ -380,9 +406,8 @@ type SyncInfo struct {
 // If the server isn't running any sync handler, the error
 // will be ErrNoSync.
 func (c *Client) SyncHandlers() ([]*SyncInfo, error) {
-	c.condDiscovery()
-	if c.discoErr != nil {
-		return nil, c.discoErr
+	if err := c.condDiscovery(); err != nil {
+		return nil, err
 	}
 	if c.syncHandlers == nil {
 		return nil, ErrNoSync
@@ -404,9 +429,8 @@ func (c *Client) GetRecentPermanodes(req *search.RecentRequest) (*search.RecentR
 	if err != nil {
 		return nil, err
 	}
-	defer hres.Body.Close()
 	res := new(search.RecentResponse)
-	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+	if err := httputil.DecodeJSON(hres, res); err != nil {
 		return nil, err
 	}
 	if err := res.Err(); err != nil {
@@ -426,9 +450,8 @@ func (c *Client) GetPermanodesWithAttr(req *search.WithAttrRequest) (*search.Wit
 	if err != nil {
 		return nil, err
 	}
-	defer hres.Body.Close()
 	res := new(search.WithAttrResponse)
-	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+	if err := httputil.DecodeJSON(hres, res); err != nil {
 		return nil, err
 	}
 	if err := res.Err(); err != nil {
@@ -448,9 +471,8 @@ func (c *Client) Describe(req *search.DescribeRequest) (*search.DescribeResponse
 	if err != nil {
 		return nil, err
 	}
-	defer hres.Body.Close()
 	res := new(search.DescribeResponse)
-	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+	if err := httputil.DecodeJSON(hres, res); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -467,9 +489,8 @@ func (c *Client) GetClaims(req *search.ClaimsRequest) (*search.ClaimsResponse, e
 	if err != nil {
 		return nil, err
 	}
-	defer hres.Body.Close()
 	res := new(search.ClaimsResponse)
-	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+	if err := httputil.DecodeJSON(hres, res); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -490,9 +511,8 @@ func (c *Client) Search(req *search.SearchQuery) (*search.SearchResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer hres.Body.Close()
 	res := new(search.SearchResult)
-	if err := json.NewDecoder(hres.Body).Decode(res); err != nil {
+	if err := httputil.DecodeJSON(hres, res); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -516,22 +536,16 @@ func (c *Client) SearchExistingFileSchema(wholeRef blob.Ref) (blob.Ref, error) {
 	if err != nil {
 		return blob.Ref{}, err
 	}
-	defer res.Body.Close()
-	var buf bytes.Buffer
-	body := io.TeeReader(io.LimitReader(res.Body, 1<<20), &buf)
-	type justWriter struct {
-		io.Writer
-	}
 	if res.StatusCode != 200 {
-		io.Copy(justWriter{ioutil.Discard}, body) // golang.org/issue/4589
-		return blob.Ref{}, fmt.Errorf("client: got status code %d from URL %s; body %s", res.StatusCode, url, buf.String())
+		body, _ := ioutil.ReadAll(io.LimitReader(res.Body, 1<<20))
+		res.Body.Close()
+		return blob.Ref{}, fmt.Errorf("client: got status code %d from URL %s; body %s", res.StatusCode, url, body)
 	}
 	var ress struct {
 		Files []blob.Ref `json:"files"`
 	}
-	if err := json.NewDecoder(body).Decode(&ress); err != nil {
-		io.Copy(justWriter{ioutil.Discard}, body) // golang.org/issue/4589
-		return blob.Ref{}, fmt.Errorf("client: error parsing JSON from URL %s: %v; body=%s", url, err, buf.String())
+	if err := httputil.DecodeJSON(res, &ress); err != nil {
+		return blob.Ref{}, fmt.Errorf("client: error parsing JSON from URL %s: %v", url, err)
 	}
 	if len(ress.Files) == 0 {
 		return blob.Ref{}, nil
@@ -548,8 +562,7 @@ func (c *Client) SearchExistingFileSchema(wholeRef blob.Ref) (blob.Ref, error) {
 // the server is configured with a "download helper", and the server responds
 // that all chunks of 'f' are available and match the digest of wholeRef.
 func (c *Client) FileHasContents(f, wholeRef blob.Ref) bool {
-	c.condDiscovery()
-	if c.discoErr != nil {
+	if err := c.condDiscovery(); err != nil {
 		return false
 	}
 	if c.downloadHelper == "" {
@@ -569,12 +582,8 @@ func (c *Client) FileHasContents(f, wholeRef blob.Ref) bool {
 // the blobref hash in case of a share URL.
 // Examples: http://foo.com:3179/bs or http://foo.com:3179/share
 func (c *Client) prefix() (string, error) {
-	c.prefixOnce.Do(func() { c.initPrefix() })
-	if c.prefixErr != nil {
-		return "", c.prefixErr
-	}
-	if c.discoErr != nil {
-		return "", c.discoErr
+	if err := c.prefixOnce.Do(c.initPrefix); err != nil {
+		return "", err
 	}
 	return c.prefixv, nil
 }
@@ -605,64 +614,95 @@ func (c *Client) discoRoot() string {
 // prefix to the blobserver root. If the server URL has a path
 // component then it is directly used, otherwise the blobRoot
 // from the discovery is used as the path.
-func (c *Client) initPrefix() {
+func (c *Client) initPrefix() error {
 	c.isSharePrefix = false
 	root := c.discoRoot()
 	u, err := url.Parse(root)
 	if err != nil {
-		c.prefixErr = err
-		return
+		return err
 	}
 	if len(u.Path) > 1 {
 		c.prefixv = strings.TrimRight(root, "/")
-		return
+		return nil
 	}
-	c.condDiscovery()
+	return c.condDiscovery()
 }
 
-func (c *Client) condDiscovery() {
-	c.discoOnce.Do(func() { c.doDiscovery() })
+func (c *Client) condDiscovery() error {
+	if c.sto != nil {
+		return errors.New("client not using HTTP")
+	}
+	return c.discoOnce.Do(c.doDiscovery)
 }
 
-func (c *Client) doDiscovery() {
-	root, err := url.Parse(c.discoRoot())
+// DiscoveryDoc returns the server's JSON discovery document.
+// This method exists purely for the "camtool discovery" command.
+// Clients shouldn't have to parse this themselves.
+func (c *Client) DiscoveryDoc() (io.Reader, error) {
+	res, err := c.discoveryResp()
 	if err != nil {
-		c.discoErr = err
-		return
+		return nil, err
 	}
+	defer res.Body.Close()
+	const maxSize = 1 << 20
+	all, err := ioutil.ReadAll(io.LimitReader(res.Body, maxSize+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(all) > maxSize {
+		return nil, errors.New("discovery document oddly large")
+	}
+	if len(all) > 0 && all[len(all)-1] != '\n' {
+		all = append(all, '\n')
+	}
+	return bytes.NewReader(all), err
+}
 
+func (c *Client) discoveryResp() (*http.Response, error) {
 	// If the path is just "" or "/", do discovery against
 	// the URL to see which path we should actually use.
 	req := c.newRequest("GET", c.discoRoot(), nil)
 	req.Header.Set("Accept", "text/x-camli-configuration")
 	res, err := c.doReqGated(req)
 	if err != nil {
-		c.discoErr = err
-		return
+		return nil, err
 	}
-	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		c.discoErr = fmt.Errorf("Got status %q from blobserver URL %q during configuration discovery", res.Status, c.discoRoot())
-		return
+		res.Body.Close()
+		return nil, fmt.Errorf("Got status %q from blobserver URL %q during configuration discovery", res.Status, c.discoRoot())
 	}
 	// TODO(bradfitz): little weird in retrospect that we request
 	// text/x-camli-configuration and expect to get back
 	// text/javascript.  Make them consistent.
 	if ct := res.Header.Get("Content-Type"); ct != "text/javascript" {
-		c.discoErr = fmt.Errorf("Blobserver returned unexpected type %q from discovery", ct)
-		return
+		res.Body.Close()
+		return nil, fmt.Errorf("Blobserver returned unexpected type %q from discovery", ct)
 	}
+	return res, nil
+}
+
+func (c *Client) doDiscovery() error {
+	root, err := url.Parse(c.discoRoot())
+	if err != nil {
+		return err
+	}
+
+	res, err := c.discoveryResp()
+	if err != nil {
+		return err
+	}
+
+	// TODO: make a proper struct type for this in another package somewhere:
 	m := make(map[string]interface{})
-	if err := json.NewDecoder(res.Body).Decode(&m); err != nil {
-		c.discoErr = err
-		return
+	if err := httputil.DecodeJSON(res, &m); err != nil {
+		return err
 	}
+
 	searchRoot, ok := m["searchRoot"].(string)
 	if ok {
 		u, err := root.Parse(searchRoot)
 		if err != nil {
-			c.discoErr = fmt.Errorf("client: invalid searchRoot %q; failed to resolve", searchRoot)
-			return
+			return fmt.Errorf("client: invalid searchRoot %q; failed to resolve", searchRoot)
 		}
 		c.searchRoot = u.String()
 	}
@@ -671,8 +711,7 @@ func (c *Client) doDiscovery() {
 	if ok {
 		u, err := root.Parse(downloadHelper)
 		if err != nil {
-			c.discoErr = fmt.Errorf("client: invalid downloadHelper %q; failed to resolve", downloadHelper)
-			return
+			return fmt.Errorf("client: invalid downloadHelper %q; failed to resolve", downloadHelper)
 		}
 		c.downloadHelper = u.String()
 	}
@@ -681,13 +720,11 @@ func (c *Client) doDiscovery() {
 
 	blobRoot, ok := m["blobRoot"].(string)
 	if !ok {
-		c.discoErr = fmt.Errorf("No blobRoot in config discovery response")
-		return
+		return fmt.Errorf("No blobRoot in config discovery response")
 	}
 	u, err := root.Parse(blobRoot)
 	if err != nil {
-		c.discoErr = fmt.Errorf("client: error resolving blobRoot: %v", err)
-		return
+		return fmt.Errorf("client: error resolving blobRoot: %v", err)
 	}
 	c.prefixv = strings.TrimRight(u.String(), "/")
 
@@ -698,14 +735,12 @@ func (c *Client) doDiscovery() {
 			from := vmap["from"].(string)
 			ufrom, err := root.Parse(from)
 			if err != nil {
-				c.discoErr = fmt.Errorf("client: invalid %q \"from\" sync; failed to resolve", from)
-				return
+				return fmt.Errorf("client: invalid %q \"from\" sync; failed to resolve", from)
 			}
 			to := vmap["to"].(string)
 			uto, err := root.Parse(to)
 			if err != nil {
-				c.discoErr = fmt.Errorf("client: invalid %q \"to\" sync; failed to resolve", to)
-				return
+				return fmt.Errorf("client: invalid %q \"to\" sync; failed to resolve", to)
 			}
 			toIndex, _ := vmap["toIndex"].(bool)
 			c.syncHandlers = append(c.syncHandlers, &SyncInfo{
@@ -715,6 +750,7 @@ func (c *Client) doDiscovery() {
 			})
 		}
 	}
+	return nil
 }
 
 func (c *Client) newRequest(method, url string, body ...io.Reader) *http.Request {
@@ -737,14 +773,6 @@ func (c *Client) newRequest(method, url string, body ...io.Reader) *http.Request
 	return req
 }
 
-func (c *Client) requestHTTPToken() {
-	c.reqGate <- true
-}
-
-func (c *Client) releaseHTTPToken() {
-	<-c.reqGate
-}
-
 // expect2XX will doReqGated and promote HTTP response codes outside of
 // the 200-299 range to a non-nil error containing the response body.
 func (c *Client) expect2XX(req *http.Request) (*http.Response, error) {
@@ -759,8 +787,8 @@ func (c *Client) expect2XX(req *http.Request) (*http.Response, error) {
 }
 
 func (c *Client) doReqGated(req *http.Request) (*http.Response, error) {
-	c.requestHTTPToken()
-	defer c.releaseHTTPToken()
+	c.httpGate.Start()
+	defer c.httpGate.Done()
 	return c.httpClient.Do(req)
 }
 
@@ -951,4 +979,14 @@ func (c *Client) UploadPlannedPermanode(key string, sigTime time.Time) (*PutResu
 func (c *Client) IsIgnoredFile(fullpath string) bool {
 	c.initIgnoredFilesOnce.Do(c.initIgnoredFiles)
 	return c.ignoreChecker(fullpath)
+}
+
+// Close closes the client. In most cases, it's not necessary to close a Client.
+// The exception is for Clients created using NewStorageClient, where the Storage
+// might implement io.Closer.
+func (c *Client) Close() error {
+	if cl, ok := c.sto.(io.Closer); ok {
+		return cl.Close()
+	}
+	return nil
 }
