@@ -64,9 +64,11 @@ func init() {
 		if up := uploader; up != nil {
 			up.Close()
 			stats := up.Stats()
-			log.Printf("Client stats: %s", stats.String())
-			if up.transport != nil {
-				log.Printf("  #HTTP reqs: %d", up.transport.Requests())
+			if *cmdmain.FlagVerbose {
+				log.Printf("Client stats: %s", stats.String())
+				if up.transport != nil {
+					log.Printf("  #HTTP reqs: %d", up.transport.Requests())
+				}
 			}
 		}
 	}
@@ -97,7 +99,7 @@ func handleResult(what string, pr *client.PutResult, err error) error {
 		cmdmain.ExitWithFailure = true
 		return err
 	}
-	fmt.Println(pr.BlobRef.String())
+	fmt.Fprintln(cmdmain.Stdout, pr.BlobRef.String())
 	return nil
 }
 
