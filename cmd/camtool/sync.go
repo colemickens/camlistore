@@ -35,9 +35,11 @@ import (
 )
 
 type syncCmd struct {
-	src   string
-	dest  string
-	third string
+	src       string
+	dest      string
+	third     string
+	srcKeyID  string // GPG public key ID of the source server, if supported.
+	destKeyID string // GPG public key ID of the destination server, if supported.
 
 	loop        bool
 	verbose     bool
@@ -75,7 +77,7 @@ func (c *syncCmd) Describe() string {
 }
 
 func (c *syncCmd) Usage() {
-	fmt.Fprintf(os.Stderr, "Usage: camtool [globalopts] sync [syncopts] \n")
+	fmt.Fprintf(cmdmain.Stderr, "Usage: camtool [globalopts] sync [syncopts] \n")
 }
 
 func (c *syncCmd) Examples() []string {
@@ -90,7 +92,7 @@ func (c *syncCmd) RunCommand(args []string) error {
 		return cmdmain.UsageError("Can't use --loop without --removesrc")
 	}
 	if c.verbose {
-		c.logger = log.New(os.Stderr, "", 0) // else nil
+		c.logger = log.New(cmdmain.Stderr, "", 0) // else nil
 	}
 	if c.all {
 		err := c.syncAll()
@@ -111,6 +113,15 @@ func (c *syncCmd) RunCommand(args []string) error {
 	ts, err := c.storageFromParam("thirdleg", c.third)
 	if err != nil {
 		return err
+	}
+
+	differentKeyIDs := fmt.Sprintf("WARNING: the source server GPG key ID (%v) and the destination's (%v) differ. All blobs will be synced, but because the indexer at the other side is indexing claims by a different user, you may not see what you expect in that server's web UI, etc.", c.srcKeyID, c.destKeyID)
+
+	if c.srcKeyID != c.destKeyID { // both blank is ok.
+		// Warn at the top (and hope the user sees it and can abort if it was a mistake):
+		fmt.Fprintln(cmdmain.Stderr, differentKeyIDs)
+		// Warn also at the end (in case the user missed the first one)
+		defer fmt.Fprintln(cmdmain.Stderr, differentKeyIDs)
 	}
 
 	passNum := 0
@@ -183,6 +194,16 @@ func (c *syncCmd) storageFromParam(which storageType, val string) (blobserver.St
 		return nil, fmt.Errorf("could not setup auth for connecting to %v: %v", val, err)
 	}
 	cl.SetLogger(c.logger)
+	serverKeyID, err := cl.ServerKeyID()
+	if err != nil && err != client.ErrNoSigning {
+		fmt.Fprintf(cmdmain.Stderr, "Failed to discover keyId for server %v: %v", val, err)
+	} else {
+		if which == storageSource {
+			c.srcKeyID = serverKeyID
+		} else if which == storageDest {
+			c.destKeyID = serverKeyID
+		}
+	}
 	return cl, nil
 }
 
@@ -304,7 +325,7 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 
 	if c.dest == "stdout" {
 		for sb := range srcBlobs {
-			fmt.Printf("%s %d\n", sb.Ref, sb.Size)
+			fmt.Fprintf(cmdmain.Stderr, "%s %d\n", sb.Ref, sb.Size)
 		}
 		checkSourceError()
 		return
@@ -326,13 +347,21 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 	}
 
 	destNotHaveBlobs := make(chan blob.SizedRef)
-	sizeMismatch := make(chan blob.Ref)
+
 	readSrcBlobs := srcBlobs
 	if c.verbose {
 		readSrcBlobs = loggingBlobRefChannel(srcBlobs)
 	}
+
 	mismatches := []blob.Ref{}
-	go client.ListMissingDestinationBlobs(destNotHaveBlobs, sizeMismatch, readSrcBlobs, destBlobs)
+	onMismatch := func(br blob.Ref) {
+		// TODO(bradfitz): check both sides and repair, carefully.  For now, fail.
+		log.Printf("WARNING: blobref %v has differing sizes on source and dest", br)
+		stats.ErrorCount++
+		mismatches = append(mismatches, br)
+	}
+
+	go client.ListMissingDestinationBlobs(destNotHaveBlobs, onMismatch, readSrcBlobs, destBlobs)
 
 	// Handle three-legged mode if tc is provided.
 	checkThirdError := func() {} // default nop
@@ -350,50 +379,39 @@ func (c *syncCmd) doPass(src, dest, thirdLeg blobserver.Storage) (stats SyncStat
 			}
 		}
 		thirdNeedBlobs := make(chan blob.SizedRef)
-		go client.ListMissingDestinationBlobs(thirdNeedBlobs, sizeMismatch, destNotHaveBlobs, thirdBlobs)
+		go client.ListMissingDestinationBlobs(thirdNeedBlobs, onMismatch, destNotHaveBlobs, thirdBlobs)
 		syncBlobs = thirdNeedBlobs
 		firstHopDest = thirdLeg
 	}
-For:
-	for {
-		select {
-		case br := <-sizeMismatch:
-			// TODO(bradfitz): check both sides and repair, carefully.  For now, fail.
-			log.Printf("WARNING: blobref %v has differing sizes on source and dest", br)
+
+	for sb := range syncBlobs {
+		fmt.Fprintf(cmdmain.Stderr, "Destination needs blob: %s\n", sb)
+
+		blobReader, size, err := src.FetchStreaming(sb.Ref)
+		if err != nil {
 			stats.ErrorCount++
-			mismatches = append(mismatches, br)
-		case sb, ok := <-syncBlobs:
-			if !ok {
-				break For
-			}
-			fmt.Printf("Destination needs blob: %s\n", sb)
+			log.Printf("Error fetching %s: %v", sb.Ref, err)
+			continue
+		}
+		if size != sb.Size {
+			stats.ErrorCount++
+			log.Printf("Source blobserver's enumerate size of %d for blob %s doesn't match its Get size of %d",
+				sb.Size, sb.Ref, size)
+			continue
+		}
 
-			blobReader, size, err := src.FetchStreaming(sb.Ref)
-			if err != nil {
-				stats.ErrorCount++
-				log.Printf("Error fetching %s: %v", sb.Ref, err)
-				continue
-			}
-			if size != sb.Size {
-				stats.ErrorCount++
-				log.Printf("Source blobserver's enumerate size of %d for blob %s doesn't match its Get size of %d",
-					sb.Size, sb.Ref, size)
-				continue
-			}
+		if _, err := blobserver.Receive(firstHopDest, sb.Ref, blobReader); err != nil {
+			stats.ErrorCount++
+			log.Printf("Upload of %s to destination blobserver failed: %v", sb.Ref, err)
+			continue
+		}
+		stats.BlobsCopied++
+		stats.BytesCopied += int64(size)
 
-			if _, err := blobserver.Receive(firstHopDest, sb.Ref, blobReader); err != nil {
+		if c.removeSrc {
+			if err = src.RemoveBlobs([]blob.Ref{sb.Ref}); err != nil {
 				stats.ErrorCount++
-				log.Printf("Upload of %s to destination blobserver failed: %v", sb.Ref, err)
-				continue
-			}
-			stats.BlobsCopied++
-			stats.BytesCopied += int64(size)
-
-			if c.removeSrc {
-				if err = src.RemoveBlobs([]blob.Ref{sb.Ref}); err != nil {
-					stats.ErrorCount++
-					log.Printf("Failed to delete %s from source: %v", sb.Ref, err)
-				}
+				log.Printf("Failed to delete %s from source: %v", sb.Ref, err)
 			}
 		}
 	}
