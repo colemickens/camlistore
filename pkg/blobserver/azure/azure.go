@@ -1,8 +1,8 @@
 // +build ignore
 
 /*
-Package s3 registers the "s3" blobserver storage type, storing
-blobs in an Amazon Web Services' S3 storage bucket.
+Package azure registers the "azure" blobserver storage type, storing
+blobs in an Microsoft Azure Blob Storage container.
 
 Example low-level config:
 
@@ -49,18 +49,18 @@ func newFromConfig(_ blobserver.Loader, config jsonconfig.Obj) (blobserver.Stora
 
 	if !skipStartupCheck {
 		// TODO: skip this check if a file
-		// ~/.camli/.configcheck/sha1-("IS GOOD: s3: sha1(access key +
+		// ~/.camli/.configcheck/sha1-("IS GOOD: s3azure: sha1(access key +
 		// secret key)") exists and has recent time?
 		buckets, err := client.Buckets()
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get bucket list from S3: %v", err)
+			return nil, fmt.Errorf("Failed to get bucket list from S3azure: %v", err)
 		}
 		haveBucket := make(map[string]bool)
 		for _, b := range buckets {
 			haveBucket[b.Name] = true
 		}
 		if !haveBucket[sto.bucket] {
-			return nil, fmt.Errorf("S3 bucket %q doesn't exist. Create it first at https://console.aws.amazon.com/s3/home")
+			return nil, fmt.Errorf("azure bucket %q doesn't exist. Create it first at https://console.aws.amazon.com/s3/home")
 		}
 	}
 	return sto, nil

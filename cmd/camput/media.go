@@ -264,17 +264,20 @@ func (c *mediaCmd) getOpensubsClaims(permaRef blob.Ref, fileBlob *search.Describ
 	header_blobs := make([]byte, opensubs.HashChunkSize)
 	footer_blobs := make([]byte, opensubs.HashChunkSize)
 
-	bf := getUploader().Client.GetBlobFetcher()
-	blob, size, err := bf.Fetch(fileBlob.BlobRef)
+	client := getUploader().Client;
+	blob, size1, err := client.FetchStreaming(fileBlob.BlobRef)
 	if err != nil {
 		panic(err)
 	}
+
+	// assert_eq!(size, size1); // :(
 
 	n, err := blob.Read(header_blobs)
 	if err != nil {
 		panic(err)
 	}
 
+	/*
 	ret, err := blob.Seek(-opensubs.HashChunkSize, 2)
 	// what is ret?
 	if err != nil {
@@ -287,6 +290,8 @@ func (c *mediaCmd) getOpensubsClaims(permaRef blob.Ref, fileBlob *search.Describ
 	}
 
 	_, _ = n, ret
+	*/
+	_, _ = n, size1
 
 	blob.Close()
 
