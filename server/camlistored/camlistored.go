@@ -46,6 +46,7 @@ import (
 	"camlistore.org/pkg/webserver"
 
 	// Storage options:
+	_ "camlistore.org/pkg/blobserver/azure"
 	_ "camlistore.org/pkg/blobserver/cond"
 	_ "camlistore.org/pkg/blobserver/diskpacked"
 	_ "camlistore.org/pkg/blobserver/encrypt"
